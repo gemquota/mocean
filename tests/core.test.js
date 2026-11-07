@@ -14,7 +14,7 @@ test('identity orientation preserves a vector', () => {
 });
 test('yaw rotates body-forward thrust into world space', () => {
   const out = quatRotate(quatFromEuler(Math.PI / 2, 0, 0), vec3(1, 0, 0));
-  assert.ok(Math.abs(out.z - 1) < 1e-10);
+  assert.ok(Math.abs(out.y - 1) < 1e-10);
   assert.ok(Math.abs(out.x) < 1e-10);
 });
 test('dynamics preserves finite values and accelerates under forward thrust', () => {
