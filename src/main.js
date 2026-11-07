@@ -10,17 +10,23 @@ function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
  const duration={CRUISE:4+random()*5,EXPLORE:3+random()*4,TURN:1.7+random()*2.2,DART:.45+random()*.45,GLIDE:1.5+random()*2,RECOVER:2+random()*2.5};
  sim.nextChoice=sim.time+duration[sim.mode];
- if(sim.mode==='TURN'){sim.targetYaw+=(random()-.5)*2.2;sim.targetPitch+=(random()-.5)*.48;}
- if(sim.mode==='EXPLORE'){sim.targetYaw+=(random()-.5)*.9;sim.targetDepth=clamp((random()-.5)*3,-1.5,1.5);}
- if(sim.mode==='DART'){sim.targetYaw+=(random()-.5)*.5;sim.targetPitch+=(random()-.5)*.18;}
+ if(sim.mode==='TURN'){sim.targetYaw+=(random()<.5?-1:1)*(1.15+random()*1.55);sim.targetPitch+=(random()-.5)*.38;}
+ if(sim.mode==='EXPLORE'){sim.targetYaw+=(random()-.5)*1.5;sim.targetDepth=clamp((random()-.5)*3,-1.5,1.5);}
+ if(sim.mode==='DART'){sim.targetYaw+=(random()-.5)*.7;sim.targetPitch+=(random()-.5)*.18;}
  if(sim.mode==='GLIDE')sim.targetDepth*=.5;
  if(sim.mode==='RECOVER'){sim.targetPitch*=.35;sim.targetDepth*=.35;}
  label.textContent=labels[sim.mode];
 }
 function simulate(dt){
  sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
- const yawError=angleDelta(sim.yaw,sim.targetYaw+Math.sin(sim.time*.21)*.12);
- const turn=clamp(yawError*.85,-.58,.58);
+ const wander=Math.sin(sim.time*.17)*.22+Math.sin(sim.time*.071+1.7)*.13;
+ const boundaryX=clamp(sim.p.x/8,-1,1),boundaryZ=clamp(sim.p.z/5.2,-1,1);
+ if(Math.abs(boundaryX)>.72||Math.abs(boundaryZ)>.72){
+  const away=Math.atan2(-boundaryZ,-boundaryX);
+  sim.targetYaw=sim.yaw+angleDelta(sim.yaw,away)*.72;
+ }
+ const yawError=angleDelta(sim.yaw,sim.targetYaw+wander);
+ const turn=clamp(yawError*1.15,-.92,.92);
  const pitch=clamp((sim.targetPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
