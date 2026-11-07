@@ -1,48 +1,16 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#07151d">
-  <meta name="description" content="Mocean is a real-time aquatic locomotion and procedural rendering laboratory.">
-  <title>MOCEAN / Creature Laboratory</title>
-  <link rel="stylesheet" href="./styles.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06141b"><meta name="description" content="Mocean: an autonomous aquatic creature simulation.">
+<title>Mocean</title><link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<header class="topbar"><a class="wordmark" href="./"><span class="mark">M</span> MOCEAN</a><div class="top-meta"><i></i> LIVE SIMULATION <span>LAB 001 / 0.2.0</span></div></header>
-<main>
-  <section class="intro"><div><p class="eyebrow">MOTION STUDY / 001</p><h1>One creature.<br><em>One view at a time.</em></h1></div><p class="lede">A camera that follows the creature through the water. Choose a rendering experiment, give it the whole stage, and judge it on its own merits.</p></section>
-  <section class="workspace">
-    <div class="stage-head"><div><span class="eyebrow">LIVE CREATURE VIEW</span><span class="stage-sub">FOLLOW CAMERA · AUTONOMOUS 3D MOTION</span></div><div class="stage-actions"><button id="pause" class="control-btn">Ⅱ PAUSE</button><button id="reset" class="control-btn">↺ RESET</button></div></div>
-    <nav class="renderer-tabs" aria-label="Choose renderer">
-      <button class="renderer-tab active" data-renderer="pixel" aria-pressed="true"><b>01</b><span>PROCEDURAL PIXEL</span></button>
-      <button class="renderer-tab" data-renderer="hybrid" aria-pressed="false"><b>02</b><span>HYBRID</span></button>
-      <button class="renderer-tab" data-renderer="layered" aria-pressed="false"><b>03</b><span>2.5D</span></button>
-      <button class="renderer-tab" data-renderer="voxel" aria-pressed="false"><b>04</b><span>VOXEL</span></button>
-    </nav>
-    <div class="render-stage"><canvas id="creature" aria-label="Live rendering of the autonomous aquatic creature"></canvas><div class="stage-caption"><span id="rendererName">PROCEDURAL PIXEL / GRID SYNTHESIS</span><span>CAMERA LOCK <i></i></span></div></div>
-    <div class="telemetry"><div><span class="eyebrow">POSITION</span><b id="position">0.00 / 0.00 / 0.00</b></div><div><span class="eyebrow">VELOCITY</span><b id="velocity">0.00 m/s</b></div><div><span class="eyebrow">HEADING</span><b id="heading">0° / 0° / 0°</b></div><div><span class="eyebrow">BEHAVIOUR</span><b id="state">CRUISE</b></div></div>
-  </section>
-  <section class="lower">
-    <aside class="controls"><div class="section-title"><span class="eyebrow">FLIGHT DECK</span><span class="tiny">LIVE PARAMETERS</span></div>
-      <label class="toggle-row"><span>Autonomous movement</span><input id="autonomy" type="checkbox" checked></label>
-      <label class="toggle-row"><span>Simulation running</span><input id="running" type="checkbox" checked></label>
-      <div class="control-group"><div class="control-title"><label for="drive">Forward drive</label><output id="driveOut">1.00×</output></div><input id="drive" type="range" min=".2" max="2.2" step=".05" value="1"></div>
-      <div class="control-group"><div class="control-title"><label for="agility">Turn response</label><output id="agilityOut">1.00×</output></div><input id="agility" type="range" min=".3" max="2" step=".05" value="1"></div>
-      <div class="control-group"><div class="control-title"><label for="dart">Flit intensity</label><output id="dartOut">0.65</output></div><input id="dart" type="range" min="0" max="1" step=".05" value=".65"></div>
-      <div class="control-group"><div class="control-title"><label for="depth">Depth excursion</label><output id="depthOut">1.00×</output></div><input id="depth" type="range" min="0" max="2" step=".05" value="1"></div>
-      <div class="control-group"><div class="control-title"><label for="seed">Random seed</label><output id="seedOut">433841</output></div><input id="seed" type="range" min="1" max="999999" step="1" value="433841"></div>
-      <button id="reseed" class="wide-btn">↻ RESTART WITH SEED</button>
-      <div class="manual"><span class="eyebrow">MANUAL NUDGE</span><div class="nudge-grid"><button data-nudge="forward">FORWARD ↑</button><button data-nudge="up">RISE</button><button data-nudge="left">TURN ↶</button><button data-nudge="right">TURN ↷</button><button data-nudge="down">DIVE</button><button data-nudge="reverse">REVERSE ↓</button></div><p>Manual input briefly influences the autonomous controller.</p></div>
-    </aside>
-    <section class="notes"><div class="section-title"><span class="eyebrow">RENDERER EXPERIMENTS</span><span class="tiny">ONE ACTIVE AT A TIME</span></div><div class="note-grid">
-      <div><span class="note-index">01</span><h3>Procedural pixel</h3><p>Grid-built silhouette, controlled palette, animated fins and readable pixel clusters.</p></div>
-      <div><span class="note-index">02</span><h3>Hybrid volume</h3><p>Volumetric body forms with a deliberately pixel-aware surface treatment.</p></div>
-      <div><span class="note-index">03</span><h3>2.5D layered</h3><p>Layered anatomy with depth-aware overlap and orientation-dependent detail.</p></div>
-      <div><span class="note-index">04</span><h3>Voxel volume</h3><p>Discrete 3D anatomy. This remains a target, not a claim about the current prototype.</p></div>
-    </div></section>
-  </section>
-  <footer><span>MOCEAN / AN EXPERIMENT IN AQUATIC MOTION</span><span>ONE CREATURE · ONE CAMERA · ONE RENDERER</span></footer>
+<main class="ocean">
+  <canvas id="creature" aria-label="Autonomous swimming creature in a three-dimensional aquatic environment"></canvas>
+  <div class="signature"><span class="sig-mark">M</span><span>MOCEAN</span></div>
+  <div class="caption">AN EXPERIMENT IN AQUATIC LIFE</div>
+  <div class="behaviour" id="behaviour">CRUISING</div>
 </main>
 <script type="module" src="./src/main.js"></script>
 </body></html>
