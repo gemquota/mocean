@@ -25,7 +25,7 @@ function simulate(dt){
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
  stepDynamics(sim,{thrust:gait.thrust,turn:gait.steering+gait.yawMoment,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment},dt);
- sim.roll=clamp(sim.roll+(-turn*.12-sim.roll*.55)*dt,-.38,.38);
+ // Roll is integrated from the differential pectoral-fin moment in stepDynamics.
 }
 function updateCamera(dt){
  const q=quatEuler(sim.yaw,sim.pitch,sim.roll),forward=rotate(q,V(1,0,0)),right=rotate(q,V(0,0,1)),up=rotate(q,V(0,1,0));
