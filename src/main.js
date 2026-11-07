@@ -24,7 +24,7 @@ function simulate(dt){
  const pitch=clamp((sim.targetPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
- stepDynamics(sim,{thrust:gait.thrust,turn,pitch,lift:depthError},dt);
+ stepDynamics(sim,{thrust:gait.thrust,turn:gait.steering+gait.yawMoment,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment},dt);
  sim.roll=clamp(sim.roll+(-turn*.12-sim.roll*.55)*dt,-.38,.38);
 }
 function updateCamera(dt){
@@ -62,17 +62,22 @@ function drawPolygon(points,color,w,h,outline=null){
  ctx.closePath();ctx.fillStyle=color;ctx.fill();if(outline){ctx.strokeStyle=outline;ctx.lineWidth=1.2;ctx.stroke();}
 }
 function drawFish(w,h){
+ const beat=Math.sin(sim.gait.phase),sweep=Math.sin(sim.gait.phase+.7);
+ // Fins are drawn behind the body. Their spread changes with steering and gliding.
+ const finSpreadL=sim.gait.leftFin??.18,finSpreadR=sim.gait.rightFin??.18;
+ drawPolygon([V(-.22,-.16,.27),V(-.62,-.46,.62+finSpreadR*.42),V(.02,-.3,.48),V(.18,-.12,.29)],'#286e7b',w,h,'#174e5c');
+ drawPolygon([V(-.22,-.16,-.27),V(-.62,-.46,-.62-finSpreadL*.42),V(.02,-.3,-.48),V(.18,-.12,-.29)],'#367f83',w,h,'#174e5c');
+ // Split caudal lobes flex around the peduncle and trail the travelling wave.
+ const tailLag=beat*.12,tailLoad=sim.gait.tailLoad??.4;
+ drawPolygon([V(-1.55,.02,tailLag),V(-2.12,.5+tailLoad*.08,tailLag*.75),V(-1.88,.04,tailLag*.45),V(-2.12,-.48-tailLoad*.08,tailLag*.75)],'#388d8e',w,h,'#174e5c');
+ // Dorsal and anal fins provide passive directional stability.
+ drawPolygon([V(-.55,.3,0),V(-.82,.58+tailLoad*.04,0),V(-.12,.32,0)],'#4ca99c',w,h);
+ drawPolygon([V(-.58,-.29,0),V(-.82,-.48,0),V(-.12,-.29,0)],'#347e85',w,h);
+
  const deformed=mesh.vertices.map(deform);
  const faces=mesh.faces.map(face=>({face,depth:face.reduce((s,i)=>s+project(add(sim.p,rotate(orientation(),deformed[i])),w,h).z,0)/3})).sort((a,b)=>b.depth-a.depth);
  for(const{face}of faces){const points=face.map(i=>deformed[i]),p=points.map(v=>project(add(sim.p,rotate(orientation(),v)),w,h));if(p.some(v=>v.z<.15))continue;
   ctx.beginPath();p.forEach((v,i)=>{const x=Math.round(v.x/3.2)*3.2,y=Math.round(v.y/3.2)*3.2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.fillStyle=faceColour(points);ctx.fill();}
- const beat=Math.sin(sim.gait.phase);
- drawPolygon([V(-1.12,0,0),V(-2.02,.55+beat*.09,0),V(-1.82,.08,0),V(-2.02,-.55-beat*.09,0)],'#388d8e',w,h,'#174e5c');
- drawPolygon([V(-.42,.29,0),V(-.08,.78,0),V(.34,.28,0)],'#4ca99c',w,h);
- drawPolygon([V(-.35,-.29,0),V(.06,-.58,0),V(.35,-.25,0)],'#347e85',w,h);
- const sweep=Math.sin(sim.gait.phase+.7)*.12;
- drawPolygon([V(.18,-.06,.27),V(-.28,-.42,.68+sweep),V(.43,-.31,.4)],'#286e7b',w,h,'#174e5c');
- drawPolygon([V(.18,-.06,-.27),V(-.28,-.42,-.68-sweep),V(.43,-.31,-.4)],'#367f83',w,h);
  const eye=projectLocal(V(.72,.13,.2),w,h);
  if(eye.z>.15){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(2.2,eye.scale*.028),0,TAU);ctx.fillStyle='#f3f0d8';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.scale*.008,eye.y,Math.max(1.2,eye.scale*.012),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
  const g1=projectLocal(V(.43,.22,.33),w,h),g2=projectLocal(V(.3,-.2,.34),w,h);
