@@ -30,3 +30,30 @@ test('drag reduces speed when no thrust is applied', () => {
   stepDynamics(body, { thrust: 0, side: 0, lift: 0, turn: 0, pitch: 0 }, 1 / 60);
   assert.ok(length3(body.vel) < before);
 });
+
+import { createGait, stepGait, deformPoint } from '../src/core/body.js';
+
+test('body undulation is minimal near the head and amplified at the tail', () => {
+  const gait = createGait();
+  gait.phase = Math.PI / 2;
+  gait.amplitude = 0.3;
+  const head = deformPoint(vec3(0.9, 0, 0), gait);
+  const tail = deformPoint(vec3(-1.15, 0, 0), gait);
+  assert.ok(Math.abs(tail.z) > Math.abs(head.z) + 0.05);
+});
+test('tail oscillation generates bounded forward propulsion', () => {
+  const gait = createGait();
+  let output;
+  for (let i = 0; i < 120; i++) output = stepGait(gait, 'CRUISE', 0.5, 0, 1 / 120);
+  assert.ok(output.thrust > 0);
+  assert.ok(output.thrust <= 1.15);
+  assert.ok(gait.frequency > 0);
+});
+test('burst swimming spends energy and recovery restores it', () => {
+  const gait = createGait();
+  for (let i = 0; i < 120; i++) stepGait(gait, 'DART', 0.5, 0, 1 / 120);
+  const afterBurst = gait.energy;
+  for (let i = 0; i < 120; i++) stepGait(gait, 'RECOVER', 0.2, 0, 1 / 120);
+  assert.ok(afterBurst < 1);
+  assert.ok(gait.energy > afterBurst);
+});
