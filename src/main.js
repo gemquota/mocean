@@ -1,7 +1,5 @@
-const TAU=Math.PI*2, clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), mix=(a,b,t)=>a+(b-a)*t;
-const V=(x=0,y=0,z=0)=>({x,y,z}), add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z), mul=(a,s)=>V(a.x*s,a.y*s,a.z*s), dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z, mag=a=>Math.hypot(a.x,a.y,a.z), unit=a=>mul(a,1/(mag(a)||1));
-function quatEuler(yaw,pitch,roll){const cy=Math.cos(yaw/2),sy=Math.sin(yaw/2),cp=Math.cos(pitch/2),sp=Math.sin(pitch/2),cr=Math.cos(roll/2),sr=Math.sin(roll/2);return {w:cr*cp*cy+sr*sp*sy,x:sr*cp*cy-cr*sp*sy,y:cr*sp*cy+sr*cp*sy,z:cr*cp*sy-sr*sp*cy};}
-function rotate(q,p){const u=V(q.x,q.y,q.z),s=q.w;return add(add(mul(u,2*dot(u,p)),mul(p,s*s-dot(u,u))),mul({x:u.y*p.z-u.z*p.y,y:u.z*p.x-u.x*p.z,z:u.x*p.y-u.y*p.x},2*s));}
+import { TAU, clamp, mix, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta } from './core/math.js';
+import { stepDynamics } from './core/dynamics.js';
 let seed=433841;function random(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
 const canvases=['pixel','hybrid','layered','voxel'].map(id=>document.getElementById(id)),ctxs=canvases.map(c=>c.getContext('2d'));
 const ui=id=>document.getElementById(id);
@@ -19,7 +17,7 @@ function step(dt){
   const intensity=params.dart;
   const wanderYaw=Math.sin(sim.time*.37)*.25+Math.sin(sim.time*.13+1.4)*.18;
   const desiredYaw=sim.targetYaw+wanderYaw;
-  turn=clamp((desiredYaw-sim.yaw)*1.7,-1,1);
+  turn=clamp(angleDelta(sim.yaw,desiredYaw)*1.7,-1,1);
   pitchCmd=clamp((sim.targetPitch+Math.sin(sim.time*.29)*.10-sim.pitch)*1.5,-.5,.5);
   switch(sim.mode){
    case 'CRUISE':thrust=.42;break;
@@ -32,18 +30,7 @@ function step(dt){
   lift=clamp((sim.targetDepth-sim.p.y)*.08,-.22,.22)*params.depth;
  }
  if(mag(sim.manual)>.01){thrust+=sim.manual.x;side+=sim.manual.z;lift+=sim.manual.y;turn+=sim.manualTurn;sim.manual=mul(sim.manual,Math.exp(-dt*2.5));sim.manualTurn*=Math.exp(-dt*2.5);}
- const force=add(add(mul(forward,thrust*2.1*params.drive),mul(right,side*.9*params.drive)),mul(up,lift*.85*params.drive));
- sim.vel=add(sim.vel,mul(force,dt));
- // Water resistance and gentle vertical buoyancy; no direct velocity snapping.
- sim.vel=mul(sim.vel,Math.exp(-dt*(.42+mag(sim.vel)*.09)));
- sim.vel.y+=(-sim.p.y*.11-sim.vel.y*.22)*dt;
- sim.p=add(sim.p,mul(sim.vel,dt));
- // Soft bounded tank, with damped restoring force rather than position teleportation.
- for(const axis of ['x','y','z']){const limit=axis==='x'?7:axis==='y'?2.8:4.2;const x=sim.p[axis];if(Math.abs(x)>limit)sim.vel[axis]+=-Math.sign(x)*(Math.abs(x)-limit)*2.8*dt;}
- const agility=params.agility;
- sim.wy+=(turn*1.45*agility-sim.wy*2.4)*dt;sim.wp+=(pitchCmd*1.15*agility-sim.wp*2.5)*dt;
- sim.wr+=(-turn*.42-sim.wr*2.8)*dt;
- sim.yaw+=sim.wy*dt;sim.pitch=clamp(sim.pitch+sim.wp*dt,-.85,.85);sim.roll=clamp(sim.roll+sim.wr*dt,-.65,.65);
+ stepDynamics(sim,{thrust,side,lift,turn,pitch:pitchCmd},{drive:params.drive,agility:params.agility},dt);
  sim.impulse=Math.max(0,sim.impulse-dt*1.6);
 }
 function project(p,w,h,scale=1){const depth=1+p.z*.055;return{x:w*.5+p.x*scale*depth,y:h*.52-p.y*scale*depth,z:p.z,scale:depth};}
