@@ -22,8 +22,8 @@ function simulate(dt){
  const wander=Math.sin(sim.time*.17)*.22+Math.sin(sim.time*.071+1.7)*.13;
  const boundaryX=clamp(sim.p.x/8,-1,1),boundaryZ=clamp(sim.p.z/5.2,-1,1);
  if(Math.abs(boundaryX)>.72||Math.abs(boundaryZ)>.72){
-  const away=Math.atan2(-boundaryZ,-boundaryX);
-  sim.targetYaw=sim.yaw+angleDelta(sim.yaw,away)*.72;
+  const away=Math.atan2(boundaryZ,-boundaryX);
+  sim.targetYaw=away;
  }
  const yawError=angleDelta(sim.yaw,sim.targetYaw+wander);
  const turn=clamp(yawError*1.15,-.92,.92);
