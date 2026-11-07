@@ -9,17 +9,18 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<header class="topbar"><a class="wordmark" href="./"><span class="mark">M</span> MOCEAN</a><div class="top-meta"><i></i> LIVE SIMULATION <span>LAB 001 / 0.1.0</span></div></header>
+<header class="topbar"><a class="wordmark" href="./"><span class="mark">M</span> MOCEAN</a><div class="top-meta"><i></i> LIVE SIMULATION <span>LAB 001 / 0.2.0</span></div></header>
 <main>
-  <section class="intro"><div><p class="eyebrow">MOTION STUDY / 001</p><h1>One creature.<br><em>Four ways to see it.</em></h1></div><p class="lede">A shared 3D body, one set of physical rules, four competing visual languages. The creature explores on its own. Change the motion once. Compare everything.</p></section>
+  <section class="intro"><div><p class="eyebrow">MOTION STUDY / 001</p><h1>One creature.<br><em>One view at a time.</em></h1></div><p class="lede">A camera that follows the creature through the water. Choose a rendering experiment, give it the whole stage, and judge it on its own merits.</p></section>
   <section class="workspace">
-    <div class="stage-head"><div><span class="eyebrow">RENDERER COMPARISON</span><span class="stage-sub">SAME SIMULATION · SYNCHRONISED</span></div><div class="stage-actions"><button id="pause" class="control-btn">Ⅱ PAUSE</button><button id="reset" class="control-btn">↺ RESET</button></div></div>
-    <div class="render-grid">
-      <article class="render-panel"><div class="panel-label"><b>01 / PROCEDURAL PIXEL</b><span>GRID SYNTHESIS</span></div><canvas id="pixel"></canvas></article>
-      <article class="render-panel"><div class="panel-label"><b>02 / HYBRID</b><span>VOLUMETRIC + PIXEL AESTHETIC</span></div><canvas id="hybrid"></canvas></article>
-      <article class="render-panel"><div class="panel-label"><b>03 / 2.5D</b><span>LAYERED DEPTH</span></div><canvas id="layered"></canvas></article>
-      <article class="render-panel"><div class="panel-label"><b>04 / VOXEL</b><span>DISCRETE VOLUME</span></div><canvas id="voxel"></canvas></article>
-    </div>
+    <div class="stage-head"><div><span class="eyebrow">LIVE CREATURE VIEW</span><span class="stage-sub">FOLLOW CAMERA · AUTONOMOUS 3D MOTION</span></div><div class="stage-actions"><button id="pause" class="control-btn">Ⅱ PAUSE</button><button id="reset" class="control-btn">↺ RESET</button></div></div>
+    <nav class="renderer-tabs" aria-label="Choose renderer">
+      <button class="renderer-tab active" data-renderer="pixel" aria-pressed="true"><b>01</b><span>PROCEDURAL PIXEL</span></button>
+      <button class="renderer-tab" data-renderer="hybrid" aria-pressed="false"><b>02</b><span>HYBRID</span></button>
+      <button class="renderer-tab" data-renderer="layered" aria-pressed="false"><b>03</b><span>2.5D</span></button>
+      <button class="renderer-tab" data-renderer="voxel" aria-pressed="false"><b>04</b><span>VOXEL</span></button>
+    </nav>
+    <div class="render-stage"><canvas id="creature" aria-label="Live rendering of the autonomous aquatic creature"></canvas><div class="stage-caption"><span id="rendererName">PROCEDURAL PIXEL / GRID SYNTHESIS</span><span>CAMERA LOCK <i></i></span></div></div>
     <div class="telemetry"><div><span class="eyebrow">POSITION</span><b id="position">0.00 / 0.00 / 0.00</b></div><div><span class="eyebrow">VELOCITY</span><b id="velocity">0.00 m/s</b></div><div><span class="eyebrow">HEADING</span><b id="heading">0° / 0° / 0°</b></div><div><span class="eyebrow">BEHAVIOUR</span><b id="state">CRUISE</b></div></div>
   </section>
   <section class="lower">
@@ -34,14 +35,14 @@
       <button id="reseed" class="wide-btn">↻ RESTART WITH SEED</button>
       <div class="manual"><span class="eyebrow">MANUAL NUDGE</span><div class="nudge-grid"><button data-nudge="forward">FORWARD ↑</button><button data-nudge="up">RISE</button><button data-nudge="left">TURN ↶</button><button data-nudge="right">TURN ↷</button><button data-nudge="down">DIVE</button><button data-nudge="reverse">REVERSE ↓</button></div><p>Manual input briefly influences the autonomous controller.</p></div>
     </aside>
-    <section class="notes"><div class="section-title"><span class="eyebrow">SIMULATION NOTES</span><span class="tiny">FOUNDATION PASS</span></div><div class="note-grid">
-      <div><span class="note-index">01</span><h3>Self-directed exploration</h3><p>Autonomous steering blends cruising, drifting, exploring, darting, turning and recovery. It continuously chooses its next movement without user input.</p></div>
-      <div><span class="note-index">02</span><h3>Body-relative thrust</h3><p>Forward propulsion is strongest. Reverse, lateral and vertical movement are weaker. Forces are applied through the creature's current orientation.</p></div>
-      <div><span class="note-index">03</span><h3>Momentum has a vote</h3><p>Inertia, water drag, buoyancy and finite angular response shape movement. Intent changes never teleport the body or overwrite its velocity.</p></div>
-      <div><span class="note-index">04</span><h3>One source of truth</h3><p>All four renderers consume the same pose and animation state. Visual differences cannot quietly become physics differences.</p></div>
+    <section class="notes"><div class="section-title"><span class="eyebrow">RENDERER EXPERIMENTS</span><span class="tiny">ONE ACTIVE AT A TIME</span></div><div class="note-grid">
+      <div><span class="note-index">01</span><h3>Procedural pixel</h3><p>Grid-built silhouette, controlled palette, animated fins and readable pixel clusters.</p></div>
+      <div><span class="note-index">02</span><h3>Hybrid volume</h3><p>Volumetric body forms with a deliberately pixel-aware surface treatment.</p></div>
+      <div><span class="note-index">03</span><h3>2.5D layered</h3><p>Layered anatomy with depth-aware overlap and orientation-dependent detail.</p></div>
+      <div><span class="note-index">04</span><h3>Voxel volume</h3><p>Discrete 3D anatomy. This remains a target, not a claim about the current prototype.</p></div>
     </div></section>
   </section>
-  <footer><span>MOCEAN / AN EXPERIMENT IN AQUATIC MOTION</span><span>BUILT TO BE TAKEN APART</span></footer>
+  <footer><span>MOCEAN / AN EXPERIMENT IN AQUATIC MOTION</span><span>ONE CREATURE · ONE CAMERA · ONE RENDERER</span></footer>
 </main>
 <script type="module" src="./src/main.js"></script>
 </body></html>
