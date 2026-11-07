@@ -11,16 +11,21 @@ export const normalize3 = a => scale3(a, 1 / (length3(a) || 1));
 export const wrapAngle = a => ((a + Math.PI) % TAU + TAU) % TAU - Math.PI;
 export const angleDelta = (from, to) => wrapAngle(to - from);
 
+const quatMultiply = (a, b) => ({
+  w: a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z,
+  x: a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,
+  y: a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,
+  z: a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w
+});
 export function quatFromEuler(yaw, pitch, roll) {
-  const cy = Math.cos(yaw / 2), sy = Math.sin(yaw / 2);
-  const cp = Math.cos(pitch / 2), sp = Math.sin(pitch / 2);
-  const cr = Math.cos(roll / 2), sr = Math.sin(roll / 2);
-  return {
-    w: cr * cp * cy + sr * sp * sy,
-    x: sr * cp * cy - cr * sp * sy,
-    y: cr * sp * cy + sr * cp * sy,
-    z: cr * cp * sy - sr * sp * cy
-  };
+  // World convention: Y is up, X is forward, Z is lateral.
+  const cy=Math.cos(yaw/2), sy=Math.sin(yaw/2);
+  const cp=Math.cos(pitch/2), sp=Math.sin(pitch/2);
+  const cr=Math.cos(roll/2), sr=Math.sin(roll/2);
+  const qYaw={w:cy,x:0,y:sy,z:0};
+  const qPitch={w:cp,x:0,y:0,z:sp};
+  const qRoll={w:cr,x:sr,y:0,z:0};
+  return quatNormalize(quatMultiply(quatMultiply(qYaw,qPitch),qRoll));
 }
 export function quatNormalize(q) {
   const n = Math.hypot(q.w, q.x, q.y, q.z) || 1;
