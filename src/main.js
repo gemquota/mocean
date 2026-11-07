@@ -1,42 +1,101 @@
 import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta } from './core/math.js';
 import { stepDynamics } from './core/dynamics.js';
+import { createGait, stepGait, deformPoint } from './core/body.js';
+const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d'),ui=id=>document.getElementById(id);
-const params={drive:1,agility:1,dart:.65,depth:1};
-const sim={p:V(),vel:V(.15,0,0),yaw:0,pitch:0,roll:0,wy:0,wp:0,wr:0,phase:0,time:0,mode:'CRUISE',modeTime:0,nextChoice:2.5,targetYaw:0,targetPitch:0,targetDepth:0,impulse:0,auto:true,running:true,manual:V(),manualTurn:0};
-const camera={p:V(-5,1.7,3),target:V(),right:V(0,0,1),up:V(0,1,0),forward:V(1,0,0)};
-let activeRenderer='pixel';
-const rendererNames={pixel:'PROCEDURAL PIXEL / GRID SYNTHESIS',hybrid:'HYBRID / VOLUMETRIC SURFACE',layered:'2.5D / LAYERED DEPTH',voxel:'VOXEL / DISCRETE VOLUME'};
-function chooseMode(){const r=random();sim.mode=r<.36?'CRUISE':r<.53?'DRIFT':r<.76?'EXPLORE':r<.84?'DART':r<.94?'TURN':'RECOVER';sim.modeTime=0;sim.nextChoice=sim.time+(sim.mode==='DART'?.45+random()*.65:1.8+random()*3.8);if(sim.mode==='DART')sim.impulse=1;if(sim.mode==='TURN'){sim.targetYaw+=(random()-.5)*2.4;sim.targetPitch+=(random()-.5)*.7;}}
-function reset(){seed=Number(ui('seed').value)||433841;sim.p=V();sim.vel=V(.15,0,0);sim.yaw=sim.pitch=sim.roll=sim.wy=sim.wp=sim.wr=sim.phase=sim.time=sim.modeTime=0;sim.targetYaw=sim.targetPitch=sim.targetDepth=0;sim.mode='CRUISE';sim.nextChoice=1.5;sim.impulse=0;sim.manual=V();sim.manualTurn=0;camera.p=V(-5,1.7,3);camera.target=V();chooseMode();}
-function step(dt){sim.time+=dt;sim.phase+=dt*(2.6+mag(sim.vel)*1.7);sim.modeTime+=dt;if(sim.auto&&sim.time>=sim.nextChoice)chooseMode();let thrust=0,side=0,lift=0,turn=0,pitchCmd=0;
- if(sim.auto){const desiredYaw=sim.targetYaw+Math.sin(sim.time*.37)*.25+Math.sin(sim.time*.13+1.4)*.18;turn=clamp(angleDelta(sim.yaw,desiredYaw)*1.7,-1,1);pitchCmd=clamp((sim.targetPitch+Math.sin(sim.time*.29)*.10-sim.pitch)*1.5,-.5,.5);switch(sim.mode){case'CRUISE':thrust=.42;break;case'DRIFT':thrust=.08;break;case'EXPLORE':thrust=.32;side=Math.sin(sim.time*1.1)*.12;turn+=Math.sin(sim.time*.8)*.15;break;case'DART':thrust=1.25*params.dart+.25;break;case'TURN':thrust=.22;turn=clamp(turn+Math.sign(Math.sin(sim.time*2.1))*.3,-1,1);break;case'RECOVER':thrust=.12;break;}lift=clamp((sim.targetDepth-sim.p.y)*.08,-.22,.22)*params.depth;}
- if(mag(sim.manual)>.01){thrust+=sim.manual.x;side+=sim.manual.z;lift+=sim.manual.y;turn+=sim.manualTurn;sim.manual=mul(sim.manual,Math.exp(-dt*2.5));sim.manualTurn*=Math.exp(-dt*2.5);}
- stepDynamics(sim,{thrust,side,lift,turn,pitch:pitchCmd},dt,{drive:params.drive,agility:params.agility});sim.impulse=Math.max(0,sim.impulse-dt*1.6);}
-function updateCamera(dt){const q=quatEuler(sim.yaw,sim.pitch,sim.roll),f=rotate(q,V(1,0,0)),r=rotate(q,V(0,0,1)),u=rotate(q,V(0,1,0));const desired=add(add(add(sim.p,mul(f,-4.8)),mul(r,3.25)),mul(u,1.25)),target=add(sim.p,mul(f,.15));camera.p=add(camera.p,mul(add(desired,mul(camera.p,-1)),1-Math.exp(-dt*2.8)));camera.target=add(camera.target,mul(add(target,mul(camera.target,-1)),1-Math.exp(-dt*4.5)));camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross(camera.forward,V(0,1,0)));if(mag(camera.right)<.001)camera.right=V(0,0,1);camera.up=unit(cross(camera.right,camera.forward));}
-function project(world,w,h){const rel=add(world,mul(camera.p,-1)),x=dot(rel,camera.right),y=dot(rel,camera.up),z=dot(rel,camera.forward),f=Math.min(w,h)*1.28,d=Math.max(.25,z);return{x:w*.5+x*f/d,y:h*.49-y*f/d,z,scale:f/d};}
-const orient=()=>quatEuler(sim.yaw,sim.pitch,sim.roll),world=p=>add(sim.p,rotate(orient(),p)),projectLocal=(p,w,h)=>project(world(p),w,h);
-function water(w,h){const g=ctx.createRadialGradient(w*.52,h*.47,10,w*.52,h*.47,Math.max(w,h)*.72);g.addColorStop(0,'#17434d');g.addColorStop(.55,'#0b2934');g.addColorStop(1,'#06151e');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);ctx.save();ctx.globalAlpha=.2;ctx.strokeStyle='#6bb6b2';for(let i=-1;i<9;i++){const y=i*76+(sim.time*12)%76;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(w*.32,y-9,w*.7,y+8,w,y-3);ctx.stroke();}ctx.restore();for(let i=0;i<38;i++){const x=(i*97.3+sim.time*(i%3+1)*3)%w,y=i*53.7%h;ctx.fillStyle='rgba(172,224,211,.22)';ctx.fillRect(x,y,1.5,1.5);}}
-const rings=[[-1.2,.05,.07],[-.92,.22,.19],[-.58,.36,.31],[-.12,.43,.38],[.35,.38,.34],[.72,.24,.23],[.94,.08,.1]];
-function makeMesh(){const v=[],faces=[],n=12;for(const[x,ry,rz]of rings)for(let j=0;j<n;j++){const a=j/n*TAU;v.push(V(x,Math.cos(a)*ry,Math.sin(a)*rz));}for(let i=0;i<rings.length-1;i++)for(let j=0;j<n;j++){const a=i*n+j,b=i*n+(j+1)%n,c=(i+1)*n+(j+1)%n,d=(i+1)*n+j;faces.push([a,b,c],[a,c,d]);}return{v,faces};}
-const mesh=makeMesh();
-function finList(){const beat=Math.sin(sim.phase)*(.18+Math.min(.22,mag(sim.vel)*.035)+sim.impulse*.18);return[{p:[V(-1.12,0,0),V(-2.05,.58+beat,0),V(-1.82,0,0),V(-2.05,-.58-beat,0)],c:'#48a99b'},{p:[V(-.38,.28,0),V(-.08,.82,0),V(.42,.25,0)],c:'#58b6a3'},{p:[V(-.32,-.28,0),V(.12,-.66,0),V(.43,-.22,0)],c:'#347f83'},{p:[V(.12,-.05,.28),V(-.28,-.48,.76),V(.48,-.34,.43)],c:'#2e7880'}];}
-function shade(face){const[a,b,c]=face.map(i=>mesh.v[i]),n=unit(cross(add(b,mul(a,-1)),add(c,mul(a,-1)))),light=clamp(.48+dot(n,unit(V(-.4,.8,.5)))*.48,.16,1);const palettes={pixel:['#245b68','#438f8d','#75cbb2','#b6f0d1'],hybrid:['#285968','#478f89','#78c6ae','#c1e9c8'],layered:['#214c60','#397c85','#6fb8aa','#b3e5d2'],voxel:['#204f60','#3d8586','#70b6a6','#a8dfc8']};return palettes[activeRenderer][light>.72?3:light>.48?2:light>.3?1:0];}
-function polygon(points,color,w,h,stroke=null,snap=0){const p=points.map(v=>project(world(v),w,h));if(p.some(v=>v.z<.1))return;ctx.beginPath();p.forEach((v,i)=>{const x=snap?Math.round(v.x/snap)*snap:v.x,y=snap?Math.round(v.y/snap)*snap:v.y;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.stroke();}}
-function creature(w,h){const snap=activeRenderer==='pixel'?4:activeRenderer==='voxel'?7:0,sorted=mesh.faces.map(face=>({face,z:face.reduce((s,i)=>s+projectLocal(mesh.v[i],w,h).z,0)/3})).sort((a,b)=>b.z-a.z);
- for(const{face}of sorted){const p=face.map(i=>projectLocal(mesh.v[i],w,h));if(p.some(v=>v.z<.1))continue;ctx.beginPath();p.forEach((v,i)=>{const x=snap?Math.round(v.x/snap)*snap:v.x,y=snap?Math.round(v.y/snap)*snap:v.y;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.fillStyle=shade(face);ctx.fill();if(activeRenderer==='hybrid'){ctx.strokeStyle='rgba(205,246,221,.12)';ctx.lineWidth=.7;ctx.stroke();}}
- for(const fin of finList())polygon(fin.p,fin.c,w,h,activeRenderer==='pixel'?'#163e4b':null,snap);
- const eye=projectLocal(V(.73,.13,.18),w,h);if(eye.z>.1){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(2,eye.scale*.035),0,TAU);ctx.fillStyle='#f3edcf';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.scale*.009,eye.y,Math.max(1,eye.scale*.015),0,TAU);ctx.fillStyle='#10262e';ctx.fill();}
- const ga=projectLocal(V(.42,.23,.33),w,h),gb=projectLocal(V(.31,-.22,.34),w,h);ctx.strokeStyle=activeRenderer==='pixel'?'#2a6a70':'rgba(20,65,72,.65)';ctx.lineWidth=activeRenderer==='pixel'?2:1.4;ctx.beginPath();ctx.moveTo(ga.x,ga.y);ctx.quadraticCurveTo((ga.x+gb.x)/2+4,(ga.y+gb.y)/2,gb.x,gb.y);ctx.stroke();
- if(activeRenderer==='layered')for(let i=0;i<3;i++){const a=projectLocal(V(-.45+i*.22,.17,.31),w,h),b=projectLocal(V(-.42+i*.22,-.16,.32),w,h);ctx.strokeStyle='rgba(202,244,223,.3)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
- if(activeRenderer==='voxel'){const p=projectLocal(V(-.18,.23,.31),w,h),q=projectLocal(V(.08,-.12,.34),w,h);ctx.fillStyle='#c1e7c9';ctx.fillRect(p.x,p.y,Math.max(4,p.scale*.035),Math.max(4,p.scale*.035));ctx.fillStyle='#4a9990';ctx.fillRect(q.x,q.y,Math.max(5,q.scale*.045),Math.max(5,q.scale*.045));}}
-function render(){const r=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(dpr,0,0,dpr,0,0);water(r.width,r.height);creature(r.width,r.height);}
-function telemetry(){ui('position').textContent=[sim.p.x,sim.p.y,sim.p.z].map(x=>x.toFixed(2)).join(' / ');ui('velocity').textContent=mag(sim.vel).toFixed(2)+' m/s';ui('heading').textContent=[sim.yaw,sim.pitch,sim.roll].map(x=>Math.round(x*180/Math.PI)+'°').join(' / ');ui('state').textContent=sim.mode;}
-function setRenderer(name){activeRenderer=name;document.querySelectorAll('[data-renderer]').forEach(b=>{const on=b.dataset.renderer===name;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});ui('rendererName').textContent=rendererNames[name];}
-document.querySelectorAll('[data-renderer]').forEach(b=>b.addEventListener('click',()=>setRenderer(b.dataset.renderer)));
-function bindRange(id,key,out,suffix='×'){const el=ui(id);el.addEventListener('input',()=>{params[key]=Number(el.value);ui(out).textContent=Number(el.value).toFixed(2)+suffix;});}
-bindRange('drive','drive','driveOut');bindRange('agility','agility','agilityOut');bindRange('dart','dart','dartOut','');bindRange('depth','depth','depthOut');ui('seed').addEventListener('input',()=>ui('seedOut').textContent=ui('seed').value);ui('reseed').addEventListener('click',reset);ui('reset').addEventListener('click',reset);
-ui('running').addEventListener('change',e=>{sim.running=e.target.checked;ui('pause').textContent=sim.running?'Ⅱ PAUSE':'▶ RESUME';});ui('pause').addEventListener('click',()=>{sim.running=!sim.running;ui('running').checked=sim.running;ui('pause').textContent=sim.running?'Ⅱ PAUSE':'▶ RESUME';});ui('autonomy').addEventListener('change',e=>{sim.auto=e.target.checked;if(sim.auto)chooseMode();else sim.mode='MANUAL';});
-document.querySelectorAll('[data-nudge]').forEach(b=>b.addEventListener('click',()=>{const m=b.dataset.nudge;if(m==='forward')sim.manual.x+=1.2;if(m==='reverse')sim.manual.x-=.35;if(m==='left')sim.manualTurn-=.8;if(m==='right')sim.manualTurn+=.8;if(m==='up')sim.manual.y+=.7;if(m==='down')sim.manual.y-=.7;}));
-let last=performance.now(),acc=0;function frame(now){const elapsed=Math.min(.05,(now-last)/1000);last=now;if(sim.running){acc+=elapsed;const dt=1/120;let n=0;while(acc>=dt&&n++<8){step(dt);acc-=dt;}}updateCamera(elapsed);render();telemetry();requestAnimationFrame(frame);}
-reset();setRenderer('pixel');requestAnimationFrame(frame);
+const sim={p:V(),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,targetDepth:0,gait:createGait()};
+const camera={p:V(-5.5,1.8,3.2),target:V(),forward:V(1,0,0),right:V(0,0,1),up:V(0,1,0)};
+const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
+function chooseBehaviour(){
+ const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
+ const duration={CRUISE:4+random()*5,EXPLORE:3+random()*4,TURN:1.7+random()*2.2,DART:.45+random()*.45,GLIDE:1.5+random()*2,RECOVER:2+random()*2.5};
+ sim.nextChoice=sim.time+duration[sim.mode];
+ if(sim.mode==='TURN'){sim.targetYaw+=(random()-.5)*2.2;sim.targetPitch+=(random()-.5)*.48;}
+ if(sim.mode==='EXPLORE'){sim.targetYaw+=(random()-.5)*.9;sim.targetDepth=clamp((random()-.5)*3,-1.5,1.5);}
+ if(sim.mode==='DART'){sim.targetYaw+=(random()-.5)*.5;sim.targetPitch+=(random()-.5)*.18;}
+ if(sim.mode==='GLIDE')sim.targetDepth*=.5;
+ if(sim.mode==='RECOVER'){sim.targetPitch*=.35;sim.targetDepth*=.35;}
+ label.textContent=labels[sim.mode];
+}
+function simulate(dt){
+ sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
+ const yawError=angleDelta(sim.yaw,sim.targetYaw+Math.sin(sim.time*.21)*.12);
+ const turn=clamp(yawError*.85,-.58,.58);
+ const pitch=clamp((sim.targetPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
+ const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
+ const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
+ stepDynamics(sim,{thrust:gait.thrust,turn,pitch,lift:depthError},dt);
+ sim.roll=clamp(sim.roll+(-turn*.12-sim.roll*.55)*dt,-.38,.38);
+}
+function updateCamera(dt){
+ const q=quatEuler(sim.yaw,sim.pitch,sim.roll),forward=rotate(q,V(1,0,0)),right=rotate(q,V(0,0,1)),up=rotate(q,V(0,1,0));
+ const desired=add(add(add(sim.p,mul(forward,-5.35)),mul(right,2.75)),mul(up,1.25)),target=add(sim.p,mul(forward,.12));
+ camera.p=add(camera.p,mul(add(desired,mul(camera.p,-1)),1-Math.exp(-dt*2.2)));
+ camera.target=add(camera.target,mul(add(target,mul(camera.target,-1)),1-Math.exp(-dt*3.5)));
+ camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross(camera.forward,V(0,1,0)));
+ if(mag(camera.right)<.001)camera.right=V(0,0,1);
+ camera.up=unit(cross(camera.right,camera.forward));
+}
+function project(world,w,h){
+ const rel=add(world,mul(camera.p,-1)),x=dot(rel,camera.right),y=dot(rel,camera.up),z=dot(rel,camera.forward),f=Math.min(w,h)*1.34,d=Math.max(.3,z);
+ return{x:w*.5+x*f/d,y:h*.51-y*f/d,z,scale:f/d};
+}
+const orientation=()=>quatEuler(sim.yaw,sim.pitch,sim.roll);
+function deform(p){return deformPoint(p,sim.gait);}
+function worldPoint(local){return add(sim.p,rotate(orientation(),deform(local)));}
+function projectLocal(local,w,h){return project(worldPoint(local),w,h);}
+function makeBodyMesh(){
+ const vertices=[],faces=[],rings=24,sides=16;
+ for(let i=0;i<=rings;i++){const t=i/rings,x=.98-2.18*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68),ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
+  for(let j=0;j<sides;j++){const a=j/sides*TAU;vertices.push(V(x,Math.cos(a)*ry,Math.sin(a)*rz));}}
+ for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+(j+1)%sides,d=(i+1)*sides+j;faces.push([a,b,c],[a,c,d]);}
+ return{vertices,faces};
+}
+const mesh=makeBodyMesh(),palette=['#174b5b','#286f79','#469d98','#78c7ad','#c0ead0'];
+function faceColour(points){
+ const n=unit(cross(add(points[1],mul(points[0],-1)),add(points[2],mul(points[0],-1)))),light=clamp(.48+dot(n,unit(V(-.35,.82,.48)))*.5,.08,1);
+ return palette[light>.78?4:light>.57?3:light>.34?2:light>.18?1:0];
+}
+function drawPolygon(points,color,w,h,outline=null){
+ const p=points.map(v=>projectLocal(v,w,h));if(p.some(v=>v.z<.15))return;
+ ctx.beginPath();p.forEach((v,i)=>{const x=Math.round(v.x/3.2)*3.2,y=Math.round(v.y/3.2)*3.2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+ ctx.closePath();ctx.fillStyle=color;ctx.fill();if(outline){ctx.strokeStyle=outline;ctx.lineWidth=1.2;ctx.stroke();}
+}
+function drawFish(w,h){
+ const deformed=mesh.vertices.map(deform);
+ const faces=mesh.faces.map(face=>({face,depth:face.reduce((s,i)=>s+project(add(sim.p,rotate(orientation(),deformed[i])),w,h).z,0)/3})).sort((a,b)=>b.depth-a.depth);
+ for(const{face}of faces){const points=face.map(i=>deformed[i]),p=points.map(v=>project(add(sim.p,rotate(orientation(),v)),w,h));if(p.some(v=>v.z<.15))continue;
+  ctx.beginPath();p.forEach((v,i)=>{const x=Math.round(v.x/3.2)*3.2,y=Math.round(v.y/3.2)*3.2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.fillStyle=faceColour(points);ctx.fill();}
+ const beat=Math.sin(sim.gait.phase);
+ drawPolygon([V(-1.12,0,0),V(-2.02,.55+beat*.09,0),V(-1.82,.08,0),V(-2.02,-.55-beat*.09,0)],'#388d8e',w,h,'#174e5c');
+ drawPolygon([V(-.42,.29,0),V(-.08,.78,0),V(.34,.28,0)],'#4ca99c',w,h);
+ drawPolygon([V(-.35,-.29,0),V(.06,-.58,0),V(.35,-.25,0)],'#347e85',w,h);
+ const sweep=Math.sin(sim.gait.phase+.7)*.12;
+ drawPolygon([V(.18,-.06,.27),V(-.28,-.42,.68+sweep),V(.43,-.31,.4)],'#286e7b',w,h,'#174e5c');
+ drawPolygon([V(.18,-.06,-.27),V(-.28,-.42,-.68-sweep),V(.43,-.31,-.4)],'#367f83',w,h);
+ const eye=projectLocal(V(.72,.13,.2),w,h);
+ if(eye.z>.15){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(2.2,eye.scale*.028),0,TAU);ctx.fillStyle='#f3f0d8';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.scale*.008,eye.y,Math.max(1.2,eye.scale*.012),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
+ const g1=projectLocal(V(.43,.22,.33),w,h),g2=projectLocal(V(.3,-.2,.34),w,h);
+ ctx.beginPath();ctx.moveTo(g1.x,g1.y);ctx.quadraticCurveTo((g1.x+g2.x)/2+4,(g1.y+g2.y)/2,g2.x,g2.y);ctx.strokeStyle='rgba(15,64,73,.72)';ctx.lineWidth=1.5;ctx.stroke();
+}
+const particles=Array.from({length:110},()=>({x:(random()-.5)*22,y:(random()-.5)*12,z:(random()-.5)*16,r:.5+random()*1.5,phase:random()*TAU}));
+function drawEnvironment(w,h){
+ const gradient=ctx.createRadialGradient(w*.5,h*.46,10,w*.5,h*.5,Math.max(w,h)*.76);
+ gradient.addColorStop(0,'#17414a');gradient.addColorStop(.48,'#0c2933');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
+ ctx.save();ctx.globalAlpha=.07;const shaft=ctx.createLinearGradient(w*.62,0,w*.42,h);
+ shaft.addColorStop(0,'rgba(166,235,211,0)');shaft.addColorStop(.5,'rgba(166,235,211,.55)');shaft.addColorStop(1,'rgba(166,235,211,0)');
+ ctx.fillStyle=shaft;ctx.beginPath();ctx.moveTo(w*.42,0);ctx.lineTo(w*.7,0);ctx.lineTo(w*.58,h);ctx.lineTo(w*.25,h);ctx.closePath();ctx.fill();ctx.restore();
+ for(const p of particles){const drift=V(p.x+Math.sin(sim.time*.12+p.phase)*.16+sim.p.x*.06,p.y+Math.sin(sim.time*.18+p.phase)*.12,p.z+sim.p.z*.05),q=project(drift,w,h);if(q.z<.4)continue;
+  const alpha=clamp(1.2/q.z,.08,.34);ctx.fillStyle='rgba(190,231,216,'+alpha+')';ctx.beginPath();ctx.arc(q.x,q.y,Math.max(.45,p.r*q.scale*.006),0,TAU);ctx.fill();}
+}
+function render(){
+ const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
+ if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+ ctx.setTransform(dpr,0,0,dpr,0,0);drawEnvironment(rect.width,rect.height);drawFish(rect.width,rect.height);
+}
+let previous=performance.now(),accumulator=0;
+function frame(now){const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;const dt=1/120;let steps=0;
+ while(accumulator>=dt&&steps++<8){simulate(dt);accumulator-=dt;}
+ updateCamera(elapsed);render();requestAnimationFrame(frame);
+}
+chooseBehaviour();requestAnimationFrame(frame);
