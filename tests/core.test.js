@@ -101,7 +101,8 @@ test('tail reaction thrust falls as forward slip increases', () => {
   const slow = structuredClone(base), fast = structuredClone(base);
   const a = stepGait(slow, 'CRUISE', 0.1, 0, 1 / 120);
   const b = stepGait(fast, 'CRUISE', 2.4, 0, 1 / 120);
-  assert.ok(a.slip < b.slip);\n  assert.ok(a.thrust > 0 && b.thrust > 0);
+  assert.ok(a.slip < b.slip);
+  assert.ok(a.thrust > 0 && b.thrust > 0);
 });
 test('pectoral fin stroke and differential steering remain finite', () => {
   const gait = createGait();
