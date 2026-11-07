@@ -1,41 +1,40 @@
 # Mocean
 
-**An experimental laboratory for aquatic locomotion and procedural creature rendering.**
+An autonomous aquatic creature study focused on believable movement and procedural anatomy.
 
 [Open the live simulation](https://gemquota.github.io/mocean/)
 
-## Current prototype
+## Current direction
 
-The interface presents one renderer at a time on a large stage. The camera follows the creature's position and orientation with a smoothed chase camera rather than leaving it pinned to a fixed side-view frame.
+Mocean is deliberately presented as a full-screen simulation, not a control dashboard. Movement and physical properties are predefined. There are no user-facing sliders or configuration panels.
 
-- Autonomous behaviour blends cruise, drift, explore, dart, turn and recovery.
-- Movement uses body-relative forward, reverse, lateral and vertical thrust.
-- Velocity persists through inertia and water resistance.
-- Orientation responds with finite angular acceleration and damping.
-- Vertical buoyancy and soft tank boundaries constrain movement.
-- Seeded random behaviour makes a run repeatable.
-- Manual nudges temporarily influence the autonomous controller.
+The first creature is a flexible-bodied swimmer:
+- A travelling lateral wave passes from the front of the body toward the tail.
+- Body curvature increases toward the caudal peduncle.
+- Tail stroke frequency and amplitude change with behaviour.
+- Propulsive acceleration is derived from tail motion and is bounded.
+- Burst swimming consumes an energy reserve; recovery restores it.
+- Momentum, speed-dependent drag, buoyancy, angular inertia and soft spatial limits shape the motion.
+- A smoothed chase camera follows the creature through its orientation changes.
 
-## Renderer selector
-
-- **Procedural pixel:** current first-pass low-poly, pixel-snapped surface treatment.
-- **Hybrid:** shaded faceted surface treatment.
-- **2.5D:** layered detail treatment.
-- **Voxel:** blocky surface treatment only; not yet a true voxel volume.
-
-These are still early visual prototypes. The next renderer pass should focus on making one implementation genuinely good before treating the other three as finished alternatives.
+Autonomous behaviour transitions between cruising, exploring, turning, darting, gliding and recovering. Randomness changes behavioural intent; it does not teleport the creature or bypass the physical model.
 
 ## Core modules
 
 - `src/core/math.js`: vector operations, quaternion rotation and angle handling.
-- `src/core/dynamics.js`: force integration, drag, buoyancy, rotational response and soft tank boundaries.
-- `src/main.js`: autonomous behaviour, follow camera, renderer selection and telemetry.
+- `src/core/body.js`: travelling-wave body deformation, gait adaptation, tail-driven propulsion and burst-energy costs.
+- `src/core/dynamics.js`: fixed-step motion, drag, buoyancy, rotational response and soft habitat boundaries.
+- `src/main.js`: autonomous behaviour, follow camera and the first full-screen procedural pixel rendering experiment.
 
-Run the deterministic core checks with:
+## Tests
+
+Run the simulation-core tests with Node 22 or later:
 
 ```sh
 npm test
 ```
+
+GitHub Actions runs the tests on pushes and pull requests.
 
 ## Run locally
 
@@ -44,3 +43,7 @@ python -m http.server 8000
 ```
 
 Then visit http://localhost:8000.
+
+## Scope and honesty
+
+This is an early procedural prototype, not a validated biological fluid simulation. The hydrodynamic response is an intentionally simplified model with bounded forces and inertia. The immediate goal is to establish a convincing flexible swimmer and coherent autonomous movement before building additional renderer experiments.
