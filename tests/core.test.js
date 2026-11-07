@@ -12,7 +12,7 @@ test('identity orientation preserves a vector', () => {
   const out = quatRotate(quatFromEuler(0, 0, 0), v);
   assert.deepEqual(out, v);
 });
-test('yaw rotates body-forward thrust into world space', () => {
+test('yaw rotates body-forward thrust around the world-up axis', () => {
   const out = quatRotate(quatFromEuler(Math.PI / 2, 0, 0), vec3(1, 0, 0));
   assert.ok(Math.abs(out.y - 1) < 1e-10);
   assert.ok(Math.abs(out.x) < 1e-10);
