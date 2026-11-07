@@ -30,7 +30,7 @@ function step(dt){
   lift=clamp((sim.targetDepth-sim.p.y)*.08,-.22,.22)*params.depth;
  }
  if(mag(sim.manual)>.01){thrust+=sim.manual.x;side+=sim.manual.z;lift+=sim.manual.y;turn+=sim.manualTurn;sim.manual=mul(sim.manual,Math.exp(-dt*2.5));sim.manualTurn*=Math.exp(-dt*2.5);}
- stepDynamics(sim,{thrust,side,lift,turn,pitch:pitchCmd},{drive:params.drive,agility:params.agility},dt);
+ stepDynamics(sim,{thrust,side,lift,turn,pitch:pitchCmd},dt,{drive:params.drive,agility:params.agility});
  sim.impulse=Math.max(0,sim.impulse-dt*1.6);
 }
 function project(p,w,h,scale=1){const depth=1+p.z*.055;return{x:w*.5+p.x*scale*depth,y:h*.52-p.y*scale*depth,z:p.z,scale:depth};}
