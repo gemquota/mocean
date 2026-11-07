@@ -24,7 +24,7 @@ function simulate(dt){
  const pitch=clamp((sim.targetPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
- stepDynamics(sim,{thrust:gait.thrust,turn:gait.steering+gait.yawMoment,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment},dt);
+ stepDynamics(sim,{thrust:gait.thrust,turn:gait.steering,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
  // Roll is integrated from the differential pectoral-fin moment in stepDynamics.
 }
 function updateCamera(dt){
@@ -65,10 +65,10 @@ function drawFish(w,h){
  const beat=Math.sin(sim.gait.phase),sweep=Math.sin(sim.gait.phase+.7);
  // Fins are drawn behind the body. Their spread changes with steering and gliding.
  const finSpreadL=sim.gait.leftFin??.18,finSpreadR=sim.gait.rightFin??.18;
- drawPolygon([V(-.22,-.16,.27),V(-.62,-.46,.62+finSpreadR*.42),V(.02,-.3,.48),V(.18,-.12,.29)],'#286e7b',w,h,'#174e5c');
- drawPolygon([V(-.22,-.16,-.27),V(-.62,-.46,-.62-finSpreadL*.42),V(.02,-.3,-.48),V(.18,-.12,-.29)],'#367f83',w,h,'#174e5c');
+ drawPolygon([V(-.22,-.16,.27),V(-.62+sim.gait.rightFinAngle*.22,-.46,.62+finSpreadR*.42),V(.02,-.3,.48),V(.18,-.12,.29)],'#286e7b',w,h,'#174e5c');
+ drawPolygon([V(-.22,-.16,-.27),V(-.62+sim.gait.leftFinAngle*.22,-.46,-.62-finSpreadL*.42),V(.02,-.3,-.48),V(.18,-.12,-.29)],'#367f83',w,h,'#174e5c');
  // Split caudal lobes flex around the peduncle and trail the travelling wave.
- const tailLag=beat*.12,tailLoad=sim.gait.tailLoad??.4;
+ const tailLag=deformPoint(V(-2.12,0,0),sim.gait).z,tailLoad=sim.gait.tailLoad??.4;
  drawPolygon([V(-1.55,.02,tailLag),V(-2.12,.5+tailLoad*.08,tailLag*.75),V(-1.88,.04,tailLag*.45),V(-2.12,-.48-tailLoad*.08,tailLag*.75)],'#388d8e',w,h,'#174e5c');
  // Dorsal and anal fins provide passive directional stability.
  drawPolygon([V(-.55,.3,0),V(-.82,.58+tailLoad*.04,0),V(-.12,.32,0)],'#4ca99c',w,h);
