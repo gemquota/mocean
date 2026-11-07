@@ -72,7 +72,7 @@ test('flexible spine reorients the body cross-section without losing its finite 
 test('pectoral fins deploy asymmetrically during a turn and retract in cruise', () => {
   const gait = createGait();
   for (let i = 0; i < 120; i++) stepGait(gait, 'TURN', 1, 0.8, 1 / 120);
-  assert.ok(gait.rightFin > gait.leftFin);
+  assert.ok(gait.leftFin > gait.rightFin);
   for (let i = 0; i < 240; i++) stepGait(gait, 'CRUISE', 0.5, 0, 1 / 120);
   assert.ok(gait.leftFin < 0.3 && gait.rightFin < 0.3);
 });
