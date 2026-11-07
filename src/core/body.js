@@ -112,7 +112,7 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt) {
     yawMoment: turn * (0.08 + gait.tailLoad * 0.12) + differentialDrag * speed * 0.055,
     finDrag,
     rollMoment: gait.rollMoment,
-    tailVelocity: tail.v
+    tailVelocity: tail.v,\n    slip
   };
 }
 
