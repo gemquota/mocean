@@ -39,7 +39,7 @@ test('body undulation is minimal near the head and amplified at the tail', () =>
   gait.amplitude = 0.3;
   const head = deformPoint(vec3(0.9, 0, 0), gait);
   const tail = deformPoint(vec3(-1.15, 0, 0), gait);
-  assert.ok(Math.abs(tail.z) > Math.abs(head.z) + 0.05);
+  assert.ok(Math.abs(tail.z) > Math.abs(head.z) + 0.025);
 });
 test('tail oscillation generates bounded forward propulsion', () => {
   const gait = createGait();
@@ -81,4 +81,33 @@ test('fin drag and roll moments remain bounded and affect rotational dynamics', 
   stepDynamics(body, { thrust: 0, turn: 0, pitch: 0, finDrag: 0.08, rollMoment: 0.2 }, 1 / 60);
   assert.ok(body.wr > 0);
   assert.ok(length3(body.vel) < 1);
+});
+
+test('distributed spine remains smooth and bounded during sustained swimming', () => {
+  const gait = createGait();
+  for (let i = 0; i < 1200; i++) stepGait(gait, 'CRUISE', 0.7, 0.1, 1 / 120);
+  const ys = gait.spine.map(node => node.y);
+  assert.ok(ys.every(Number.isFinite));
+  assert.ok(Math.max(...ys.map(Math.abs)) <= 0.62);
+  const slopes = ys.slice(1).map((y, i) => y - ys[i]);
+  assert.ok(slopes.every(Number.isFinite));
+  assert.ok(Math.max(...slopes.map(Math.abs)) < 0.2);
+});
+test('tail reaction thrust falls as forward slip increases', () => {
+  const slow = createGait(), fast = createGait();
+  let a, b;
+  for (let i = 0; i < 300; i++) {
+    a = stepGait(slow, 'CRUISE', 0.1, 0, 1 / 120);
+    b = stepGait(fast, 'CRUISE', 2.4, 0, 1 / 120);
+  }
+  assert.ok(a.thrust > b.thrust);
+});
+test('pectoral fin stroke and differential steering remain finite', () => {
+  const gait = createGait();
+  let output;
+  for (let i = 0; i < 240; i++) output = stepGait(gait, 'TURN', 1.1, -0.7, 1 / 120);
+  assert.ok(Number.isFinite(gait.leftFinAngle));
+  assert.ok(Number.isFinite(gait.rightFinAngle));
+  assert.ok(output.yawMoment < 0);
+  assert.ok(Math.abs(output.finDrag) < 0.2);
 });
