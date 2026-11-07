@@ -1,79 +1,133 @@
 import { clamp, mix } from './math.js';
 
+const NODE_COUNT = 19;
+const BODY_LENGTH = 2.18;
+const MUSCLE_STIFFNESS = 58;
+const AXIAL_COUPLING = 22;
+const WATER_DAMPING = 8.5;
+
 export function createGait() {
   return {
-    phase: 0, amplitude: 0.22, frequency: 1.25, steering: 0,
-    energy: 1, tailVelocity: 0, leftFin: 0.18, rightFin: 0.18,
-    tailLoad: 0, rollMoment: 0
+    phase: 0, frequency: 1.15, amplitude: 0.2, steering: 0,
+    energy: 1, tailVelocity: 0, tailAcceleration: 0,
+    leftFin: 0.16, rightFin: 0.16, leftFinAngle: 0, rightFinAngle: 0,
+    tailLoad: 0, rollMoment: 0,
+    spine: Array.from({ length: NODE_COUNT }, () => ({ y: 0, v: 0, target: 0 }))
   };
 }
 
-/** Coordinated body-and-fin gait. Steering is expressed as fin asymmetry and a biased tail wave. */
-export function stepGait(gait, behaviour, speed, turnIntent, dt) {
-  const profiles = {
-    CRUISE: [0.19, 1.25], EXPLORE: [0.25, 1.48],
-    TURN: [0.31, 1.62], DART: [0.39, 2.35],
-    GLIDE: [0.035, 0.42], RECOVER: [0.105, 0.82]
-  };
-  const [baseAmplitude, baseFrequency] = profiles[behaviour] ?? profiles.CRUISE;
-  const burstCost = behaviour === 'DART' ? 0.22 * dt : 0;
-  gait.energy = clamp(gait.energy - burstCost + (behaviour === 'RECOVER' ? 0.12 : 0.032) * dt, 0.12, 1);
+function muscleWave(u, gait, turn) {
+  const envelope = Math.pow(u, 1.65);
+  const wave = Math.sin(gait.phase - u * 3.55);
+  // Axial muscle recruitment grows toward the tail; turning adds a persistent bend.
+  return gait.amplitude * envelope * wave + turn * 0.24 * envelope * envelope;
+}
 
-  // A little more body wave is needed to maintain speed against drag, but effort is bounded.
-  const speedCompensation = clamp(speed / 2.8, 0, 0.18);
-  const reserve = 0.48 + gait.energy * 0.52;
-  const targetAmplitude = (baseAmplitude + speedCompensation) * reserve;
-  const targetFrequency = baseFrequency * (0.76 + gait.energy * 0.24);
-  gait.amplitude = mix(gait.amplitude, targetAmplitude, 1 - Math.exp(-dt * 2.6));
-  gait.frequency = mix(gait.frequency, targetFrequency, 1 - Math.exp(-dt * 2.0));
-  gait.steering = mix(gait.steering, clamp(turnIntent, -1, 1), 1 - Math.exp(-dt * 3.2));
-  gait.phase += dt * gait.frequency * Math.PI * 2;
-
-  const tailLateralSpeed = gait.amplitude * gait.frequency * Math.PI * 2;
-  gait.tailVelocity = tailLateralSpeed;
-  gait.tailLoad = clamp(tailLateralSpeed / 4.5, 0, 1);
-  const thrust = clamp(0.26 * tailLateralSpeed * tailLateralSpeed, 0, behaviour === 'DART' ? 1.9 : 1.05);
-
-  // Outside pectoral fin opens to brake and pivot; the inside fin stays tucked.
-  const turn = gait.steering;
-  const targetLeft = clamp(0.18 + Math.max(0, turn) * 0.62 + (behaviour === 'GLIDE' ? 0.22 : 0), 0.08, 0.88);
-  const targetRight = clamp(0.18 + Math.max(0, -turn) * 0.62 + (behaviour === 'GLIDE' ? 0.22 : 0), 0.08, 0.88);
-  gait.leftFin = mix(gait.leftFin, targetLeft, 1 - Math.exp(-dt * 4.5));
-  gait.rightFin = mix(gait.rightFin, targetRight, 1 - Math.exp(-dt * 4.5));
-  gait.rollMoment = (gait.leftFin - gait.rightFin) * clamp(speed * 0.22, 0, 0.5);
-
+function interpolateSpine(spine, u) {
+  const p = clamp(u, 0, 1) * (spine.length - 1);
+  const i = Math.min(spine.length - 2, Math.floor(p));
+  const f = p - i;
+  const a = spine[i], b = spine[i + 1];
   return {
-    thrust,
-    steering: gait.steering,
-    yawMoment: gait.steering * (0.12 + gait.tailLoad * 0.22),
-    finDrag: (gait.leftFin + gait.rightFin) * clamp(speed * 0.025, 0, 0.08),
-    rollMoment: gait.rollMoment
+    y: mix(a.y, b.y, f),
+    slope: (b.y - a.y) * (spine.length - 1) / BODY_LENGTH,
+    velocity: mix(a.v, b.v, f)
   };
 }
 
 /**
- * Continuous centreline bend with a local moving frame. The cross-section is
- * reoriented along the spine tangent, preventing the body from shearing sideways.
+ * Distributed active-beam swimmer. Muscle recruitment drives a travelling
+ * curvature wave; elastic coupling and water damping determine the actual pose.
+ * Tail reaction is estimated from lateral tail momentum rather than a free thrust knob.
  */
-export function deformPoint(point, gait) {
-  const u = clamp((0.98 - point.x) / 2.18, 0, 1.35);
-  const envelope = u * u;
-  const phase = gait.phase - u * 3.0;
-  const amplitude = gait.amplitude ?? 0.2;
-  const steering = gait.steering ?? 0;
-  const wave = amplitude * envelope * Math.sin(phase);
-  const curve = steering * 0.19 * envelope;
-  const centre = wave + curve;
+export function stepGait(gait, behaviour, speed, turnIntent, dt) {
+  const profiles = {
+    CRUISE: [0.16, 1.12], EXPLORE: [0.205, 1.34],
+    TURN: [0.255, 1.48], DART: [0.31, 2.05],
+    GLIDE: [0.018, 0.32], RECOVER: [0.085, 0.72]
+  };
+  const [baseAmplitude, baseFrequency] = profiles[behaviour] ?? profiles.CRUISE;
+  const cost = behaviour === 'DART' ? 0.19 * dt : behaviour === 'TURN' ? 0.035 * dt : 0;
+  gait.energy = clamp(gait.energy - cost + (behaviour === 'RECOVER' ? 0.105 : 0.025) * dt, 0.1, 1);
+  const reserve = 0.52 + gait.energy * 0.48;
+  const speedGain = clamp(speed / 3.2, 0, 0.14);
+  gait.amplitude = mix(gait.amplitude, (baseAmplitude + speedGain) * reserve, 1 - Math.exp(-dt * 2.2));
+  gait.frequency = mix(gait.frequency, baseFrequency * (0.82 + gait.energy * 0.18), 1 - Math.exp(-dt * 1.8));
+  gait.steering = mix(gait.steering, clamp(turnIntent, -1, 1), 1 - Math.exp(-dt * 2.7));
+  gait.phase += dt * gait.frequency * Math.PI * 2;
 
-  const duDx = -1 / 2.18;
-  const dCentreDu = amplitude * (2 * u * Math.sin(phase) - 3 * envelope * Math.cos(phase)) + steering * 0.38 * u;
-  const slope = dCentreDu * duDx;
-  const tangentScale = 1 / Math.sqrt(1 + slope * slope);
+  const previousTailVelocity = gait.tailVelocity;
+  for (let i = 0; i < NODE_COUNT; i++) {
+    const u = i / (NODE_COUNT - 1);
+    const node = gait.spine[i];
+    node.target = muscleWave(u, gait, gait.steering);
+  }
 
-  // Offset each cross-section along the spine normal, not the world lateral axis.
+  // Semi-implicit integration of a damped, coupled elastic spine.
+  const accelerations = gait.spine.map((node, i) => {
+    if (i < 2) return -node.v * 18;
+    const previous = gait.spine[i - 1].y;
+    const next = gait.spine[Math.min(NODE_COUNT - 1, i + 1)].y;
+    const curvature = previous - 2 * node.y + next;
+    const coupling = AXIAL_COUPLING * curvature * (NODE_COUNT - 1) ** 2 / 100;
+    const muscle = MUSCLE_STIFFNESS * (node.target - node.y);
+    const water = -WATER_DAMPING * (1 + speed * 0.12) * node.v;
+    return coupling + muscle + water;
+  });
+  for (let i = 0; i < NODE_COUNT; i++) {
+    const node = gait.spine[i];
+    node.v += accelerations[i] * dt;
+    node.y += node.v * dt;
+    node.y = clamp(node.y, -0.62, 0.62);
+    if (i < 2) { node.y = 0; node.v = 0; }
+  }
+
+  const tail = gait.spine[NODE_COUNT - 1];
+  gait.tailVelocity = tail.v;
+  gait.tailAcceleration = (tail.v - previousTailVelocity) / Math.max(dt, 1e-5);
+  gait.tailLoad = clamp(Math.abs(tail.v) * 0.42 + Math.abs(gait.tailAcceleration) * 0.025, 0, 1);
+
+  // Approximate reactive thrust from lateral tail motion and caudal-fin area.
+  // A slip correction reduces thrust as forward speed approaches the stroke's useful limit.
+  const slip = clamp(speed / (0.55 + Math.abs(tail.v) * 2.8), 0, 0.82);
+  const caudalArea = 0.34;
+  const thrust = clamp(caudalArea * 1.9 * tail.v * tail.v * (1 - slip), 0, behaviour === 'DART' ? 1.15 : 0.72);
+
+  const turn = gait.steering;
+  const glide = behaviour === 'GLIDE' ? 0.24 : 0;
+  const leftTarget = clamp(0.15 + Math.max(0, turn) * 0.58 + glide, 0.08, 0.82);
+  const rightTarget = clamp(0.15 + Math.max(0, -turn) * 0.58 + glide, 0.08, 0.82);
+  gait.leftFin = mix(gait.leftFin, leftTarget, 1 - Math.exp(-dt * 3.8));
+  gait.rightFin = mix(gait.rightFin, rightTarget, 1 - Math.exp(-dt * 3.8));
+  const finStroke = Math.sin(gait.phase * 0.5 + 0.4) * (0.12 + speed * 0.035);
+  gait.leftFinAngle = mix(gait.leftFinAngle, finStroke + turn * 0.12, 1 - Math.exp(-dt * 5));
+  gait.rightFinAngle = mix(gait.rightFinAngle, -finStroke - turn * 0.12, 1 - Math.exp(-dt * 5));
+
+  const differentialDrag = gait.leftFin - gait.rightFin;
+  gait.rollMoment = differentialDrag * clamp(speed * 0.18, 0, 0.42);
+  const finDrag = (gait.leftFin + gait.rightFin) * (0.035 + speed * 0.018);
   return {
-    x: point.x - point.z * slope * tangentScale,
+    thrust,
+    steering: turn,
+    yawMoment: turn * (0.08 + gait.tailLoad * 0.12) + differentialDrag * speed * 0.055,
+    finDrag,
+    rollMoment: gait.rollMoment,
+    tailVelocity: tail.v
+  };
+}
+
+/** Reconstruct the local body frame from the integrated spine centreline. */
+export function deformPoint(point, gait) {
+  const u = clamp((0.98 - point.x) / BODY_LENGTH, 0, 1);
+  const spine = interpolateSpine(gait.spine, u);
+  const tangentLength = Math.sqrt(1 + spine.slope * spine.slope);
+  const normalX = -spine.slope / tangentLength;
+  const normalZ = 1 / tangentLength;
+  // Cross-sections follow the spine normal. Small longitudinal correction preserves
+  // the local section shape during bends rather than shearing the body mesh.
+  return {
+    x: point.x + point.z * normalX,
     y: point.y,
-    z: centre + point.z * tangentScale
+    z: spine.y + point.z * normalZ
   };
 }
