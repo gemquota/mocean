@@ -57,3 +57,28 @@ test('burst swimming spends energy and recovery restores it', () => {
   assert.ok(afterBurst < 1);
   assert.ok(gait.energy > afterBurst);
 });
+
+test('flexible spine reorients the body cross-section without losing its finite shape', () => {
+  const gait = createGait();
+  gait.phase = Math.PI * 0.35;
+  gait.amplitude = 0.32;
+  const centre = deformPoint(vec3(-1.1, 0, 0), gait);
+  const upper = deformPoint(vec3(-1.1, 0.2, 0), gait);
+  const lateral = deformPoint(vec3(-1.1, 0, 0.2), gait);
+  assert.ok(Number.isFinite(centre.x) && Number.isFinite(centre.z));
+  assert.ok(Math.abs(upper.y - centre.y - 0.2) < 1e-9);
+  assert.ok(Math.hypot(lateral.x - centre.x, lateral.z - centre.z) > 0.19);
+});
+test('pectoral fins deploy asymmetrically during a turn and retract in cruise', () => {
+  const gait = createGait();
+  for (let i = 0; i < 120; i++) stepGait(gait, 'TURN', 1, 0.8, 1 / 120);
+  assert.ok(gait.rightFin > gait.leftFin);
+  for (let i = 0; i < 240; i++) stepGait(gait, 'CRUISE', 0.5, 0, 1 / 120);
+  assert.ok(gait.leftFin < 0.3 && gait.rightFin < 0.3);
+});
+test('fin drag and roll moments remain bounded and affect rotational dynamics', () => {
+  const body = { p: vec3(), vel: vec3(1,0,0), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  stepDynamics(body, { thrust: 0, turn: 0, pitch: 0, finDrag: 0.08, rollMoment: 0.2 }, 1 / 60);
+  assert.ok(body.wr > 0);
+  assert.ok(length3(body.vel) < 1);
+});
