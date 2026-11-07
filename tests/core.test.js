@@ -94,12 +94,11 @@ test('distributed spine remains smooth and bounded during sustained swimming', (
   assert.ok(Math.max(...slopes.map(Math.abs)) < 0.2);
 });
 test('tail reaction thrust falls as forward slip increases', () => {
-  const slow = createGait(), fast = createGait();
-  let a, b;
-  for (let i = 0; i < 300; i++) {
-    a = stepGait(slow, 'CRUISE', 0.1, 0, 1 / 120);
-    b = stepGait(fast, 'CRUISE', 2.4, 0, 1 / 120);
-  }
+  const base = createGait();
+  for (let i = 0; i < 300; i++) stepGait(base, 'CRUISE', 0.5, 0, 1 / 120);
+  const slow = structuredClone(base), fast = structuredClone(base);
+  const a = stepGait(slow, 'CRUISE', 0.1, 0, 1 / 120);
+  const b = stepGait(fast, 'CRUISE', 2.4, 0, 1 / 120);
   assert.ok(a.thrust > b.thrust);
 });
 test('pectoral fin stroke and differential steering remain finite', () => {
