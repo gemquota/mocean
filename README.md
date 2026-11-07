@@ -46,4 +46,4 @@ Then visit http://localhost:8000.
 
 ## Scope and honesty
 
-This is an early procedural prototype, not a validated biological fluid simulation. The hydrodynamic response is an intentionally simplified model with bounded forces and inertia. The immediate goal is to establish a convincing flexible swimmer and coherent autonomous movement before building additional renderer experiments.
+This is a biomechanical approximation, not a validated animal model or computational fluid-dynamics solver. It uses a distributed damped elastic spine, active muscle-wave forcing, approximate added-water damping, quadratic body drag and fin-generated moments. Hydrodynamic coefficients are phenomenological and still require calibration against measured swimming data. The immediate goal is to establish a convincing flexible swimmer and coherent autonomous movement before building additional renderer experiments.
