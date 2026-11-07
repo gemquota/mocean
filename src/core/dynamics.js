@@ -2,8 +2,7 @@ import { add3, clamp, length3, quatFromEuler, quatRotate, scale3, vec3 } from '.
 
 /**
  * Simplified rigid-body response coupled to distributed fish-body propulsion.
- * Translational drag is quadratic; angular response includes water damping and
- * passive stability. Coefficients are fixed physical approximations, not controls.
+ * Local forward is +X, world up is +Y, and yaw rotates about world Y.
  */
 export function stepDynamics(body, command, dt) {
   const q = quatFromEuler(body.yaw, body.pitch, body.roll);
@@ -20,19 +19,19 @@ export function stepDynamics(body, command, dt) {
   const speed = length3(body.vel);
   const quadraticDrag = 0.11 + speed * 0.19 + (command.finDrag ?? 0);
   body.vel = scale3(body.vel, Math.exp(-quadraticDrag * dt));
-  // Weak restoring buoyancy about the preferred depth, with vertical damping.
   body.vel.y += (-body.p.y * 0.052 - body.vel.y * 0.23) * dt;
   body.p = add3(body.p, scale3(body.vel, dt));
 
-  // Soft habitat limits prevent hard wall collisions.
+  // Soft habitat boundaries turn the swimmer back before it reaches a wall.
   for (const [axis, limit] of [['x', 9], ['y', 4], ['z', 6]]) {
     const excess = Math.abs(body.p[axis]) - limit;
     if (excess > 0) body.vel[axis] += -Math.sign(body.p[axis]) * excess * 1.35 * dt;
   }
 
-  // Hydrodynamic yaw damping and passive pitch/roll stability.
-  const yawDrive = (command.turn ?? 0) * 0.58 + (command.yawMoment ?? 0);
-  body.wy += (yawDrive - body.wy * (1.15 + speed * 0.12)) * dt;
+  // A bounded hydrodynamic steering moment gives the fish enough authority to
+  // complete broad arcs and full reversals without snapping its heading.
+  const yawDrive = clamp(command.turn ?? 0, -1, 1) * 1.65 + (command.yawMoment ?? 0);
+  body.wy += (yawDrive - body.wy * (1.45 + speed * 0.16)) * dt;
   body.wp += ((command.pitch ?? 0) * 0.34 - body.wp * 1.65 - body.pitch * 0.18) * dt;
   body.wr += ((command.rollMoment ?? 0) - body.wr * 1.9 - body.roll * 0.12) * dt;
   body.yaw += body.wy * dt;
