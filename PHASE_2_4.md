@@ -62,5 +62,5 @@ The pitch-fin moment is bounded to ±0.4 in the dynamics layer and used only by 
 - The elastic centreline remains primarily a lateral bend. Independent vertical centreline curvature is still a biomechanical gap.
 - Attitude control uses a phenomenological angular-response model; it is not validated against fish fin moments or measured inertias.
 - The loop sequence is a controlled demonstration of the attitude/force pathways, not a validated fish acrobatic manoeuvre.
-- The sequence scheduler is a sparse deterministic demonstration mechanism. Rich intent selection, anticipation and natural behavioural rhythm belong to Phase 5.
+- The sequence scheduler makes a sparse seeded selection from the primitive/composite sequence pool every roughly 24–42 seconds. It is a demonstration mechanism, not a planner; rich intent selection, anticipation and natural behavioural rhythm belong to Phase 5.
 - No fluid solver, multi-creature system, user-facing physics controls or environment expansion is introduced here.
