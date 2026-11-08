@@ -21,10 +21,6 @@ function pointerPosition(event){
   const rect=canvas.getBoundingClientRect();
   return {x:event.clientX-rect.left,y:event.clientY-rect.top,width:rect.width,height:rect.height};
 }
-function averagePointerY(){
-  const values=[...activePointers.values()];
-  return values.reduce((sum,p)=>sum+p.y,0)/Math.max(1,values.length);
-}
 function updateFloorDepth(gesture,deltaY,width,height){
   const desiredScreenY=gesture.startScreenY+deltaY;
   const z=worldZAtScreenY(camera,gesture.startFloorPoint,desiredScreenY,width,height);
@@ -50,7 +46,9 @@ canvas.addEventListener('pointerdown',event=>{
     depthGesture={kind:'tap'};
   }else if(activePointers.size===2&&sim.userTarget&&sim.userFloorPoint){
     const floorScreenY=projectedScreenY(camera,sim.userFloorPoint,point.height,point.width);
-    depthGesture={kind:'multi',startY:averagePointerY(),startTarget:V(sim.userTarget.x,sim.userTarget.y,sim.userTarget.z),
+    depthGesture={kind:'multi',
+      pointerStartY:new Map([...activePointers].map(([id,p])=>[id,p.y])),
+      startTarget:V(sim.userTarget.x,sim.userTarget.y,sim.userTarget.z),
       startFloorPoint:V(sim.userFloorPoint.x,sim.userFloorPoint.y,sim.userFloorPoint.z),startScreenY:floorScreenY};
   }
 });
@@ -59,7 +57,11 @@ canvas.addEventListener('pointermove',event=>{
   const point=pointerPosition(event);
   activePointers.set(event.pointerId,point);
   if(activePointers.size>=2&&depthGesture?.kind==='multi'){
-    updateFloorDepth(depthGesture,averagePointerY()-depthGesture.startY,point.width,point.height);
+    const dragDelta=[...activePointers].reduce((largest,[id,p])=>{
+      const delta=p.y-(depthGesture.pointerStartY.get(id)??p.y);
+      return Math.abs(delta)>Math.abs(largest)?delta:largest;
+    },0);
+    updateFloorDepth(depthGesture,dragDelta,point.width,point.height);
   }
 });
 function finishPointer(event){
@@ -122,7 +124,8 @@ function simulate(dt){
   const pathAim=sampleDepthApproach(sim.userApproach,lookProgress).position;
   const guidance=createPursuitGuidance(sim.p,sim.vel,sim.yaw,sim.pitch,sim.userTarget,pathAim);
   sim.mode='EXPLORE';
-  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),guidance.turn,dt,guidance.brake);
+  sim.mode='PURSUIT';
+  const gait=stepGait(sim.gait,'PURSUIT',mag(sim.vel),guidance.turn,dt,guidance.brake);
   stepDynamics(sim,{thrust:gait.thrust*guidance.thrustScale,turn:gait.steering,pitch:guidance.pitch,
    finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
   label.textContent=guidance.hovering?'HOVERING':guidance.distance<1.15?'SLOWING / SETTLING':'SWIMMING TO TARGET';
