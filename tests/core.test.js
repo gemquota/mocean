@@ -565,7 +565,7 @@ test('pursuit gait has stronger travelling-wave drive and a higher tail-thrust c
 });
 
 test('pursuit brakes as it reaches the target and identifies a low-speed hover', () => {
-  const approaching = createPursuitGuidance(vec3(), vec3(1, 0, 0), 0, 0, vec3(.5, 0, 0));
+  const approaching = createPursuitGuidance(vec3(), vec3(1.4, 0, 0), 0, 0, vec3(.5, 0, 0));
   const settled = createPursuitGuidance(vec3(), vec3(.08, 0, 0), 0, 0, vec3(.1, 0, 0));
   assert.ok(approaching.brake > 0);
   assert.equal(settled.hovering, true);
