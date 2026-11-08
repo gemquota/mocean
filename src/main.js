@@ -41,11 +41,11 @@ function chooseBehaviour(){
  sim.targetYaw=endYaw;sim.targetPitch=endPitch;
  label.textContent=labels[sim.mode];
 }
-const sequenceOrder=['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','curved-reversal','loop-the-loop','dive-brake-reorient','compound-3d'];
+const sequenceOrder=['dive','backward-drift','climb','curved-reversal','turn-accelerate-coast-brake','loop-the-loop','roll-turn','dive-brake-reorient','compound-3d'];
 function beginMotionSequence(){
- const name=sequenceOrder[sim.sequenceCount%sequenceOrder.length];sim.sequenceCount++;
+ const name=sequenceOrder[Math.floor(random()*sequenceOrder.length)];sim.sequenceCount++;
  sim.sequence=createMotionSequence(name,{yaw:sim.yaw,pitch:sim.pitch,roll:sim.roll});sim.sequenceStartedAt=sim.time;
- sim.nextSequence=sim.time+31+random()*18;
+ sim.nextSequence=sim.time+24+random()*18;
  label.textContent='MANOEUVRE / '+name.replaceAll('-',' ').toUpperCase();
 }
 function simulate(dt){
