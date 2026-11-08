@@ -1,7 +1,7 @@
 import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta, perspectiveScale, distanceTreatment, habitatReturnGuidance } from './core/math.js';
 import { stepDynamics } from './core/dynamics.js';
 import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
-import { createGait, stepGait, deformPoint } from './core/body.js';
+import { createGait, stepGait, deformPoint, articulateFinPoint } from './core/body.js';
 import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVerticalDirection } from './core/intent.js';
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
@@ -101,6 +101,21 @@ function drawPolygon(points,color,w,h,outline=null){
  ctx.beginPath();p.forEach((v,i)=>{const x=Math.round(v.x/3.2)*3.2,y=Math.round(v.y/3.2)*3.2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
  ctx.closePath();ctx.fillStyle=color;ctx.fill();if(outline){ctx.strokeStyle=outline;ctx.lineWidth=1.2;ctx.stroke();}
 }
+function drawPectoralFin(side, spread, angle, w, h) {
+ const root=V(-.22,-.16,.27*side);
+ const raw=side>0
+  ? [root,V(-.62,-.46,.62+spread*.42),V(.02,-.3,.48),V(.18,-.12,.29)]
+  : [root,V(-.62,-.46,-.62-spread*.42),V(.02,-.3,-.48),V(.18,-.12,-.29)];
+ const points=raw.map(point=>articulateFinPoint(point,root,angle));
+ drawPolygon(points,side>0?'#286e7b':'#367f83',w,h,'#174e5c');
+ const ray=points.map(projectLocal);
+ if(ray.every(point=>point.z>.15)){
+  ctx.beginPath();ctx.moveTo(ray[0].x,ray[0].y);ctx.lineTo(ray[1].x,ray[1].y);
+  ctx.strokeStyle='rgba(177,235,207,.72)';ctx.lineWidth=1.1;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ray[0].x,ray[0].y);ctx.lineTo(ray[2].x,ray[2].y);
+  ctx.strokeStyle='rgba(12,48,55,.7)';ctx.lineWidth=.8;ctx.stroke();
+ }
+}
 function drawFish(w,h){
  const centre=project(sim.p,w,h),reference=project(V(0,0,0),w,h);
  const treatment=distanceTreatment(centre.scale/reference.scale);
@@ -108,8 +123,8 @@ function drawFish(w,h){
  const beat=Math.sin(sim.gait.phase),sweep=Math.sin(sim.gait.phase+.7);
  // Fins are drawn behind the body. Their spread changes with steering and gliding.
  const finSpreadL=sim.gait.leftFin??.18,finSpreadR=sim.gait.rightFin??.18;
- drawPolygon([V(-.22,-.16,.27),V(-.62+sim.gait.rightFinAngle*.22,-.46,.62+finSpreadR*.42),V(.02,-.3,.48),V(.18,-.12,.29)],'#286e7b',w,h,'#174e5c');
- drawPolygon([V(-.22,-.16,-.27),V(-.62+sim.gait.leftFinAngle*.22,-.46,-.62-finSpreadL*.42),V(.02,-.3,-.48),V(.18,-.12,-.29)],'#367f83',w,h,'#174e5c');
+ drawPectoralFin(1,finSpreadR,sim.gait.rightFinAngle,w,h);
+ drawPectoralFin(-1,finSpreadL,sim.gait.leftFinAngle,w,h);
  // Split caudal lobes flex around the peduncle and trail the travelling wave.
  const tailLoad=sim.gait.tailLoad??.4;
  drawPolygon([V(-1.48,.02,0),V(-2.12,.5+tailLoad*.08,0),V(-1.82,.04,0),V(-2.12,-.48-tailLoad*.08,0)],'#388d8e',w,h,'#174e5c');
