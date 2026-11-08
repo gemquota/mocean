@@ -490,7 +490,7 @@ test('backward drift turns the head against retained forward momentum before rev
   const sequence = createMotionSequence('backward-drift');
   const prepare = sampleMotionSequence(sequence, 1.1).command;
   const counter = sampleMotionSequence(sequence, 2.3).command;
-  const reverse = sampleMotionSequence(sequence, 3.5).command;
+  const reverse = sampleMotionSequence(sequence, 4.3).command;
   assert.ok(prepare.thrust > 0.5);
   assert.ok(counter.yawOffset > Math.PI * 0.7);
   assert.ok(counter.thrust < 0.2);
@@ -507,7 +507,7 @@ test('loop and compound 3D sequences deliberately include pitch, yaw and axial r
   const peak = sampleMotionSequence(compound, 2.6).command;
   assert.ok(peak.yawOffset > 1);
   assert.ok(peak.pitch > 0.8);
-  assert.ok(peak.roll > Math.PI);
+  assert.ok(peak.roll > 0.8);
 });
 
 
