@@ -36,3 +36,18 @@ export function worldZAtScreenY(camera, point, screenY, width, height) {
   const z = camera.p.z + numerator / denominator;
   return Number.isFinite(z) ? z : null;
 }
+
+/**
+ * Use the largest signed displacement of either captured finger. This preserves
+ * full depth-control travel when one finger moves and the other acts as an anchor.
+ */
+export function dominantPointerDelta(currentPointers, startPointerY) {
+  let largest = 0;
+  for (const [id, point] of currentPointers) {
+    const start = startPointerY.get(id);
+    if (!Number.isFinite(start)) continue;
+    const delta = point.y - start;
+    if (Math.abs(delta) > Math.abs(largest)) largest = delta;
+  }
+  return largest;
+}
