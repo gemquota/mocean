@@ -450,7 +450,7 @@ test('axial roll command saturates and auxiliary roll moment remains bounded', (
 import { createMotionSequence, sampleMotionSequence, MOTION_SEQUENCE_NAMES } from '../src/core/sequences.js';
 
 test('movement sequence library covers isolated primitives and the Phase 3–4 manoeuvre set', () => {
-  for (const name of ['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','loop-the-loop','dive-brake-reorient','compound-3d']) {
+  for (const name of ['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','curved-reversal','loop-the-loop','dive-brake-reorient','compound-3d']) {
     assert.ok(MOTION_SEQUENCE_NAMES.includes(name), name+' must be available');
     const sequence = createMotionSequence(name);
     assert.ok(sequence.duration > 0);
@@ -500,8 +500,9 @@ test('backward drift turns the head against retained forward momentum before rev
 
 test('loop and compound 3D sequences deliberately include pitch, yaw and axial roll', () => {
   const loop = createMotionSequence('loop-the-loop');
-  const loopPeak = sampleMotionSequence(loop, 2.5).command;
+  const loopPeak = sampleMotionSequence(loop, 7.5).command;
   assert.ok(loopPeak.pitch > Math.PI);
+  assert.ok(loopPeak.pitchMoment > 0.3 && loopPeak.pitchMoment <= 0.4);
   const compound = createMotionSequence('compound-3d');
   const peak = sampleMotionSequence(compound, 2.6).command;
   assert.ok(peak.yawOffset > 1);
@@ -557,4 +558,22 @@ test('complex sequence integration remains finite under combined 3D attitude and
     const q = body.orientation;
     assert.ok(Math.abs(Math.hypot(q.w,q.x,q.y,q.z)-1) < 1e-9, name+' quaternion must remain normalized');
   }
+});
+
+
+test('backward drift produces a head direction opposed to retained world momentum', () => {
+  const body = runIntentSequence('backward-drift', vec3(1.1,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  const velocity = body.vel;
+  const alignment = forward.x*velocity.x + forward.y*velocity.y + forward.z*velocity.z;
+  assert.ok(velocity.x > 0.12, 'the fish must retain forward world-space drift');
+  assert.ok(alignment < 0, 'the head must point against the direction of travel');
+});
+
+test('loop-the-loop carries pitch through a complete revolution and returns near its starting heading', () => {
+  const body = runIntentSequence('loop-the-loop', vec3(0.4,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  assert.ok(body.pitch > Math.PI*1.8, 'pitch must pass through a full somersault');
+  assert.ok(forward.x > 0.75, 'body-forward should return toward its original direction');
+  assert.ok(Math.abs(forward.y) < 0.65, 'body-forward should finish near the starting plane');
 });
