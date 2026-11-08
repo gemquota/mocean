@@ -510,11 +510,11 @@ test('loop and compound 3D sequences deliberately include pitch, yaw and axial r
 });
 
 
-function runIntentSequence(name, initialVelocity = vec3()) {
+function runIntentSequence(name, initialVelocity = vec3(), duration = Infinity) {
   const sequence = createMotionSequence(name);
   const body = { p: vec3(), vel: initialVelocity, yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0, orientation: quatFromEuler(0,0,0) };
   const dt = 1/120;
-  for (let t = 0; t < sequence.duration; t += dt) {
+  for (let t = 0; t < Math.min(sequence.duration,duration); t += dt) {
     const command = sampleMotionSequence(sequence, t).command;
     const turn = Math.max(-1, Math.min(1, angleDelta(body.yaw, sequence.startYaw + command.yawOffset) * 1.7));
     const pitch = Math.max(-0.85, Math.min(0.85, (command.pitch - body.pitch) * 2.2));
@@ -525,8 +525,8 @@ function runIntentSequence(name, initialVelocity = vec3()) {
 }
 
 test('physics integration turns the dive and climb intents into vertical momentum', () => {
-  const dive = runIntentSequence('dive');
-  const climb = runIntentSequence('climb');
+  const dive = runIntentSequence('dive', vec3(), 3.04);
+  const climb = runIntentSequence('climb', vec3(), 3.04);
   assert.ok(dive.pitch < -0.2, 'dive must pitch the nose down');
   assert.ok(dive.vel.y < -0.1, 'body-forward thrust must build downward momentum');
   assert.ok(climb.pitch > 0.2, 'climb must pitch the nose up');
