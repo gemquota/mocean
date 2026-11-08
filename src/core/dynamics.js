@@ -1,18 +1,19 @@
-import { add3, clamp, length3, quatFromEuler, quatRotate, scale3, vec3 } from './math.js';
+import { add3, clamp, length3, quatFromEuler, quatIntegrateAngularVelocity, quatRotate, scale3, vec3 } from './math.js';
 
 /**
- * Simplified rigid-body response coupled to distributed fish-body propulsion.
- * Local forward is +X, world up is +Y, and yaw rotates about world Y.
+ * Rigid-body translation and attitude response coupled to fish-body propulsion.
+ * World: +Y up. Body at identity: +X forward, +Y dorsal, +Z lateral.
+ * Orientation is a body-to-world quaternion. Lift is world-vertical; thrust and
+ * side force follow body-local forward and right. Torque channels are independent.
  */
 export function stepDynamics(body, command, dt) {
-  const q = quatFromEuler(body.yaw, body.pitch, body.roll);
+  const q = body.orientation ?? quatFromEuler(body.yaw, body.pitch, body.roll);
   const forward = quatRotate(q, vec3(1, 0, 0));
   const right = quatRotate(q, vec3(0, 0, 1));
-  const up = quatRotate(q, vec3(0, 1, 0));
 
   const force = add3(
-    add3(scale3(forward, command.thrust), scale3(right, command.side ?? 0)),
-    scale3(up, command.lift ?? 0)
+    add3(scale3(forward, command.thrust ?? 0), scale3(right, command.side ?? 0)),
+    vec3(0, command.lift ?? 0, 0)
   );
   body.vel = add3(body.vel, scale3(force, dt));
 
@@ -22,19 +23,22 @@ export function stepDynamics(body, command, dt) {
   body.vel.y += (-body.p.y * 0.052 - body.vel.y * 0.23) * dt;
   body.p = add3(body.p, scale3(body.vel, dt));
 
-  // Soft habitat boundaries turn the swimmer back before it reaches a wall.
   for (const [axis, limit] of [['x', 9], ['y', 4], ['z', 6]]) {
     const excess = Math.abs(body.p[axis]) - limit;
     if (excess > 0) body.vel[axis] += -Math.sign(body.p[axis]) * excess * 1.35 * dt;
   }
 
-  // A bounded hydrodynamic steering moment gives the fish enough authority to
-  // complete broad arcs and full reversals without snapping its heading.
   const yawDrive = clamp(command.turn ?? 0, -1, 1) * 3.1 + (command.yawMoment ?? 0);
   body.wy += (yawDrive - body.wy * (1.05 + speed * 0.12)) * dt;
   body.wp += ((command.pitch ?? 0) * 0.58 - body.wp * 1.25 - body.pitch * 0.12) * dt;
   body.wr += ((command.rollMoment ?? 0) * 1.8 - body.wr * 1.35 - body.roll * 0.09) * dt;
+
+  // Angular rates are body-local: X roll, Y yaw, Z pitch. Quaternion
+  // integration allows the frame to pass through vertical and inverted poses.
+  body.orientation = quatIntegrateAngularVelocity(q, vec3(body.wr, body.wy, body.wp), dt);
+
+  // Euler values remain approximate telemetry for the current behaviour controller.
   body.yaw += body.wy * dt;
-  body.pitch = clamp(body.pitch + body.wp * dt, -0.68, 0.68);
-  body.roll = clamp(body.roll + body.wr * dt, -0.46, 0.46);
+  body.pitch += body.wp * dt;
+  body.roll += body.wr * dt;
 }
