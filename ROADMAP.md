@@ -1,6 +1,6 @@
 # Mocean Development Roadmap
 
-**Revision:** 09 · 8 November 2026  
+**Revision:** 10 · 8 November 2026  
 **Status:** Phase 0 confirmed by user; Phase 1 implementation complete and awaiting review of its latest increment.  
 **Implementation gate:** Phase 1 has started; remaining phase tasks stay evidence-gated.
 
@@ -55,14 +55,14 @@ The Plan presentation must show both marks as separate columns for every task. T
 
 ## Phase 1 · True 3D locomotion foundation
 
-**Status:** Core implementation increment delivered; visual acceptance for P1-4 to P1-6 remains open. Phase 1 gate not yet ready for approval.
+**Status:** All six tasks assistant-complete and user-confirmed on 8 November 2026; awaiting explicit Phase 1 gate approval.
 
 - [x] P1-1 Build a coherent 3D orientation frame with quaternion-based attitude.
 - [x] P1-2 Separate thrust, lift and lateral propulsion from pitch, yaw and roll control.
 - [x] P1-3 Support forward, reverse, lateral, vertical and diagonal travel.
-- [ ] P1-4 Make depth travel visibly change perspective scale on the fixed camera.
-- [ ] P1-5 Add distance-based blur and fade near one-quarter apparent size.
-- [ ] P1-6 Guide the fish back toward the visible habitat using world-space heading, pitch and body-forward thrust.
+- [x] P1-4 Make depth travel visibly change perspective scale on the fixed camera.
+- [x] P1-5 Add distance-based blur and fade near one-quarter apparent size.
+- [x] P1-6 Guide the fish back toward the visible habitat using world-space heading, pitch and body-forward thrust.
 
 ### Phase 1 implementation evidence · current increment
 
@@ -73,11 +73,11 @@ The Plan presentation must show both marks as separate columns for every task. T
 - Automated verification: **26 tests passed** in GitHub Actions at commit `425bf1cf048608e93b76dceef709a978e3c1cafa`.
 - GitHub Pages deployment succeeded for that commit.
 
-The latest code increment is implemented and its 26 automated tests pass, but P1-4 to P1-6 remain assistant-unchecked because their specific visual acceptance has not yet been demonstrated. A live browser observation confirmed continuous single-fish rendering, a stationary camera, no visible errors and normal swimming within the viewport; it did not deliberately exercise depth scaling, the quarter-size blur/fade threshold, or an out-of-frame return. Those behaviours must be visually exercised before these tasks are marked assistant-complete. Phase 2 remains gated.
+The user independently confirmed P1-4 to P1-6 on 8 November 2026. All six Phase 1 tasks now carry both completion marks. The implementation is backed by 26 passing automated tests and a successful GitHub Pages deployment. Phase 2 remains gated until explicit Phase 1 phase-gate approval.
 
 ### Visual verification record · 8 November 2026
 
-A live browser observation of the deployed simulation confirmed one continuously animated fish, a fixed camera, no visible JavaScript errors or blank areas, and normal swimming within the viewport. The observation did not drive the fish to controlled camera depths or outside the habitat. Consequently, it is baseline visual evidence only, not acceptance evidence for P1-4, P1-5 or P1-6.
+A live browser observation of the deployed simulation confirmed one continuously animated fish, a fixed camera, no visible JavaScript errors or blank areas, and normal swimming within the viewport. The user has now independently confirmed the remaining three Phase 1 tasks after review.
 
 ## Phase 2 · Elementary movement primitives
 
