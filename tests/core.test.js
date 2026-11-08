@@ -318,3 +318,28 @@ test('Bezier paths support level, upward and downward trajectories', () => {
   assert.ok(up.tangent.y > 0.6);
   assert.ok(down.tangent.y < -0.6);
 });
+
+
+import { createFixedCamera, CAMERA_ELEVATION_DEGREES, CAMERA_DISTANCE } from '../src/core/camera.js';
+
+test('fixed camera looks down into the habitat at a restrained 22-degree elevation', () => {
+  const camera = createFixedCamera();
+  const angle = Math.atan2(camera.p.y - camera.target.y, camera.p.z - camera.target.z) * 180 / Math.PI;
+  assert.equal(CAMERA_ELEVATION_DEGREES, 22);
+  assert.equal(CAMERA_DISTANCE, 13);
+  assert.ok(Math.abs(angle - 22) < 1e-10);
+  assert.ok(camera.forward.y < 0, 'camera viewing direction must point downward');
+  assert.ok(Math.abs(length3(camera.forward) - 1) < 1e-10);
+});
+
+test('attitude dynamics produce clearly visible nose-up and nose-down pitch', () => {
+  for (const direction of [1, -1]) {
+    const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+    for (let i = 0; i < 360; i++) {
+      stepDynamics(body, { pitch: direction * 0.85 }, 1 / 120);
+    }
+    const forward = quatRotate(body.orientation, vec3(1, 0, 0));
+    assert.ok(direction * body.pitch > 0.45, 'pitch telemetry should show a deliberate vertical turn');
+    assert.ok(direction * forward.y > 0.4, 'body-forward axis should visibly point up or down');
+  }
+});
