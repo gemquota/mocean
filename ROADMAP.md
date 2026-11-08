@@ -86,36 +86,36 @@ A live browser observation of the deployed simulation confirmed one continuously
 
 ## Phase 2 · Elementary movement primitives
 
-**Status:** Four of five tasks assistant-complete by isolated regression tests. P2-5 deliberate visual validation remains open; user confirmation and the Phase 2 gate are pending.
+**Status:** P2-1 assistant-complete. P2-2 to P2-5 remain open pending deliberate live visual validation; user confirmation and the Phase 2 gate are pending.
 
 - [x] P2-1 Straight swimming, acceleration, coasting and braking.
-- [x] P2-2 Controlled pitch-up and pitch-down independently of translation.
-- [x] P2-3 Controlled yaw turns with bounded angular acceleration.
-- [x] P2-4 True axial roll around the local head-to-tail axis, independent of pitch and yaw.
+- [ ] P2-2 Controlled pitch-up and pitch-down independently of translation.
+- [ ] P2-3 Controlled yaw turns with bounded angular acceleration.
+- [ ] P2-4 True axial roll around the local head-to-tail axis, independent of pitch and yaw.
 - [ ] P2-5 Validate each primitive alone with local-axis visual cues.
 
 **Evidence:** the regression suite covers bounded pitch/yaw/roll, torque-only attitude changes, axial roll around local X without pitch/yaw/translation, acceleration, coasting and fin braking. The dorsal ridge remains attached to the deforming body frame. A deliberate isolated live-browser inspection is still required for P2-5.
 
 ## Phase 3 · Basic composite motions
 
-**Status:** Implemented as eased command sequences with passing physics-integration tests. Live visual verification and independent user review remain open.
+**Status:** Sequence implementation integrated; all five kinematic checks pass. Assistant task completion is withheld until live visual playback confirms the manoeuvres and preserves cruising quality.
 
-- [x] P3-1 Proper dive: pitch nose down first, then accelerate forward along the new heading.
-- [x] P3-2 Climb using the same orient-then-propel sequence.
-- [x] P3-3 Turns combined with acceleration, coasting and braking while preserving momentum.
-- [x] P3-4 Axial roll combined with a turn or glide without unwanted yaw spin.
-- [x] P3-5 Smooth transitions between composite motions and calm cruising.
+- [ ] P3-1 Proper dive: pitch nose down first, then accelerate forward along the new heading.
+- [ ] P3-2 Climb using the same orient-then-propel sequence.
+- [ ] P3-3 Turns combined with acceleration, coasting and braking while preserving momentum.
+- [ ] P3-4 Axial roll combined with a turn or glide without unwanted yaw spin.
+- [ ] P3-5 Smooth transitions between composite motions and calm cruising.
 
 **Evidence:** sequence hand-offs are eased; the test suite integrates the commands through rigid-body dynamics and checks vertical momentum, heading/velocity divergence, roll-turn separation and passive momentum decay after a sequence. Visual playback against the accepted cruising baseline remains required before user confirmation.
 
 ## Phase 4 · Complex manoeuvre arrangements
 
-**Status:** Implemented as compound sequences with passing kinematic tests. Live visual verification and independent user review remain open.
+**Status:** Compound sequence implementation integrated; all four kinematic checks pass. Assistant task completion is withheld pending live visual review of complete manoeuvres.
 
-- [x] P4-1 Backwards drift while the head turns against current travel direction.
-- [x] P4-2 Momentum-carrying curved reversal and controlled loop-the-loop.
-- [x] P4-3 Continuous dive, braking, reorientation and recovery sequence.
-- [x] P4-4 Full 3D compound sequences with axial roll as a deliberate component.
+- [ ] P4-1 Backwards drift while the head turns against current travel direction.
+- [ ] P4-2 Momentum-carrying curved reversal and controlled loop-the-loop.
+- [ ] P4-3 Continuous dive, braking, reorientation and recovery sequence.
+- [ ] P4-4 Full 3D compound sequences with axial roll as a deliberate component.
 
 **Evidence:** physics-integration tests check counter-heading drift with retained world momentum, curved reversal, a complete pitch revolution, braking and reorientation, and combined yaw/pitch/axial-roll attitude. These tests establish bounded numerical/kinematic behaviour, not biological realism. Visual inspection remains an acceptance requirement.
 
@@ -165,9 +165,9 @@ Reviewed on 8 November 2026:
 |---|---|---|
 | 0 · Architecture | Assistant complete | User confirmed · 8 November 2026 |
 | 1 · 3D locomotion foundation | Assistant complete | All six tasks confirmed; phase gate approved by user · 8 November 2026 |
-| 2 · Elementary movement primitives | In progress | P2-1 to P2-4 assistant complete; P2-5 visual review pending; user gate open |
-| 3 · Basic composite motions | Implementation complete · visual review open | Kinematic tests pass; user gate open |
-| 4 · Complex manoeuvre arrangements | Implementation complete · visual review open | Kinematic tests pass; user gate open |
+| 2 · Elementary movement primitives | In progress | P2-1 assistant complete; P2-2 to P2-5 visual review pending; user gate open |
+| 3 · Basic composite motions | Prototype integrated · visual review open | Kinematic tests pass; assistant task completion withheld; user gate open |
+| 4 · Complex manoeuvre arrangements | Prototype integrated · visual review open | Kinematic tests pass; assistant task completion withheld; user gate open |
 | 5 · Autonomous natural behaviour | Queued | Not started |
 | 6 · Environment | Deferred | Not started |
 | 7 · Integration and polish | Queued | Not started |
