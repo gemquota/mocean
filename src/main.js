@@ -6,9 +6,10 @@ import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVertical
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createFixedCamera } from './core/camera.js';
 import { screenRay, intersectHorizontalPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Y, WORLD_FLOOR_Y } from './core/navigation.js';
+import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait(),userTarget:null,userFloorPoint:null};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait(),userTarget:null,userFloorPoint:null,userApproach:null,userApproachProgress:0};
 const camera=createFixedCamera();
 
 // Tap selects a mid-water destination; the floor projection is the two-finger depth handle.
@@ -29,6 +30,8 @@ function updateFloorDepth(gesture,deltaY,width,height){
   const deltaZ=z-gesture.startFloorPoint.z;
   sim.userFloorPoint=V(gesture.startFloorPoint.x,WORLD_FLOOR_Y,z);
   sim.userTarget=V(gesture.startTarget.x,gesture.startTarget.y,gesture.startTarget.z+deltaZ);
+  sim.userApproach=createDepthApproach(sim.p,sim.userTarget);
+  sim.userApproachProgress=0;
 }
 canvas.addEventListener('pointerdown',event=>{
   const point=pointerPosition(event);
@@ -40,6 +43,8 @@ canvas.addEventListener('pointerdown',event=>{
     if(!target)return;
     sim.userTarget=target;
     sim.userFloorPoint=projectToWorldFloor(target,WORLD_FLOOR_Y);
+    sim.userApproach=createDepthApproach(sim.p,target);
+    sim.userApproachProgress=0;
     depthGesture={kind:'tap'};
   }else if(activePointers.size===2&&sim.userTarget&&sim.userFloorPoint){
     const floorScreenY=projectedScreenY(camera,sim.userFloorPoint,point.height,point.width);
@@ -100,7 +105,11 @@ function simulate(dt){
  if(sim.userTarget){
   const offset=add(sim.userTarget,mul(sim.p,-1));
   const distance=mag(offset);
-  const desiredDirection=unit(offset);
+  sim.userApproachProgress=nearestDepthApproachProgress(sim.userApproach,sim.p,sim.userApproachProgress);
+  const lookAheadProgress=Math.min(1,sim.userApproachProgress+clamp(.6/sim.userApproach.length,.015,.12));
+  const pathSample=sampleDepthApproach(sim.userApproach,lookAheadProgress);
+  const steeringPoint=lookAheadProgress>=.999?sim.userTarget:pathSample.position;
+  const desiredDirection=unit(add(steeringPoint,mul(sim.p,-1)));
   const targetYaw=Math.atan2(-desiredDirection.z,desiredDirection.x);
   const targetPitch=Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
   const yawError=angleDelta(sim.yaw,targetYaw);
@@ -117,13 +126,13 @@ function simulate(dt){
   const approachFactor=clamp(distance*.58,.1,1);
   const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
   stepDynamics(sim,{
-   thrust:gait.thrust*1.45*alignmentFactor*approachFactor+returnGuidance.thrust,
+   thrust:gait.thrust*(1.05+.4*clamp(distance/8,0,1))*alignmentFactor*approachFactor+returnGuidance.thrust,
    turn:gait.steering,pitch,finDrag:gait.finDrag,brake:gait.brake,
    rollMoment:gait.rollMoment,yawMoment:gait.yawMoment
   },dt);
   label.textContent='NAVIGATING';
   if(distance<.2&&mag(sim.vel)<.2){
-   sim.userTarget=null;sim.userFloorPoint=null;
+   sim.userTarget=null;sim.userFloorPoint=null;sim.userApproach=null;sim.userApproachProgress=0;
    sim.mode='CRUISE';sim.maneuver=null;sim.nextChoice=sim.time;label.textContent=labels.CRUISE;
   }
   return;
