@@ -9,11 +9,12 @@
 - A second dot is projected directly below that destination onto the habitat floor plane **Y = -3.1**, preserving its world **X/Z** coordinates.
 - A fine, translucent laser segment connects the two dots and represents their vertical world-space relationship.
 - A two-finger vertical drag moves the floor handle along world **Z** (toward/away from the fixed camera). The destination moves by the same Z displacement, so the laser remains vertical and the destination retains its X/Y.
+- While two fingers are held, a thin screen-spanning guide is drawn along world **X** through the upper destination dot; it follows the dot as depth changes.
 - Single-finger movement does not adjust depth. The two-finger gesture is the depth control.
 
 ## Locomotion coupling
 
-The upper dot is behavioural intent, not a kinematic constraint. The existing gait model still produces the travelling body wave, tail thrust and fin response. Existing rigid-body dynamics still integrates forces, drag, buoyancy/restoring response, momentum and attitude. Navigation supplies desired heading/pitch and distance-dependent propulsion/braking demand. The fish can drift and turn before its velocity aligns with its nose.
+The upper dot is behavioural intent, not a kinematic constraint. The existing gait model still produces the travelling body wave, tail thrust and fin response. Existing rigid-body dynamics still integrates forces, drag, buoyancy/restoring response, momentum and attitude. Navigation supplies desired heading/pitch and distance-dependent propulsion/braking demand. Longer approaches recruit the existing high-frequency **DART** gait and a modest propulsion multiplier; close-range steering returns to controlled turn/explore gait. This is a stronger pursuit response, not a position or velocity override. The fish can drift and turn before its velocity aligns with its nose.
 
 Autonomous intent resumes after the fish reaches the target and slows. No camera tracking, position snapping or direct pose assignment is used.
 
