@@ -41,7 +41,7 @@ function chooseBehaviour(){
  sim.targetYaw=endYaw;sim.targetPitch=endPitch;
  label.textContent=labels[sim.mode];
 }
-const sequenceOrder=['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','loop-the-loop','dive-brake-reorient','compound-3d'];
+const sequenceOrder=['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','curved-reversal','loop-the-loop','dive-brake-reorient','compound-3d'];
 function beginMotionSequence(){
  const name=sequenceOrder[sim.sequenceCount%sequenceOrder.length];sim.sequenceCount++;
  sim.sequence=createMotionSequence(name,{yaw:sim.yaw,pitch:sim.pitch,roll:sim.roll});sim.sequenceStartedAt=sim.time;
@@ -72,7 +72,7 @@ function simulate(dt){
  const roll=command?clamp((sim.sequence.startRoll+command.roll-sim.roll)*1.15,-1,1):0;
  const brakeIntent=command?command.brake:0;
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt,brakeIntent);
- stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+(command?.thrust??0)+returnGuidance.thrust,side:command?.side??0,turn:gait.steering,pitch,roll,finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
+ stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+(command?.thrust??0)+returnGuidance.thrust,side:command?.side??0,turn:gait.steering,pitch,pitchMoment:command?.pitchMoment??0,roll,finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
  // Sequence commands alter attitude/force intent only; inertia and drag still determine the path.
 }
 function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
