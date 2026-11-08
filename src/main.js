@@ -6,10 +6,71 @@ import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVertical
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
+import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
+import { createPursuitGuidance } from './core/pursuit.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
 const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,sequence:null,sequenceStartedAt:0,nextSequence:31,sequenceCount:0,lastVerticalDirection:1,gait:createGait()};
 const camera=createFixedCamera();
+
+// Tap selects a mid-water destination; the floor projection is the two-finger depth handle.
+const activePointers=new Map();
+let depthGesture=null;
+function pointerPosition(event){
+  const rect=canvas.getBoundingClientRect();
+  return {x:event.clientX-rect.left,y:event.clientY-rect.top,width:rect.width,height:rect.height};
+}
+function averagePointerY(){
+  const values=[...activePointers.values()];
+  return values.reduce((sum,p)=>sum+p.y,0)/Math.max(1,values.length);
+}
+function updateFloorDepth(gesture,deltaY,width,height){
+  const desiredScreenY=gesture.startScreenY+deltaY;
+  const z=worldZAtScreenY(camera,gesture.startFloorPoint,desiredScreenY,width,height);
+  if(z===null)return;
+  const deltaZ=z-gesture.startFloorPoint.z;
+  sim.userFloorPoint=V(gesture.startFloorPoint.x,WORLD_FLOOR_Y,z);
+  sim.userTarget=V(gesture.startTarget.x,gesture.startTarget.y,gesture.startTarget.z+deltaZ);
+  sim.userApproach=createDepthApproach(sim.p,sim.userTarget);
+  sim.userApproachProgress=0;
+}
+canvas.addEventListener('pointerdown',event=>{
+  const point=pointerPosition(event);
+  activePointers.set(event.pointerId,point);
+  canvas.setPointerCapture?.(event.pointerId);
+  if(activePointers.size===1){
+    const ray=screenRay(camera,point.x,point.y,point.width,point.height);
+    const target=intersectXYPlane(camera,ray,TARGET_PLANE_Z);
+    if(!target)return;
+    sim.userTarget=target;
+    sim.userFloorPoint=projectToWorldFloor(target,WORLD_FLOOR_Y);
+    sim.userApproach=createDepthApproach(sim.p,target);
+    sim.userApproachProgress=0;
+    depthGesture={kind:'tap'};
+  }else if(activePointers.size===2&&sim.userTarget&&sim.userFloorPoint){
+    const floorScreenY=projectedScreenY(camera,sim.userFloorPoint,point.height,point.width);
+    depthGesture={kind:'multi',startY:averagePointerY(),startTarget:V(sim.userTarget.x,sim.userTarget.y,sim.userTarget.z),
+      startFloorPoint:V(sim.userFloorPoint.x,sim.userFloorPoint.y,sim.userFloorPoint.z),startScreenY:floorScreenY};
+  }
+});
+canvas.addEventListener('pointermove',event=>{
+  if(!activePointers.has(event.pointerId))return;
+  const point=pointerPosition(event);
+  activePointers.set(event.pointerId,point);
+  if(activePointers.size>=2&&depthGesture?.kind==='multi'){
+    updateFloorDepth(depthGesture,averagePointerY()-depthGesture.startY,point.width,point.height);
+  }
+});
+function finishPointer(event){
+  activePointers.delete(event.pointerId);
+  if(activePointers.size===0)depthGesture=null;
+  else if(activePointers.size<2)depthGesture=null;
+}
+canvas.addEventListener('pointerup',finishPointer);
+canvas.addEventListener('pointercancel',finishPointer);
+canvas.addEventListener('lostpointercapture',finishPointer);
+canvas.addEventListener('contextmenu',event=>event.preventDefault());
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
 function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
@@ -162,7 +223,36 @@ function drawEnvironment(w,h){
 function render(){
  const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
- ctx.setTransform(dpr,0,0,dpr,0,0);drawEnvironment(rect.width,rect.height);drawFish(rect.width,rect.height);
+ ctx.setTransform(dpr,0,0,dpr,0,0);drawEnvironment(rect.width,rect.height);drawFish(rect.width,rect.height);drawNavigationTarget(rect.width,rect.height);
+}
+
+function drawNavigationTarget(w,h){
+ if(!sim.userTarget||!sim.userFloorPoint)return;
+ const target=project(sim.userTarget,w,h),floor=project(sim.userFloorPoint,w,h);
+ if(target.z<=.15||floor.z<=.15)return;
+ ctx.save();
+ // During the two-finger depth gesture, show the world-X reference across
+ // the floor plane through the lower handle. Its endpoints are viewport-clipped.
+ if(depthGesture?.kind==='multi'){
+  const left=project(V(-100,sim.userFloorPoint.y,sim.userFloorPoint.z),w,h);
+  const right=project(V(100,sim.userFloorPoint.y,sim.userFloorPoint.z),w,h);
+  if(left.z>.15&&right.z>.15){
+   ctx.strokeStyle='rgba(135,218,220,.28)';ctx.lineWidth=1;
+   ctx.beginPath();ctx.moveTo(left.x,left.y);ctx.lineTo(right.x,right.y);ctx.stroke();
+  }
+ }
+ ctx.strokeStyle='rgba(135,218,220,.34)';ctx.lineWidth=1.15;
+ ctx.shadowColor='rgba(110,220,225,.22)';ctx.shadowBlur=5;
+ ctx.beginPath();ctx.moveTo(target.x,target.y);ctx.lineTo(floor.x,floor.y);ctx.stroke();
+ const floorRadius=clamp(floor.scale*.014,3.5,8);
+ ctx.shadowBlur=0;ctx.strokeStyle='rgba(135,218,220,.8)';ctx.lineWidth=1.25;
+ ctx.beginPath();ctx.arc(floor.x,floor.y,floorRadius*1.8,0,TAU);ctx.stroke();
+ ctx.fillStyle='rgba(135,218,220,.62)';ctx.beginPath();ctx.arc(floor.x,floor.y,floorRadius*.48,0,TAU);ctx.fill();
+ const radius=clamp(target.scale*.018,4,10);
+ ctx.strokeStyle='rgba(155,231,200,.95)';ctx.lineWidth=1.5;
+ ctx.beginPath();ctx.arc(target.x,target.y,radius*1.8,0,TAU);ctx.stroke();
+ ctx.fillStyle='rgba(155,231,200,.95)';ctx.beginPath();ctx.arc(target.x,target.y,radius*.58,0,TAU);ctx.fill();
+ ctx.restore();
 }
 let previous=performance.now(),accumulator=0;
 function frame(now){const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;const dt=1/120;let steps=0;
