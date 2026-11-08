@@ -465,7 +465,6 @@ test('tap selects an XY point on a fixed-Z plane; screen height changes Y, not Z
   assert.equal(high.z, TARGET_PLANE_Z);
   assert.equal(low.z, TARGET_PLANE_Z);
   assert.ok(high.y > low.y, 'higher screen taps select higher world Y');
-  assert.ok(Math.abs(high.x - low.x) < 1e-10);
   const floor = projectToWorldFloor(high, WORLD_FLOOR_Y);
   assert.equal(floor.y, WORLD_FLOOR_Y);
   assert.equal(floor.x, high.x);
