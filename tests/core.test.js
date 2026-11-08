@@ -447,7 +447,7 @@ test('axial roll command saturates and auxiliary roll moment remains bounded', (
 });
 
 
-import { screenRay, intersectWorldFloor, cameraDepth, pointOnCameraDepth, depthFromDrag, depthLineEndpoints } from '../src/core/navigation.js';
+import { screenRay, intersectHorizontalPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Y, WORLD_FLOOR_Y } from '../src/core/navigation.js';
 
 test('screen-centre ray follows the fixed camera forward axis', () => {
   const camera = createFixedCamera();
@@ -457,38 +457,29 @@ test('screen-centre ray follows the fixed camera forward axis', () => {
   assert.ok(Math.abs(ray.z - camera.forward.z) < 1e-12);
 });
 
-test('tap ray intersects the world floor at the exact floor height', () => {
-  const camera = createFixedCamera();
-  const ray = screenRay(camera, 500, 300, 1000, 600);
-  const point = intersectWorldFloor(camera, ray);
-  assert.ok(point);
-  assert.ok(Math.abs(point.y) < 1e-10);
-  assert.ok(cameraDepth(camera, point) > 0);
-});
-
-test('depth-plane selection preserves the original screen ray', () => {
+test('tap selects a mid-water point and floor projection preserves world X/Z', () => {
   const camera = createFixedCamera();
   const ray = screenRay(camera, 620, 340, 1000, 600);
-  const near = pointOnCameraDepth(camera, ray, 9);
-  const far = pointOnCameraDepth(camera, ray, 15);
-  assert.ok(Math.abs(cameraDepth(camera, near) - 9) < 1e-10);
-  assert.ok(Math.abs(cameraDepth(camera, far) - 15) < 1e-10);
-  const nearRay = vec3(near.x-camera.p.x, near.y-camera.p.y, near.z-camera.p.z);
-  const farRay = vec3(far.x-camera.p.x, far.y-camera.p.y, far.z-camera.p.z);
-  const cross = vec3(nearRay.y*farRay.z-nearRay.z*farRay.y, nearRay.z*farRay.x-nearRay.x*farRay.z, nearRay.x*farRay.y-nearRay.y*farRay.x);
-  assert.ok(length3(cross) < 1e-9, 'depth changes must not move the point off the tap ray');
+  const target = intersectHorizontalPlane(camera, ray, TARGET_PLANE_Y);
+  const floor = projectToWorldFloor(target, WORLD_FLOOR_Y);
+  assert.ok(target && floor);
+  assert.equal(target.y, TARGET_PLANE_Y);
+  assert.equal(floor.y, WORLD_FLOOR_Y);
+  assert.equal(floor.x, target.x);
+  assert.equal(floor.z, target.z);
+  assert.ok(target.y - floor.y > 3);
 });
 
-test('vertical depth drag moves the selection plane predictably and remains bounded', () => {
-  assert.ok(depthFromDrag(12, -100, 600) > 12, 'dragging up selects farther depth');
-  assert.ok(depthFromDrag(12, 100, 600) < 12, 'dragging down selects nearer depth');
-  assert.equal(depthFromDrag(12, -100000, 600), 21);
-  assert.equal(depthFromDrag(12, 100000, 600), 5);
-});
-
-test('depth guide endpoints lie on one camera-depth plane', () => {
+test('two-finger floor drag moves the handle along world Z and tracks screen Y exactly', () => {
   const camera = createFixedCamera();
-  const endpoints = depthLineEndpoints(camera, 320, 1000, 600, 14);
-  assert.ok(Math.abs(cameraDepth(camera, endpoints.left) - 14) < 1e-9);
-  assert.ok(Math.abs(cameraDepth(camera, endpoints.right) - 14) < 1e-9);
+  const ray = screenRay(camera, 620, 340, 1000, 600);
+  const target = intersectHorizontalPlane(camera, ray, TARGET_PLANE_Y);
+  const floor = projectToWorldFloor(target);
+  const startY = projectedScreenY(camera, floor, 600, 1000);
+  const fartherZ = worldZAtScreenY(camera, floor, startY - 35, 1000, 600);
+  const closerZ = worldZAtScreenY(camera, floor, startY + 35, 1000, 600);
+  assert.ok(fartherZ < floor.z, 'dragging up moves the handle farther along -Z');
+  assert.ok(closerZ > floor.z, 'dragging down moves the handle closer along +Z');
+  assert.ok(Math.abs(projectedScreenY(camera, { ...floor, z: fartherZ }, 600, 1000) - (startY - 35)) < 1e-8);
+  assert.ok(Math.abs(projectedScreenY(camera, { ...floor, z: closerZ }, 600, 1000) - (startY + 35)) < 1e-8);
 });
