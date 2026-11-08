@@ -5,10 +5,10 @@
 
 ## Interaction geometry
 
-- A tap casts a camera ray and selects a destination on the world-horizontal mid-water plane **Y = 0**.
+- A tap casts a camera ray and selects a destination on the world **XY plane at Z = 0**. Screen height therefore changes world Y while target Z remains fixed.
 - A second dot is projected directly below that destination onto the habitat floor plane **Y = -3.1**, preserving its world **X/Z** coordinates.
 - A fine, translucent laser segment connects the two dots and represents their vertical world-space relationship.
-- A two-finger vertical drag moves the floor handle along world **Z** (toward/away from the fixed camera). The destination moves by the same Z displacement, so the laser remains vertical and the destination retains its X/Y.
+- A two-finger vertical drag moves the floor handle and upper destination together along world **Z** (toward/away from the fixed camera). Their X/Y coordinates remain unchanged, so depth is independent of the one-finger XY selection.
 - While two fingers are held, a thin screen-spanning guide is drawn along world **X** through the lower floor handle; it follows the dot as depth changes.
 - Single-finger movement does not adjust depth. The two-finger gesture is the depth control.
 
@@ -20,7 +20,7 @@ Autonomous intent is suspended while a user destination is active. No camera tra
 
 ## Verification
 
-Run `npm test` (Node 22+). Navigation tests cover screen-ray alignment, target-plane intersection, vertical floor projection and exact screen-Y-to-world-Z mapping. Approach-path tests verify halfway depth convergence, level final travel, smooth tangents and monotonic path progress. The existing gait/dynamics regression suite remains in place.
+Run `npm test` (Node 22+). Navigation tests cover screen-ray alignment, fixed-Z XY-plane selection (including higher-tap Y changes without Z changes), floor projection and two-finger screen-Y-to-world-Z depth mapping. Approach-path tests verify halfway depth convergence, level final travel, smooth tangents and monotonic path progress. The existing gait/dynamics regression suite remains in place.
 
 ## Review limits
 
