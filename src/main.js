@@ -12,7 +12,7 @@ camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
 function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
- const duration={CRUISE:4+random()*5,EXPLORE:3+random()*4,TURN:1.7+random()*2.2,DART:.45+random()*.45,GLIDE:1.5+random()*2,RECOVER:2+random()*2.5};
+ const duration={CRUISE:4+random()*5,EXPLORE:3.5+random()*2.5,TURN:2.8+random()*2.2,DART:1.4+random()*.5,GLIDE:2.8+random()*2,RECOVER:2.5+random()*2};
  sim.nextChoice=sim.time+duration[sim.mode];
 
  let endYaw=sim.yaw;
@@ -31,7 +31,7 @@ function chooseBehaviour(){
  const speedPeak=sim.mode==='DART'?1.42:sim.mode==='GLIDE'?.96:1.12+random()*.18;
  sim.maneuver=createManeuver({
   startYaw:sim.yaw,startPitch:sim.pitch,endYaw,endPitch,
-  duration:sim.mode==='DART'?1.4+random()*.5:2.8+random()*2.8,
+  duration:duration[sim.mode],
   curve,speedPeak
  });
  sim.maneuverStartedAt=sim.time;
