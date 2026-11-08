@@ -508,3 +508,53 @@ test('loop and compound 3D sequences deliberately include pitch, yaw and axial r
   assert.ok(peak.pitch > 0.8);
   assert.ok(peak.roll > Math.PI);
 });
+
+
+function runIntentSequence(name, initialVelocity = vec3()) {
+  const sequence = createMotionSequence(name);
+  const body = { p: vec3(), vel: initialVelocity, yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0, orientation: quatFromEuler(0,0,0) };
+  const dt = 1/120;
+  for (let t = 0; t < sequence.duration; t += dt) {
+    const command = sampleMotionSequence(sequence, t).command;
+    const turn = Math.max(-1, Math.min(1, angleDelta(body.yaw, sequence.startYaw + command.yawOffset) * 1.7));
+    const pitch = Math.max(-0.85, Math.min(0.85, (command.pitch - body.pitch) * 2.2));
+    const roll = Math.max(-1, Math.min(1, (sequence.startRoll + command.roll - body.roll) * 1.15));
+    stepDynamics(body, { thrust: command.thrust, turn, pitch, roll, brake: command.brake }, dt);
+  }
+  return body;
+}
+
+test('physics integration turns the dive and climb intents into vertical momentum', () => {
+  const dive = runIntentSequence('dive');
+  const climb = runIntentSequence('climb');
+  assert.ok(dive.pitch < -0.2, 'dive must pitch the nose down');
+  assert.ok(dive.vel.y < -0.1, 'body-forward thrust must build downward momentum');
+  assert.ok(climb.pitch > 0.2, 'climb must pitch the nose up');
+  assert.ok(climb.vel.y > 0.1, 'body-forward thrust must build upward momentum');
+});
+
+test('physics integration preserves momentum while the fish turns and brakes', () => {
+  const body = runIntentSequence('turn-accelerate-coast-brake', vec3(1.1,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  assert.ok(Math.hypot(body.vel.x,body.vel.y,body.vel.z) > 0.12);
+  assert.ok(Math.hypot(forward.x-body.vel.x,forward.y-body.vel.y,forward.z-body.vel.z) > 0.2,
+    'heading and velocity must remain distinct during the turn');
+  assert.ok(body.vel.x > 0, 'the turn must not teleport or reverse retained momentum');
+});
+
+test('physics integration produces visible axial roll without changing body-forward heading', () => {
+  const body = runIntentSequence('axial-roll', vec3(0.6,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  const dorsal = quatRotate(body.orientation, vec3(0,1,0));
+  assert.ok(Math.abs(forward.x-1) < 1e-5 && Math.abs(forward.y) < 1e-5 && Math.abs(forward.z) < 1e-5);
+  assert.ok(Math.abs(dorsal.y-1) > 0.12, 'dorsal axis must visibly rotate around the longitudinal axis');
+});
+
+test('complex sequence integration remains finite under combined 3D attitude and force commands', () => {
+  for (const name of ['backward-drift','loop-the-loop','dive-brake-reorient','compound-3d']) {
+    const body = runIntentSequence(name, vec3(0.8,0.05,0));
+    assert.ok([body.p.x,body.p.y,body.p.z,body.vel.x,body.vel.y,body.vel.z,body.yaw,body.pitch,body.roll].every(Number.isFinite), name+' must remain finite');
+    const q = body.orientation;
+    assert.ok(Math.abs(Math.hypot(q.w,q.x,q.y,q.z)-1) < 1e-9, name+' quaternion must remain normalized');
+  }
+});
