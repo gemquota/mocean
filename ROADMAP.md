@@ -196,6 +196,13 @@ The user explicitly approved the Phase 1 phase gate on 8 November 2026. On 9 Nov
 - Braking increases hydrodynamic resistance, dissipating existing momentum; it does not apply reverse force or instantly change velocity direction.
 - Added automated coverage for acceleration, momentum retention during coasting, stronger braking deceleration and bounded braking input.
 - This validates the translational primitive in isolation. Visual fin deployment and fish-level braking gait remain to be verified.
+### Phase 2 implementation evidence · pectoral-fin local articulation
+- Pectoral-fin tips now rotate around a body-local longitudinal hinge rather than shifting only by a small longitudinal offset. The two fins use mirrored articulation angles, retain their root attachment and preserve hinge radius.
+- Fin stroke amplitude is increased modestly and remains driven by the existing gait phase, speed and steering response. No user-facing control or decorative world-axis overlay was added.
+- The renderer adds restrained fin-ray highlights so the fin plane and its articulation remain legible as the body changes orientation.
+- Automated verification: **61 tests passed, 0 failed** in GitHub Actions for commit `c9c71ab244c344cbe707d68561470214b33cb721` ([workflow run](https://github.com/gemquota/mocean/actions/runs/42498561211)). Coverage includes hinge-root invariance, preserved hinge radius, angular displacement and mirrored left/right articulation.
+- This establishes the fin kinematics and code-level orientation cue. It does **not** yet establish live visual acceptance of isolated pitch, yaw and axial roll; P2-2 to P2-5 remain open.
+
 ### Phase 2 implementation evidence · P2-2 and P2-3
 - Pitch input is clamped to a defined range and drives body-local pitch angular response. Positive and negative commands produce nose-up and nose-down attitude without directly adding translation or yaw/roll torque.
 - Yaw command and auxiliary yaw moment are bounded before entering the angular response. Sustained-turn coverage remains in the regression suite; excessive auxiliary moment saturates rather than injecting unbounded angular drive.
