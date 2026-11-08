@@ -1,4 +1,4 @@
-import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, quatIntegrateAngularVelocity, angleDelta } from './core/math.js';
+import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta } from './core/math.js';
 import { stepDynamics } from './core/dynamics.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
