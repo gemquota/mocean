@@ -104,18 +104,20 @@ function simulate(dt){
   const targetYaw=Math.atan2(-desiredDirection.z,desiredDirection.x);
   const targetPitch=Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
   const yawError=angleDelta(sim.yaw,targetYaw);
-  const turn=clamp(yawError*1.7,-1,1);
-  const pitch=clamp((targetPitch-sim.pitch)*2.2,-.85,.85);
+  const turn=clamp(yawError*2.1,-1,1);
+  const pitch=clamp((targetPitch-sim.pitch)*2.6,-.85,.85);
   const forward=rotate(sim.orientation,V(1,0,0));
   const alignment=dot(forward,desiredDirection);
   const brakeIntent=clamp((0.95-distance)*1.15+mag(sim.vel)*.12,0,.9);
-  const gaitMode=Math.abs(yawError)>.38||Math.abs(targetPitch-sim.pitch)>.28?'TURN':'EXPLORE';
+  // A sustained approach recruits the existing burst gait; close-range steering
+  // returns to the more controlled turn/explore profiles.
+  const gaitMode=distance>2.4?'DART':Math.abs(yawError)>.3||Math.abs(targetPitch-sim.pitch)>.22?'TURN':'EXPLORE';
   const gait=stepGait(sim.gait,gaitMode,mag(sim.vel),turn,dt,brakeIntent);
   const alignmentFactor=clamp((alignment+.12)/1.12,.12,1);
   const approachFactor=clamp(distance*.58,.1,1);
   const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
   stepDynamics(sim,{
-   thrust:gait.thrust*alignmentFactor*approachFactor+returnGuidance.thrust,
+   thrust:gait.thrust*1.45*alignmentFactor*approachFactor+returnGuidance.thrust,
    turn:gait.steering,pitch,finDrag:gait.finDrag,brake:gait.brake,
    rollMoment:gait.rollMoment,yawMoment:gait.yawMoment
   },dt);
@@ -222,6 +224,16 @@ function drawNavigationTarget(w,h){
  const target=project(sim.userTarget,w,h),floor=project(sim.userFloorPoint,w,h);
  if(target.z<=.15||floor.z<=.15)return;
  ctx.save();
+ // During the two-finger depth gesture, show the world-X reference through
+ // the destination. Its endpoints sit well beyond the viewport and are clipped.
+ if(depthGesture?.kind==='multi'){
+  const left=project(V(-100,sim.userTarget.y,sim.userTarget.z),w,h);
+  const right=project(V(100,sim.userTarget.y,sim.userTarget.z),w,h);
+  if(left.z>.15&&right.z>.15){
+   ctx.strokeStyle='rgba(135,218,220,.28)';ctx.lineWidth=1;
+   ctx.beginPath();ctx.moveTo(left.x,left.y);ctx.lineTo(right.x,right.y);ctx.stroke();
+  }
+ }
  ctx.strokeStyle='rgba(135,218,220,.34)';ctx.lineWidth=1.15;
  ctx.shadowColor='rgba(110,220,225,.22)';ctx.shadowBlur=5;
  ctx.beginPath();ctx.moveTo(target.x,target.y);ctx.lineTo(floor.x,floor.y);ctx.stroke();
