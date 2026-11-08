@@ -50,6 +50,7 @@ The pitch-fin moment is bounded to ±0.4 in the dynamics layer and used only by 
 
 ## Regression and acceptance
 
+- **60 tests passed, 0 failed** on Node 22 through GitHub Actions at implementation commit `50983741e208af474724abd3252a4f58944fd3cb` ([workflow run](https://github.com/gemquota/mocean/actions/runs/42497653176)). Documentation and presentation updates continue on the same feature branch.
 - The full Node test suite runs on Node 22 through GitHub Actions on pushes and pull requests.
 - Tests cover finite state, normalized quaternions, force/torque separation, sequence hand-off continuity, orient-then-propel vertical momentum, retained momentum during turns, independent axial roll, counter-heading drift, a complete pitch revolution and compound 3D attitude changes.
 - Passing tests establish numerical and kinematic properties, not that the motion looks biologically convincing.
