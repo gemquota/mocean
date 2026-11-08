@@ -14,8 +14,10 @@ export function createDepthApproach(start,target,samples=480){
 }
 export function sampleDepthApproach(path,progress){
  const t=clamp(progress,0,1),position=pointAt(path,t);
- const before=pointAt(path,Math.max(0,t-.002)),after=pointAt(path,Math.min(1,t+.002));
- return {position,tangent:normalize3(add3(after,scale3(before,-1))),progress:t,parameter:t};
+ const u=clamp(t/path.depthEndT,0,1);
+ const depthSlope=t<path.depthEndT?6*u*(1-u)/path.depthEndT:0;
+ const tangent=normalize3({x:path.target.x-path.start.x,y:path.target.y-path.start.y,z:(path.target.z-path.start.z)*depthSlope});
+ return {position,tangent,progress:t,parameter:t};
 }
 /** Find the closest remaining path sample; progress is geometric path fraction, never time. */
 export function nearestDepthApproachProgress(path,point,minimumProgress=0){
