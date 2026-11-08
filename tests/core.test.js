@@ -377,3 +377,16 @@ test('braking input is bounded and cannot inject energy', () => {
   assert.ok(length3(high.vel) <= length3(low.vel) + 1e-12);
   assert.ok(length3(low.vel) < 1);
 });
+
+
+import { alternateVerticalDirection } from '../src/core/intent.js';
+
+test('successive vertical manoeuvres alternate between dives and climbs', () => {
+  let direction = 1;
+  const sequence = [];
+  for (let i = 0; i < 6; i++) {
+    direction = alternateVerticalDirection(direction);
+    sequence.push(direction);
+  }
+  assert.deepEqual(sequence, [-1, 1, -1, 1, -1, 1]);
+});
