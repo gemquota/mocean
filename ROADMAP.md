@@ -70,7 +70,8 @@ The Plan presentation must show both marks as separate columns for every task. T
 - P1-4: perspective projection explicitly uses focal scale divided by camera-space depth.
 - P1-5: fish-only blur and restrained opacity reduction begin below one-quarter baseline apparent size.
 - P1-6: world-space habitat-return guidance blends heading and pitch toward the habitat centre and adds bounded body-forward thrust. It does not reposition the fish or move the camera.
-- Automated verification: **26 tests passed** in GitHub Actions at commit `425bf1cf048608e93b76dceef709a978e3c1cafa`.
+- Initial framing refinement: the fish now spawns at world position `(0, 0, -2.8)`, farther from the fixed camera than the habitat origin. This reduces its initial apparent size while keeping it inside the inactive region of the soft habitat boundary; it can still approach naturally. A regression test checks camera-space depth, apparent scale and boundary margin.
+- Automated verification: **27 tests passed** in GitHub Actions at commit `425bf1cf048608e93b76dceef709a978e3c1cafa`.
 - GitHub Pages deployment succeeded for that commit.
 
 The user independently confirmed P1-4 to P1-6 on 8 November 2026. All six Phase 1 tasks now carry both completion marks. The implementation is backed by 26 passing automated tests and a successful GitHub Pages deployment. Phase 2 remains gated until explicit Phase 1 phase-gate approval.
