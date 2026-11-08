@@ -4,6 +4,6 @@ export function sampleHorizontalHeading(random) {
 }
 
 /** Vertical excursions are deliberately occasional, not a continuous gait bias. */
-export function shouldMakeVerticalExcursion(random) {
-  return random() < 0.2;
+export function shouldMakeVerticalExcursion(random, probability = 0.2) {
+  return random() < probability;
 }
