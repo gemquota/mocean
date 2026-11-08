@@ -13,7 +13,7 @@ const PROGRAMS = {
   'pitch-down': [segment(1.4, { pitch: -0.78 }), segment(0.9, { pitch: -0.2 })],
   'yaw-left': [segment(1.8, { yawOffset: 0.95, thrust: 0.16 }), segment(1, { yawOffset: 0.95 })],
   'yaw-right': [segment(1.8, { yawOffset: -0.95, thrust: 0.16 }), segment(1, { yawOffset: -0.95 })],
-  'axial-roll': [segment(2.4, { roll: Math.PI * 1.55, thrust: 0.12 }), segment(0.8, { roll: Math.PI * 1.55 })],
+  'axial-roll': [segment(2.4, { roll: 1.45, thrust: 0.12 }), segment(0.8, { roll: 1.45 })],
   accelerate: [segment(1.8, { thrust: 0.78 })],
   coast: [segment(2.1)],
   brake: [segment(1.25, { brake: 0.92 })],
@@ -38,21 +38,27 @@ const PROGRAMS = {
     segment(0.9, { yawOffset: 1.35 })
   ],
   'roll-turn': [
-    segment(1.35, { roll: Math.PI * 0.85, yawOffset: 0.32, thrust: 0.28 }),
-    segment(1.25, { roll: Math.PI * 1.35, yawOffset: 0.72, thrust: 0.22 }),
-    segment(0.9, { roll: Math.PI * 1.55, yawOffset: 0.72, brake: 0.3 })
+    segment(1.35, { roll: 0.62, yawOffset: 0.32, thrust: 0.28 }),
+    segment(1.25, { roll: 1.15, yawOffset: 0.72, thrust: 0.22 }),
+    segment(0.9, { roll: 1.35, yawOffset: 0.72, brake: 0.3 })
   ],
 
   // Phase 4: momentum and attitude are deliberately allowed to disagree.
   'backward-drift': [
     segment(1.1, { thrust: 0.62 }),
-    segment(1.7, { yawOffset: Math.PI * 0.78, thrust: 0.12 }),
+    segment(2.4, { yawOffset: Math.PI * 0.78, thrust: 0.12 }),
     segment(1.35, { yawOffset: Math.PI * 0.92, thrust: -0.28 }),
     segment(0.85, { yawOffset: Math.PI * 0.92, brake: 0.55 })
   ],
+  'curved-reversal': [
+    segment(1.2, { yawOffset: 0.6, thrust: 0.62 }),
+    segment(1.6, { yawOffset: 1.55, thrust: 0.4 }),
+    segment(1.8, { yawOffset: 2.55, thrust: 0.22 }),
+    segment(0.9, { yawOffset: Math.PI, brake: 0.55 })
+  ],
   'loop-the-loop': [
     segment(1.1, { pitch: 0.7, thrust: 0.42 }),
-    segment(2.7, { pitch: Math.PI * 1.8, thrust: 0.68 }),
+    segment(9.5, { pitch: Math.PI * 2, pitchMoment: 0.36, thrust: 0.68 }),
     segment(1.15, { pitch: Math.PI * 2, thrust: 0.18, brake: 0.18 })
   ],
   'dive-brake-reorient': [
@@ -64,9 +70,9 @@ const PROGRAMS = {
   ],
   'compound-3d': [
     segment(1.1, { yawOffset: 0.55, pitch: 0.52, roll: 0.72, thrust: 0.35 }),
-    segment(1.8, { yawOffset: 1.35, pitch: 1.15, roll: Math.PI * 1.15, thrust: 0.62 }),
-    segment(1.25, { yawOffset: 2.1, pitch: 0.45, roll: Math.PI * 1.75, thrust: 0.3 }),
-    segment(0.85, { yawOffset: 2.1, pitch: 0.08, roll: Math.PI * 2, brake: 0.42 })
+    segment(1.8, { yawOffset: 1.35, pitch: 1.15, roll: 1.1, thrust: 0.62 }),
+    segment(1.25, { yawOffset: 2.1, pitch: 0.45, roll: 1.55, thrust: 0.3 }),
+    segment(0.85, { yawOffset: 2.1, pitch: 0.08, roll: 1.8, brake: 0.42 })
   ]
 };
 
