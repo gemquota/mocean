@@ -29,10 +29,11 @@ function chooseBehaviour(){
  }
  const curve=(random()-.5)*1.25;
  const speedPeak=sim.mode==='DART'?1.42:sim.mode==='GLIDE'?.96:1.12+random()*.18;
+ const startDirection=rotate(sim.orientation,V(1,0,0));
+ const endDirection=V(Math.cos(endPitch)*Math.cos(endYaw),Math.sin(endPitch),-Math.cos(endPitch)*Math.sin(endYaw));
  sim.maneuver=createManeuver({
-  startYaw:sim.yaw,startPitch:sim.pitch,endYaw,endPitch,
-  duration:duration[sim.mode],
-  curve,speedPeak
+  start:V(sim.p.x,sim.p.y,sim.p.z),startDirection,endDirection,
+  distance:2.6+random()*2.1,duration:duration[sim.mode],curve,speedPeak
  });
  sim.maneuverStartedAt=sim.time;
  sim.targetYaw=endYaw;sim.targetPitch=endPitch;
@@ -41,15 +42,18 @@ function chooseBehaviour(){
 function simulate(dt){
  sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
  const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
- const intent=sampled?.complete?{yaw:sim.targetYaw,pitch:sim.targetPitch,speed:1}:sampled??{yaw:sim.yaw,pitch:0,speed:1};
+ const lookAhead=add(sampled.position,mul(sampled.tangent,.85));
+ const desiredDirection=unit(add(lookAhead,mul(sim.p,-1)));
+ const intentYaw=Math.atan2(-desiredDirection.z,desiredDirection.x);
+ const intentPitch=Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
  const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
- const guidedYaw=intent.yaw+angleDelta(intent.yaw,returnGuidance.yaw)*returnGuidance.weight;
- const guidedPitch=intent.pitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
+ const guidedYaw=intentYaw+angleDelta(intentYaw,returnGuidance.yaw)*returnGuidance.weight;
+ const guidedPitch=intentPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
  const yawError=angleDelta(sim.yaw,guidedYaw);
  const turn=clamp(yawError*1.7,-1,1);
  const pitch=clamp((guidedPitch-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
- stepDynamics(sim,{thrust:gait.thrust*intent.speed+returnGuidance.thrust,turn:gait.steering,pitch,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
+ stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+returnGuidance.thrust,turn:gait.steering,pitch,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
  // The path is an intent curve; momentum, drag and attitude inertia determine the actual trajectory.
 }
 function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
