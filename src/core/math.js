@@ -46,3 +46,14 @@ export function quatIntegrateAngularVelocity(q, omegaLocal, dt) {
   const delta = { w: Math.cos(halfAngle), x: omegaLocal.x * s, y: omegaLocal.y * s, z: omegaLocal.z * s };
   return quatNormalize(quatMultiply(q, delta));
 }
+
+/** Perspective focal scale with a near-plane guard. */
+export function perspectiveScale(focalLength, cameraDepth) {
+  return focalLength / Math.max(0.3, cameraDepth);
+}
+
+/** Subtle distance treatment, activated only below the quarter-size threshold. */
+export function distanceTreatment(apparentSizeRatio, threshold = 0.25) {
+  const amount = clamp((threshold - apparentSizeRatio) / threshold, 0, 1);
+  return { blur: amount * 1.8, opacity: 1 - amount * 0.22 };
+}
