@@ -194,3 +194,7 @@ The user explicitly approved the Phase 1 phase gate on 8 November 2026. Phase 2 
 - Isolated roll tests confirm the body-forward axis remains fixed while dorsal orientation rotates, with no translation, pitch or yaw input. The complete suite reached **43 passing tests, 0 failures** at commit f76381427cacaed86748fb68b7bea24e68915582.
 - Live browser inspection confirmed the fish renders and swims continuously. It also found that existing fins alone do not provide sufficiently clear local-axis cues and do not show independent articulation.
 - Added a narrow dorsal pigment ridge attached to the body-local deforming frame. This is an anatomical orientation cue, not a screen-space axis overlay. Visual verification of this latest ridge and a deliberate roll remains pending.
+### Phase 2 visual verification · dorsal orientation cue
+- GitHub Pages deployment succeeded for commit ba8bfa9331f19afd8d9c99fc5e63573ed2f0027f.
+- Live browser inspection observed the dorsal ridge clearly visible and remaining attached to the fish's dorsal side through several autonomous orientation changes.
+- This confirms the ridge's body-local attachment under observed pitch/yaw changes. It does not yet demonstrate a deliberately commanded axial roll or complete P2-5 primitive-by-primitive visual acceptance.
