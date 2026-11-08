@@ -4,13 +4,14 @@ import { createGait, stepGait, deformPoint } from './core/body.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
 const sim={p:V(),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,targetDepth:0,gait:createGait()};
-const camera={p:V(-5.5,1.8,3.2),target:V(),forward:V(1,0,0),right:V(0,0,1),up:V(0,1,0)};
+const camera={p:V(0,2.15,10),target:V(0,0,0),forward:V(),right:V(),up:V()};
+camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross(camera.forward,V(0,1,0)));camera.up=unit(cross(camera.right,camera.forward));
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
 function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
  const duration={CRUISE:4+random()*5,EXPLORE:3+random()*4,TURN:1.7+random()*2.2,DART:.45+random()*.45,GLIDE:1.5+random()*2,RECOVER:2+random()*2.5};
  sim.nextChoice=sim.time+duration[sim.mode];
- if(sim.mode==='TURN'){sim.targetYaw+=(random()<.5?-1:1)*(1.15+random()*1.55);sim.targetPitch+=(random()-.5)*.38;}
+ if(sim.mode==='TURN'){sim.targetYaw+=(random()<.5?-1:1)*(1.8+random()*1.05);sim.targetPitch+=(random()-.5)*.38;}
  if(sim.mode==='EXPLORE'){sim.targetYaw+=(random()-.5)*1.5;sim.targetDepth=clamp((random()-.5)*3,-1.5,1.5);}
  if(sim.mode==='DART'){sim.targetYaw+=(random()-.5)*.7;sim.targetPitch+=(random()-.5)*.18;}
  if(sim.mode==='GLIDE')sim.targetDepth*=.5;
@@ -20,28 +21,20 @@ function chooseBehaviour(){
 function simulate(dt){
  sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
  const wander=Math.sin(sim.time*.17)*.22+Math.sin(sim.time*.071+1.7)*.13;
- const boundaryX=clamp(sim.p.x/8,-1,1),boundaryZ=clamp(sim.p.z/5.2,-1,1);
- if(Math.abs(boundaryX)>.72||Math.abs(boundaryZ)>.72){
+ const boundaryX=clamp(sim.p.x/3.6,-1,1),boundaryZ=clamp(sim.p.z/2.35,-1,1);
+ if(Math.abs(boundaryX)>.78||Math.abs(boundaryZ)>.78){
   const away=Math.atan2(boundaryZ,-boundaryX);
   sim.targetYaw=away;
  }
  const yawError=angleDelta(sim.yaw,sim.targetYaw+wander);
- const turn=clamp(yawError*1.15,-.92,.92);
+ const turn=clamp(yawError*1.7,-1,1);
  const pitch=clamp((sim.targetPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
  stepDynamics(sim,{thrust:gait.thrust,turn:gait.steering,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
  // Roll is integrated from the differential pectoral-fin moment in stepDynamics.
 }
-function updateCamera(dt){
- const q=quatEuler(sim.yaw,sim.pitch,sim.roll),forward=rotate(q,V(1,0,0)),right=rotate(q,V(0,0,1)),up=rotate(q,V(0,1,0));
- const desired=add(add(add(sim.p,mul(forward,-5.35)),mul(right,2.75)),mul(up,1.25)),target=add(sim.p,mul(forward,.12));
- camera.p=add(camera.p,mul(add(desired,mul(camera.p,-1)),1-Math.exp(-dt*2.2)));
- camera.target=add(camera.target,mul(add(target,mul(camera.target,-1)),1-Math.exp(-dt*3.5)));
- camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross(camera.forward,V(0,1,0)));
- if(mag(camera.right)<.001)camera.right=V(0,0,1);
- camera.up=unit(cross(camera.right,camera.forward));
-}
+function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
 function project(world,w,h){
  const rel=add(world,mul(camera.p,-1)),x=dot(rel,camera.right),y=dot(rel,camera.up),z=dot(rel,camera.forward),f=Math.min(w,h)*1.34,d=Math.max(.3,z);
  return{x:w*.5+x*f/d,y:h*.51-y*f/d,z,scale:f/d};
@@ -52,7 +45,7 @@ function worldPoint(local){return add(sim.p,rotate(orientation(),deform(local)))
 function projectLocal(local,w,h){return project(worldPoint(local),w,h);}
 function makeBodyMesh(){
  const vertices=[],faces=[],rings=24,sides=16;
- for(let i=0;i<=rings;i++){const t=i/rings,x=.98-2.18*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68),ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
+ for(let i=0;i<=rings;i++){const t=i/rings,x=.98-2.65*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68),ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
   for(let j=0;j<sides;j++){const a=j/sides*TAU;vertices.push(V(x,Math.cos(a)*ry,Math.sin(a)*rz));}}
  for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+(j+1)%sides,d=(i+1)*sides+j;faces.push([a,b,c],[a,c,d]);}
  return{vertices,faces};
@@ -74,8 +67,8 @@ function drawFish(w,h){
  drawPolygon([V(-.22,-.16,.27),V(-.62+sim.gait.rightFinAngle*.22,-.46,.62+finSpreadR*.42),V(.02,-.3,.48),V(.18,-.12,.29)],'#286e7b',w,h,'#174e5c');
  drawPolygon([V(-.22,-.16,-.27),V(-.62+sim.gait.leftFinAngle*.22,-.46,-.62-finSpreadL*.42),V(.02,-.3,-.48),V(.18,-.12,-.29)],'#367f83',w,h,'#174e5c');
  // Split caudal lobes flex around the peduncle and trail the travelling wave.
- const tailLag=deformPoint(V(-2.12,0,0),sim.gait).z,tailLoad=sim.gait.tailLoad??.4;
- drawPolygon([V(-1.55,.02,tailLag),V(-2.12,.5+tailLoad*.08,tailLag*.75),V(-1.88,.04,tailLag*.45),V(-2.12,-.48-tailLoad*.08,tailLag*.75)],'#388d8e',w,h,'#174e5c');
+ const tailLoad=sim.gait.tailLoad??.4;
+ drawPolygon([V(-1.48,.02,0),V(-2.12,.5+tailLoad*.08,0),V(-1.82,.04,0),V(-2.12,-.48-tailLoad*.08,0)],'#388d8e',w,h,'#174e5c');
  // Dorsal and anal fins provide passive directional stability.
  drawPolygon([V(-.55,.3,0),V(-.82,.58+tailLoad*.04,0),V(-.12,.32,0)],'#4ca99c',w,h);
  drawPolygon([V(-.58,-.29,0),V(-.82,-.48,0),V(-.12,-.29,0)],'#347e85',w,h);
@@ -107,6 +100,6 @@ function render(){
 let previous=performance.now(),accumulator=0;
 function frame(now){const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;const dt=1/120;let steps=0;
  while(accumulator>=dt&&steps++<8){simulate(dt);accumulator-=dt;}
- updateCamera(elapsed);render();requestAnimationFrame(frame);
+ updateCamera();render();requestAnimationFrame(frame);
 }
 chooseBehaviour();requestAnimationFrame(frame);
