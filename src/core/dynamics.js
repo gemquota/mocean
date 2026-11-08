@@ -18,7 +18,9 @@ export function stepDynamics(body, command, dt) {
   body.vel = add3(body.vel, scale3(force, dt));
 
   const speed = length3(body.vel);
-  const quadraticDrag = 0.11 + speed * 0.19 + (command.finDrag ?? 0);
+  // Active braking models deployed fins increasing resistance, not reverse thrust.
+  const brake = clamp(command.brake ?? 0, 0, 1);
+  const quadraticDrag = 0.11 + speed * 0.19 + (command.finDrag ?? 0) + brake * 1.35;
   body.vel = scale3(body.vel, Math.exp(-quadraticDrag * dt));
   body.vel.y += (-body.p.y * 0.052 - body.vel.y * 0.23) * dt;
   body.p = add3(body.p, scale3(body.vel, dt));
