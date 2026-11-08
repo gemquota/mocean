@@ -280,37 +280,41 @@ test('vertical excursions are selected occasionally rather than continuously', (
 
 import { createManeuver, sampleManeuver } from '../src/core/maneuver.js';
 
-test('Bezier manoeuvre intent begins and ends at its requested attitude', () => {
-  const path = createManeuver({ startYaw: 0.2, startPitch: 0, endYaw: 1.4, endPitch: 0.65, duration: 4, curve: 0.4 });
-  const start = sampleManeuver(path, 0);
-  const end = sampleManeuver(path, 4);
-  assert.ok(Math.abs(start.yaw - 0.2) < 1e-12);
-  assert.ok(Math.abs(start.pitch) < 1e-12);
-  assert.ok(Math.abs(end.yaw - 1.4) < 1e-12);
-  assert.ok(Math.abs(end.pitch - 0.65) < 1e-12);
-  assert.equal(end.complete, true);
+test('Bezier path starts and ends at its intended positions and headings', () => {
+  const start = vec3(1, 0, -2), forward = vec3(1, 0, 0), finish = vec3(0.6, 0.5, -0.62);
+  const path = createManeuver({ start, startDirection: forward, endDirection: finish, distance: 4, duration: 4, curve: 0.4 });
+  const a = sampleManeuver(path, 0), b = sampleManeuver(path, 4);
+  assert.ok(Math.hypot(a.position.x-start.x,a.position.y-start.y,a.position.z-start.z) < 1e-10);
+  assert.ok(Math.hypot(a.tangent.x-forward.x,a.tangent.y-forward.y,a.tangent.z-forward.z) < 1e-10);
+  assert.ok(Math.hypot(b.tangent.x-finish.x/length3(finish),b.tangent.y-finish.y/length3(finish),b.tangent.z-finish.z/length3(finish)) < 1e-10);
+  assert.equal(b.complete, true);
 });
 
-test('Bezier manoeuvre varies heading, pitch and propulsion effort continuously', () => {
-  const path = createManeuver({ startYaw: -0.3, startPitch: 0, endYaw: 0.8, endPitch: -0.72, duration: 5, curve: -0.5, speedPeak: 1.3 });
-  let previous = sampleManeuver(path, 0);
-  let peakSpeed = previous.speed;
+test('spatial Bezier manoeuvre bends smoothly and changes propulsion effort gradually', () => {
+  const path = createManeuver({ start: vec3(), startDirection: vec3(1,0,0), endDirection: vec3(0.7,0.25,-0.66), distance: 4, duration: 5, curve: -0.5, speedPeak: 1.3 });
+  let previous = sampleManeuver(path, 0), peakSpeed = previous.speed, maxStep = 0;
   for (let i = 1; i <= 500; i++) {
     const current = sampleManeuver(path, i / 100);
-    assert.ok(Math.abs(current.yaw - previous.yaw) < 0.04);
-    assert.ok(Math.abs(current.pitch - previous.pitch) < 0.04);
-    assert.ok(Math.abs(current.speed - previous.speed) < 0.02);
+    const positionStep = length3(vec3(current.position.x-previous.position.x,current.position.y-previous.position.y,current.position.z-previous.position.z));
+    const tangentStep = length3(vec3(current.tangent.x-previous.tangent.x,current.tangent.y-previous.tangent.y,current.tangent.z-previous.tangent.z));
+    assert.ok(positionStep < 0.06);
+    assert.ok(tangentStep < 0.04);
+    assert.ok(Math.abs(current.speed-previous.speed) < 0.02);
+    maxStep = Math.max(maxStep, positionStep);
     peakSpeed = Math.max(peakSpeed, current.speed);
     previous = current;
   }
   assert.ok(peakSpeed > 1.25);
-  assert.ok(sampleManeuver(path, 5).speed < peakSpeed);
+  assert.ok(maxStep > 0);
+  assert.ok(sampleManeuver(path, 5).speed === 1);
 });
 
-test('vertical manoeuvres can be upward or downward without changing horizontal heading target', () => {
-  const up = sampleManeuver(createManeuver({ startYaw: 0.6, startPitch: 0, endYaw: 0.6, endPitch: 0.9, duration: 3 }), 3);
-  const down = sampleManeuver(createManeuver({ startYaw: 0.6, startPitch: 0, endYaw: 0.6, endPitch: -0.9, duration: 3 }), 3);
-  assert.ok(up.pitch > 0.8);
-  assert.ok(down.pitch < -0.8);
-  assert.ok(Math.abs(up.yaw - down.yaw) < 1e-12);
+test('Bezier paths support level, upward and downward trajectories', () => {
+  const start = vec3();
+  const level = sampleManeuver(createManeuver({ start, startDirection: vec3(1,0,0), endDirection: vec3(1,0,0), distance: 3, duration: 3 }), 3);
+  const up = sampleManeuver(createManeuver({ start, startDirection: vec3(1,0,0), endDirection: vec3(0.7,0.7,0), distance: 3, duration: 3 }), 3);
+  const down = sampleManeuver(createManeuver({ start, startDirection: vec3(1,0,0), endDirection: vec3(0.7,-0.7,0), distance: 3, duration: 3 }), 3);
+  assert.ok(Math.abs(level.tangent.y) < 1e-10);
+  assert.ok(up.tangent.y > 0.6);
+  assert.ok(down.tangent.y < -0.6);
 });
