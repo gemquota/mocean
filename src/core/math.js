@@ -11,7 +11,7 @@ export const normalize3 = a => scale3(a, 1 / (length3(a) || 1));
 export const wrapAngle = a => ((a + Math.PI) % TAU + TAU) % TAU - Math.PI;
 export const angleDelta = (from, to) => wrapAngle(to - from);
 
-const quatMultiply = (a, b) => ({
+export const quatMultiply = (a, b) => ({
   w: a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z,
   x: a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,
   y: a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,
@@ -34,4 +34,15 @@ export function quatNormalize(q) {
 export function quatRotate(q, p) {
   const u = vec3(q.x, q.y, q.z), s = q.w;
   return add3(add3(scale3(u, 2 * dot3(u, p)), scale3(p, s * s - dot3(u, u))), scale3(cross3(u, p), 2 * s));
+}
+
+
+/** Integrate a body-local angular velocity (radians/second) into body-to-world attitude. */
+export function quatIntegrateAngularVelocity(q, omegaLocal, dt) {
+  const speed = length3(omegaLocal);
+  if (speed < 1e-10 || dt === 0) return quatNormalize(q);
+  const halfAngle = speed * dt * 0.5;
+  const s = Math.sin(halfAngle) / speed;
+  const delta = { w: Math.cos(halfAngle), x: omegaLocal.x * s, y: omegaLocal.y * s, z: omegaLocal.z * s };
+  return quatNormalize(quatMultiply(q, delta));
 }
