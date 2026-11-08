@@ -30,9 +30,10 @@ export function stepDynamics(body, command, dt) {
     if (excess > 0) body.vel[axis] += -Math.sign(body.p[axis]) * excess * 1.35 * dt;
   }
 
-  const yawDrive = clamp(command.turn ?? 0, -1, 1) * 3.1 + (command.yawMoment ?? 0);
+  const yawDrive = clamp(command.turn ?? 0, -1, 1) * 3.1 + clamp(command.yawMoment ?? 0, -0.35, 0.35);
   body.wy += (yawDrive - body.wy * (1.05 + speed * 0.12)) * dt;
-  body.wp += ((command.pitch ?? 0) * 0.58 - body.wp * 1.25 - body.pitch * 0.12) * dt;
+  const pitchDrive = clamp(command.pitch ?? 0, -1, 1) * 0.58;
+  body.wp += (pitchDrive - body.wp * 1.25 - body.pitch * 0.12) * dt;
   body.wr += ((command.rollMoment ?? 0) * 1.8 - body.wr * 1.35 - body.roll * 0.09) * dt;
 
   // Yaw is about world-up. Pitch and axial roll are body-local Z and X.
