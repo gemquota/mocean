@@ -425,3 +425,23 @@ test('yaw primitive has bounded angular drive even with excessive moment input',
   assert.ok(Math.abs(excessive.wp) < 1e-12 && Math.abs(excessive.wr) < 1e-12);
   assert.ok(Math.abs(excessive.vel.x) < 1e-12 && Math.abs(excessive.vel.z) < 1e-12);
 });
+
+test('axial roll primitive rotates around local head-to-tail axis without pitch yaw or translation', () => {
+  const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  for (let i = 0; i < 360; i++) stepDynamics(body, { roll: 1 }, 1 / 120);
+  const forward = quatRotate(body.orientation, vec3(1, 0, 0));
+  const dorsal = quatRotate(body.orientation, vec3(0, 1, 0));
+  assert.ok(body.wr > 0 && body.roll > 0);
+  assert.ok(Math.abs(forward.x - 1) < 1e-6 && Math.abs(forward.y) < 1e-6 && Math.abs(forward.z) < 1e-6);
+  assert.ok(Math.abs(dorsal.y) < 0.95, 'dorsal axis should rotate around the longitudinal axis');
+  assert.ok(Math.abs(body.wy) < 1e-12 && Math.abs(body.wp) < 1e-12);
+  assert.ok(Math.abs(body.vel.x) < 1e-12 && Math.abs(body.vel.y) < 1e-12 && Math.abs(body.vel.z) < 1e-12);
+});
+
+test('axial roll command saturates and auxiliary roll moment remains bounded', () => {
+  const normal = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  const excessive = structuredClone(normal);
+  stepDynamics(normal, { roll: 1, rollMoment: 0.35 }, 1 / 120);
+  stepDynamics(excessive, { roll: 9, rollMoment: 30 }, 1 / 120);
+  assert.ok(Math.abs(excessive.wr - normal.wr) < 1e-12);
+});
