@@ -343,3 +343,13 @@ test('attitude dynamics produce clearly visible nose-up and nose-down pitch', ()
     assert.ok(direction * forward.y > 0.4, 'body-forward axis should visibly point up or down');
   }
 });
+
+
+test('vertical excursion frequency follows the configured manoeuvre probability', () => {
+  let seed = 73191;
+  const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  let excursions = 0;
+  const count = 10000;
+  for (let i = 0; i < count; i++) if (shouldMakeVerticalExcursion(random, 0.35)) excursions++;
+  assert.ok(excursions / count > 0.33 && excursions / count < 0.37);
+});
