@@ -54,7 +54,7 @@ function simulate(dt){
  const turn=clamp(yawError*1.7,-1,1);
  const pitch=clamp((guidedPitch-sim.pitch)*2.2,-.85,.85);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
- stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+returnGuidance.thrust,turn:gait.steering,pitch,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
+ stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+returnGuidance.thrust,turn:gait.steering,pitch,finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
  // The path is an intent curve; momentum, drag and attitude inertia determine the actual trajectory.
 }
 function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
