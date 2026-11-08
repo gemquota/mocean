@@ -390,3 +390,14 @@ test('successive vertical manoeuvres alternate between dives and climbs', () => 
   }
   assert.deepEqual(sequence, [-1, 1, -1, 1, -1, 1]);
 });
+
+test('braking intent deploys both pectoral fins symmetrically and returns bounded drag command', () => {
+  const gait = createGait();
+  let output;
+  for (let i = 0; i < 180; i++) output = stepGait(gait, 'CRUISE', 1.2, 0, 1 / 120, 1);
+  assert.ok(gait.brake > 0.99);
+  assert.ok(Math.abs(gait.leftFin - gait.rightFin) < 1e-9);
+  assert.ok(gait.leftFin > 0.65 && gait.rightFin > 0.65);
+  assert.equal(output.brake, gait.brake);
+  assert.ok(output.brake <= 1);
+});
