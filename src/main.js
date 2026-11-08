@@ -4,11 +4,11 @@ import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
 import { sampleHorizontalHeading, shouldMakeVerticalExcursion } from './core/intent.js';
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
+import { createFixedCamera } from './core/camera.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
 const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,gait:createGait()};
-const camera={p:V(0,2.15,10),target:V(0,0,0),forward:V(),right:V(),up:V()};
-camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross(camera.forward,V(0,1,0)));camera.up=unit(cross(camera.right,camera.forward));
+const camera=createFixedCamera();
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
 function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
@@ -21,11 +21,11 @@ function chooseBehaviour(){
 
  // Most trajectories stay level. A minority arc above or below the cruising plane.
  let endPitch=0;
- const verticalExcursion=(sim.mode==='EXPLORE'&&shouldMakeVerticalExcursion(random))||(sim.mode==='TURN'&&random()<.12);
+ const verticalExcursion=(sim.mode==='EXPLORE'&&shouldMakeVerticalExcursion(random,0.35))||(sim.mode==='TURN'&&random()<.25);
  if(verticalExcursion){
   const direction=random()<.5?-1:1;
-  const steep=random()<.12;
-  endPitch=direction*(steep?0.88+random()*.24:0.24+random()*.48);
+  const steep=random()<.2;
+  endPitch=direction*(steep?0.95+random()*.23:0.45+random()*.4);
  }
  const curve=(random()-.5)*1.25;
  const speedPeak=sim.mode==='DART'?1.42:sim.mode==='GLIDE'?.96:1.12+random()*.18;
@@ -51,7 +51,7 @@ function simulate(dt){
  const guidedPitch=intentPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
  const yawError=angleDelta(sim.yaw,guidedYaw);
  const turn=clamp(yawError*1.7,-1,1);
- const pitch=clamp((guidedPitch-sim.pitch)*.9,-.32,.32);
+ const pitch=clamp((guidedPitch-sim.pitch)*2.2,-.85,.85);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+returnGuidance.thrust,turn:gait.steering,pitch,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
  // The path is an intent curve; momentum, drag and attitude inertia determine the actual trajectory.
