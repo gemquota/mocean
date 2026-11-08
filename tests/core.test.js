@@ -564,6 +564,31 @@ test('pursuit gait has stronger travelling-wave drive and a higher tail-thrust c
   assert.ok(pursuitOutput.thrust > exploreOutput.thrust);
 });
 
+
+test('integrated pursuit reaches a materially higher swimming speed without direct velocity assignment', () => {
+  const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0, orientation: quatFromEuler(0, 0, 0) };
+  const gait = createGait(), target = vec3(30, 0, 0);
+  let peakSpeed = 0;
+  for (let i = 0; i < 720; i++) {
+    const guidance = createPursuitGuidance(body.p, body.vel, body.yaw, body.pitch, target);
+    const output = stepGait(gait, 'PURSUIT', length3(body.vel), guidance.turn, 1 / 120, guidance.brake);
+    stepDynamics(body, {
+      thrust: output.thrust * guidance.thrustScale,
+      turn: output.steering,
+      pitch: guidance.pitch,
+      finDrag: output.finDrag,
+      brake: output.brake,
+      rollMoment: output.rollMoment,
+      yawMoment: output.yawMoment
+    }, 1 / 120);
+    const speed = length3(body.vel);
+    peakSpeed = Math.max(peakSpeed, speed);
+    assert.ok(Number.isFinite(speed));
+    assert.ok(gait.spine.every(node => Number.isFinite(node.y) && Number.isFinite(node.v)));
+  }
+  assert.ok(peakSpeed > 3.5, `expected stronger pursuit to exceed 3.5 units/s, got ${peakSpeed}`);
+});
+
 test('pursuit brakes as it reaches the target and identifies a low-speed hover', () => {
   const approaching = createPursuitGuidance(vec3(), vec3(1.4, 0, 0), 0, 0, vec3(.5, 0, 0));
   const settled = createPursuitGuidance(vec3(), vec3(.08, 0, 0), 0, 0, vec3(.1, 0, 0));
