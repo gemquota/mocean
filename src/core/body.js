@@ -11,7 +11,7 @@ export function createGait() {
     phase: 0, frequency: 1.15, amplitude: 0.2, steering: 0,
     energy: 1, tailVelocity: 0, tailAcceleration: 0,
     leftFin: 0.16, rightFin: 0.16, leftFinAngle: 0, rightFinAngle: 0,
-    tailLoad: 0, rollMoment: 0,
+    tailLoad: 0, rollMoment: 0, brake: 0,
     spine: Array.from({ length: NODE_COUNT }, () => ({ y: 0, v: 0, target: 0 }))
   };
 }
@@ -40,7 +40,7 @@ function interpolateSpine(spine, u) {
  * curvature wave; elastic coupling and water damping determine the actual pose.
  * Tail reaction is estimated from lateral tail momentum rather than a free thrust knob.
  */
-export function stepGait(gait, behaviour, speed, turnIntent, dt) {
+export function stepGait(gait, behaviour, speed, turnIntent, dt, brakeIntent = 0) {
   const profiles = {
     CRUISE: [0.16, 1.12], EXPLORE: [0.205, 1.34],
     TURN: [0.255, 1.48], DART: [0.31, 2.05],
@@ -94,9 +94,11 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt) {
   const thrust = clamp(caudalArea * 1.9 * tail.v * tail.v * (1 - slip), 0, behaviour === 'DART' ? 1.15 : 0.72);
 
   const turn = gait.steering;
+  gait.brake = mix(gait.brake, clamp(brakeIntent, 0, 1), 1 - Math.exp(-dt * 5.5));
   const glide = behaviour === 'GLIDE' ? 0.24 : 0;
-  const leftTarget = clamp(0.12 + Math.max(0, turn) * 0.72 + glide, 0.08, 0.9);
-  const rightTarget = clamp(0.12 + Math.max(0, -turn) * 0.72 + glide, 0.08, 0.9);
+  const brakingSpread = gait.brake * 0.58;
+  const leftTarget = clamp(0.12 + Math.max(0, turn) * 0.72 + glide + brakingSpread, 0.08, 0.9);
+  const rightTarget = clamp(0.12 + Math.max(0, -turn) * 0.72 + glide + brakingSpread, 0.08, 0.9);
   gait.leftFin = mix(gait.leftFin, leftTarget, 1 - Math.exp(-dt * 5.2));
   gait.rightFin = mix(gait.rightFin, rightTarget, 1 - Math.exp(-dt * 5.2));
   const finStroke = Math.sin(gait.phase * 0.5 + 0.4) * (0.12 + speed * 0.035);
@@ -111,6 +113,7 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt) {
     steering: turn,
     yawMoment: turn * (0.08 + gait.tailLoad * 0.12) + differentialDrag * speed * 0.055,
     finDrag,
+    brake: gait.brake,
     rollMoment: gait.rollMoment,
     tailVelocity: tail.v,
     slip
