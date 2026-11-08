@@ -108,7 +108,7 @@ function drawPectoralFin(side, spread, angle, w, h) {
   : [root,V(-.62,-.46,-.62-spread*.42),V(.02,-.3,-.48),V(.18,-.12,-.29)];
  const points=raw.map(point=>articulateFinPoint(point,root,angle));
  drawPolygon(points,side>0?'#286e7b':'#367f83',w,h,'#174e5c');
- const ray=points.map(projectLocal);
+ const ray=points.map(point=>projectLocal(point,w,h));
  if(ray.every(point=>point.z>.15)){
   ctx.beginPath();ctx.moveTo(ray[0].x,ray[0].y);ctx.lineTo(ray[1].x,ray[1].y);
   ctx.strokeStyle='rgba(177,235,207,.72)';ctx.lineWidth=1.1;ctx.stroke();
