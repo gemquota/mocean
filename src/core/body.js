@@ -101,9 +101,9 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt, brakeIntent = 0
   const rightTarget = clamp(0.12 + Math.max(0, -turn) * 0.72 + glide + brakingSpread, 0.08, 0.9);
   gait.leftFin = mix(gait.leftFin, leftTarget, 1 - Math.exp(-dt * 5.2));
   gait.rightFin = mix(gait.rightFin, rightTarget, 1 - Math.exp(-dt * 5.2));
-  const finStroke = Math.sin(gait.phase * 0.5 + 0.4) * (0.12 + speed * 0.035);
-  gait.leftFinAngle = mix(gait.leftFinAngle, finStroke + turn * 0.12, 1 - Math.exp(-dt * 5));
-  gait.rightFinAngle = mix(gait.rightFinAngle, -finStroke - turn * 0.12, 1 - Math.exp(-dt * 5));
+  const finStroke = Math.sin(gait.phase * 0.5 + 0.4) * (0.2 + speed * 0.05);
+  gait.leftFinAngle = mix(gait.leftFinAngle, finStroke + turn * 0.16, 1 - Math.exp(-dt * 5));
+  gait.rightFinAngle = mix(gait.rightFinAngle, -finStroke - turn * 0.16, 1 - Math.exp(-dt * 5));
 
   const differentialDrag = gait.leftFin - gait.rightFin;
   gait.rollMoment = differentialDrag * clamp(speed * 0.18, 0, 0.42);
@@ -117,6 +117,19 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt, brakeIntent = 0
     rollMoment: gait.rollMoment,
     tailVelocity: tail.v,
     slip
+  };
+}
+
+/** Rotate a pectoral-fin point around its body-local longitudinal hinge. */
+export function articulateFinPoint(point, root, angle) {
+  const dy = point.y - root.y;
+  const dz = point.z - root.z;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return {
+    x: point.x,
+    y: root.y + dy * c - dz * s,
+    z: root.z + dy * s + dz * c
   };
 }
 
