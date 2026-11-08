@@ -121,7 +121,7 @@ function simulate(dt){
   const lookProgress=Math.min(1,progress+Math.min(.18,.035+distanceToTarget/Math.max(sim.userApproach.length,1)*.2));
   const pathAim=sampleDepthApproach(sim.userApproach,lookProgress).position;
   const guidance=createPursuitGuidance(sim.p,sim.vel,sim.yaw,sim.pitch,sim.userTarget,pathAim);
-  sim.mode=guidance.distance>3.6?'DART':'EXPLORE';
+  sim.mode='EXPLORE';
   const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),guidance.turn,dt,guidance.brake);
   stepDynamics(sim,{thrust:gait.thrust*guidance.thrustScale,turn:gait.steering,pitch:guidance.pitch,
    finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
