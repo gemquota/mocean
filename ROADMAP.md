@@ -189,3 +189,8 @@ The user explicitly approved the Phase 1 phase gate on 8 November 2026. Phase 2 
 - Yaw command and auxiliary yaw moment are bounded before entering the angular response. Sustained-turn coverage remains in the regression suite; excessive auxiliary moment saturates rather than injecting unbounded angular drive.
 - Automated verification: **41 tests passed, 0 failed** in GitHub Actions for commit 8099124ba673eb53487e2fca809ec58c9ba86616. GitHub Pages deployment succeeded for the same commit.
 - P2-2 and P2-3 remain unchecked until the actual fish's isolated pitch/yaw motion is visually inspected against the fixed camera and prior cruising quality.
+### Phase 2 implementation evidence · P2-4 and P2-5 work in progress
+- Added a bounded explicit roll command. It drives angular velocity around the body-local longitudinal X axis; auxiliary fin-generated roll moment is bounded separately.
+- Isolated roll tests confirm the body-forward axis remains fixed while dorsal orientation rotates, with no translation, pitch or yaw input. The complete suite reached **43 passing tests, 0 failures** at commit f76381427cacaed86748fb68b7bea24e68915582.
+- Live browser inspection confirmed the fish renders and swims continuously. It also found that existing fins alone do not provide sufficiently clear local-axis cues and do not show independent articulation.
+- Added a narrow dorsal pigment ridge attached to the body-local deforming frame. This is an anatomical orientation cue, not a screen-space axis overlay. Visual verification of this latest ridge and a deliberate roll remains pending.
