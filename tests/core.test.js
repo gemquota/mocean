@@ -577,3 +577,38 @@ test('loop-the-loop carries pitch through a complete revolution and returns near
   assert.ok(forward.x > 0.75, 'body-forward should return toward its original direction');
   assert.ok(Math.abs(forward.y) < 0.65, 'body-forward should finish near the starting plane');
 });
+
+
+test('roll-turn composite couples axial roll and yaw without introducing a pitch spin', () => {
+  const body = runIntentSequence('roll-turn', vec3(0.7,0,0));
+  assert.ok(body.yaw > 0.25, 'the fish should turn around world-up');
+  assert.ok(Math.abs(body.roll) > 0.25, 'the fish should roll around its local longitudinal axis');
+  assert.ok(Math.abs(body.pitch) < 0.3, 'roll-turn should not become an accidental somersault');
+});
+
+test('curved reversal turns the head while retaining a curved, momentum-led path', () => {
+  const body = runIntentSequence('curved-reversal', vec3(1.05,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  const velocity = body.vel;
+  const alignment = forward.x*velocity.x + forward.y*velocity.y + forward.z*velocity.z;
+  assert.ok(body.yaw > 1.2, 'heading must make a substantial reversal');
+  assert.ok(length3(velocity) > 0.12, 'momentum must persist through the turn');
+  assert.ok(alignment < 0.5, 'the path must lag behind the changing heading');
+});
+
+test('dive, braking and reorientation are distinct consecutive phases', () => {
+  const sequence = createMotionSequence('dive-brake-reorient');
+  const dive = sampleMotionSequence(sequence, 2.2).command;
+  const brake = sampleMotionSequence(sequence, 3.1).command;
+  const reorient = sampleMotionSequence(sequence, 4.2).command;
+  assert.ok(dive.pitch < -0.5 && dive.thrust > 0.6);
+  assert.ok(brake.brake > 0.7 && brake.pitch < 0);
+  assert.ok(reorient.yawOffset > Math.PI*0.6 && reorient.brake < 0.1);
+});
+
+test('compound 3D manoeuvre changes yaw, pitch and axial roll through the dynamics', () => {
+  const body = runIntentSequence('compound-3d', vec3(0.8,0.05,0));
+  assert.ok(body.yaw > 0.8);
+  assert.ok(body.pitch > 0.25);
+  assert.ok(body.roll > 0.25);
+});
