@@ -23,7 +23,7 @@ export function createPursuitGuidance(position, velocity, yaw, pitch, target, ai
   const feedForward = dragAtDesiredSpeed / PURSUIT_THRUST_CAP;
   const speedError = desiredSpeed - speed;
   const distanceGate = clamp(distance / 0.5, 0, 1);
-  const thrustScale = clamp(feedForward + speedError * 1.45, 0, 5.5) * distanceGate;
+  const thrustScale = clamp(feedForward + speedError * 0.9, 0, 5.5) * distanceGate;
   const brake = clamp((speed - desiredSpeed - 0.12) / 0.7, 0, 1);
   const hovering = distance < 0.42 && speed < 0.2;
   return {
