@@ -210,6 +210,12 @@ main{grid-column:1/-1;grid-row:2;min-width:0}
 .phase-bubble .bubble-core{position:absolute;inset:8px;border-radius:50%;z-index:0;background:var(--core-gradient,#9d2929);box-shadow:inset 0 1px 8px #0008}
 .phase-bubble span{z-index:2}
 .phase-bubble[aria-pressed=true]{outline:2px solid #f2f7ff;outline-offset:3px;transform:scale(1.035)}
+/* Blue phase rim: subdued while incomplete, with brief restrained light flares. */
+.phase-bubble{animation:ring-breathe 8.8s ease-in-out infinite;will-change:box-shadow}
+.phase-bubble:after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:1;background:conic-gradient(from 0deg,transparent 0deg,transparent 38deg,#a9d9ff55 48deg,#e1f3ffb0 51deg,#a9d9ff35 55deg,transparent 66deg,transparent 150deg,#a9d9ff45 160deg,#d8efff90 163deg,#a9d9ff25 168deg,transparent 180deg,transparent 360deg);-webkit-mask:radial-gradient(circle,transparent 0 68%,#000 72% 100%);mask:radial-gradient(circle,transparent 0 68%,#000 72% 100%);mix-blend-mode:screen;opacity:0;animation:ring-flare 13.5s ease-in-out infinite}
+@keyframes ring-breathe{0%,72%,100%{box-shadow:inset 0 0 0 1px #ffffff20,0 2px 7px #0009}78%{box-shadow:inset 0 0 0 1px #b9dcff70,0 0 9px #397fba66,0 0 17px #397fba30}84%{box-shadow:inset 0 0 0 1px #ffffff24,0 2px 8px #0009}}
+@keyframes ring-flare{0%,70%,100%{opacity:0;transform:rotate(0deg)}76%{opacity:.48}80%{opacity:.12;transform:rotate(9deg)}}
+@media(prefers-reduced-motion:reduce){.phase-bubble,.phase-bubble:after{animation:none!important}.phase-bubble:after{display:none}}
 .phase-card{display:none}
 .phase-card.is-expanded{display:block;animation:phase-open .18s ease-out}
 @keyframes phase-open{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -345,7 +351,7 @@ function updateBubbleProgress(){
   });
   const count=Math.max(1,colours.length),step=360/count,gap=2;
   const core=colours.map((c,i)=>c+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #080d13 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
-  const rim='#397fba';
+  const rim=approved||allConfirmed?'#397fba':'#1b3858';
   const rimSegments=Array.from({length:count},(_,i)=>rim+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #080d13 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
   button.style.setProperty('--rim-gradient','conic-gradient(from -90deg,'+rimSegments+')');
   button.style.setProperty('--core-gradient','conic-gradient(from -90deg,'+core+')');
