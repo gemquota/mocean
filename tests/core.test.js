@@ -447,7 +447,7 @@ test('axial roll command saturates and auxiliary roll moment remains bounded', (
 });
 
 
-import { screenRay, intersectHorizontalPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Y, WORLD_FLOOR_Y } from '../src/core/navigation.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Z, WORLD_FLOOR_Y } from '../src/core/navigation.js';
 
 test('screen-centre ray follows the fixed camera forward axis', () => {
   const camera = createFixedCamera();
@@ -457,33 +457,36 @@ test('screen-centre ray follows the fixed camera forward axis', () => {
   assert.ok(Math.abs(ray.z - camera.forward.z) < 1e-12);
 });
 
-test('tap selects a mid-water point and floor projection preserves world X/Z', () => {
+test('tap selects an XY point on a fixed-Z plane; screen height changes Y, not Z', () => {
   const camera = createFixedCamera();
-  const ray = screenRay(camera, 620, 340, 1000, 600);
-  const target = intersectHorizontalPlane(camera, ray, TARGET_PLANE_Y);
-  const floor = projectToWorldFloor(target, WORLD_FLOOR_Y);
-  assert.ok(target && floor);
-  assert.equal(target.y, TARGET_PLANE_Y);
+  const high = intersectXYPlane(camera, screenRay(camera, 620, 250, 1000, 600), TARGET_PLANE_Z);
+  const low = intersectXYPlane(camera, screenRay(camera, 620, 390, 1000, 600), TARGET_PLANE_Z);
+  assert.ok(high && low);
+  assert.equal(high.z, TARGET_PLANE_Z);
+  assert.equal(low.z, TARGET_PLANE_Z);
+  assert.ok(high.y > low.y, 'higher screen taps select higher world Y');
+  assert.ok(Math.abs(high.x - low.x) < 1e-10);
+  const floor = projectToWorldFloor(high, WORLD_FLOOR_Y);
   assert.equal(floor.y, WORLD_FLOOR_Y);
-  assert.equal(floor.x, target.x);
-  assert.equal(floor.z, target.z);
-  assert.ok(target.y - floor.y > 3);
+  assert.equal(floor.x, high.x);
+  assert.equal(floor.z, high.z);
 });
 
-test('two-finger floor drag moves the handle along world Z and tracks screen Y exactly', () => {
+test('two-finger vertical drag changes shared Z depth while preserving XY', () => {
   const camera = createFixedCamera();
-  const ray = screenRay(camera, 620, 340, 1000, 600);
-  const target = intersectHorizontalPlane(camera, ray, TARGET_PLANE_Y);
+  const target = intersectXYPlane(camera, screenRay(camera, 620, 340, 1000, 600), TARGET_PLANE_Z);
   const floor = projectToWorldFloor(target);
   const startY = projectedScreenY(camera, floor, 600, 1000);
   const fartherZ = worldZAtScreenY(camera, floor, startY - 35, 1000, 600);
   const closerZ = worldZAtScreenY(camera, floor, startY + 35, 1000, 600);
   assert.ok(fartherZ < floor.z, 'dragging up moves the handle farther along -Z');
   assert.ok(closerZ > floor.z, 'dragging down moves the handle closer along +Z');
+  const fartherTarget = { ...target, z: fartherZ };
+  assert.equal(fartherTarget.x, target.x);
+  assert.equal(fartherTarget.y, target.y);
   assert.ok(Math.abs(projectedScreenY(camera, { ...floor, z: fartherZ }, 600, 1000) - (startY - 35)) < 1e-8);
   assert.ok(Math.abs(projectedScreenY(camera, { ...floor, z: closerZ }, 600, 1000) - (startY + 35)) < 1e-8);
 });
-
 
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from '../src/core/approach.js';
 
