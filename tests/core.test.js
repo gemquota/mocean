@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { angleDelta, quatFromEuler, quatRotate, vec3, length3, wrapAngle } from '../src/core/math.js';
+import { angleDelta, quatFromEuler, quatRotate, vec3, length3, wrapAngle, quatIntegrateAngularVelocity } from '../src/core/math.js';
 import { stepDynamics } from '../src/core/dynamics.js';
 
 test('angle wrapping chooses the shortest signed rotation', () => {
@@ -136,4 +136,34 @@ test('caudal fin attachment points follow the same continuous spine deformation'
   const bodyEnd = deformPoint(vec3(-1.48, 0, 0), gait);
   const finRoot = deformPoint(vec3(-1.55, 0, 0), gait);
   assert.ok(Math.hypot(finRoot.x - bodyEnd.x, finRoot.z - bodyEnd.z) < 0.1);
+});
+
+
+test('quaternion attitude integration remains normalized through compound 3D rotation', () => {
+  let q = quatFromEuler(0.4, -0.3, 0.2);
+  for (let i = 0; i < 2400; i++) q = quatIntegrateAngularVelocity(q, vec3(0.7, -0.4, 1.1), 1 / 120);
+  const norm = Math.hypot(q.w, q.x, q.y, q.z);
+  assert.ok(Math.abs(norm - 1) < 1e-10);
+  const forward = quatRotate(q, vec3(1, 0, 0));
+  const up = quatRotate(q, vec3(0, 1, 0));
+  assert.ok(Math.abs(length3(forward) - 1) < 1e-10);
+  assert.ok(Math.abs(length3(up) - 1) < 1e-10);
+  assert.ok(Math.abs(forward.x * up.x + forward.y * up.y + forward.z * up.z) < 1e-10);
+});
+
+test('world-vertical lift is independent of body pitch', () => {
+  const a = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  const b = { ...a, p: vec3(), vel: vec3(), orientation: quatFromEuler(0, Math.PI / 3, 0) };
+  stepDynamics(a, { lift: 1 }, 1 / 120);
+  stepDynamics(b, { lift: 1 }, 1 / 120);
+  assert.ok(Math.abs(a.vel.y - b.vel.y) < 1e-12);
+});
+
+test('torque-only input changes attitude without directly creating translation', () => {
+  const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  stepDynamics(body, { turn: 1 }, 1 / 60);
+  assert.ok(Math.abs(body.vel.x) < 1e-12);
+  assert.ok(Math.abs(body.vel.y) < 1e-12);
+  assert.ok(Math.abs(body.vel.z) < 1e-12);
+  assert.ok(Math.abs(body.orientation.y) > 0);
 });
