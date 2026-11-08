@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { angleDelta, quatFromEuler, quatRotate, vec3, length3, wrapAngle, quatIntegrateAngularVelocity, perspectiveScale, distanceTreatment } from '../src/core/math.js';
+import { angleDelta, quatFromEuler, quatRotate, vec3, length3, wrapAngle, quatIntegrateAngularVelocity, perspectiveScale, distanceTreatment, habitatReturnGuidance } from '../src/core/math.js';
 import { stepDynamics } from '../src/core/dynamics.js';
 
 test('angle wrapping chooses the shortest signed rotation', () => {
@@ -210,4 +210,23 @@ test('distance blur and fade remain absent until apparent size falls below one q
   assert.ok(far.blur > 0 && far.blur <= 1.8);
   assert.ok(far.opacity < 1 && far.opacity >= 0.78);
   assert.deepEqual(distanceTreatment(0), { blur: 1.8, opacity: 0.78 });
+});
+
+test('habitat return guidance is inactive inside the soft boundary', () => {
+  const guidance = habitatReturnGuidance(vec3(1, 0.5, -1), vec3(6.4, 3.5, 5.2));
+  assert.equal(guidance.weight, 0);
+  assert.equal(guidance.thrust, 0);
+});
+
+test('habitat return guidance points back toward the centre in horizontal and vertical axes', () => {
+  const right = habitatReturnGuidance(vec3(8, 0, 0), vec3(6.4, 3.5, 5.2));
+  assert.ok(right.weight > 0 && right.thrust > 0);
+  assert.ok(Math.abs(Math.abs(right.yaw) - Math.PI) < 1e-9);
+  const high = habitatReturnGuidance(vec3(0, 5, 0), vec3(6.4, 3.5, 5.2));
+  assert.ok(high.pitch < 0);
+  const low = habitatReturnGuidance(vec3(0, -5, 0), vec3(6.4, 3.5, 5.2));
+  assert.ok(low.pitch > 0);
+  const deep = habitatReturnGuidance(vec3(0, 0, -7), vec3(6.4, 3.5, 5.2));
+  assert.ok(Math.abs(deep.yaw) < 1e-9);
+  assert.ok(deep.thrust > 0);
 });
