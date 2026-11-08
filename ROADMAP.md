@@ -1,7 +1,7 @@
 # Mocean Development Roadmap
 
-**Revision:** 03 · 8 November 2026  
-**Status:** Initial blueprint drafted; awaiting user approval.  
+**Revision:** 04 · 8 November 2026  
+**Status:** Phase 0 architecture and baseline complete; awaiting user review and confirmation.  
 **Implementation gate:** Phase One has not started.
 
 ## Direction
@@ -42,13 +42,16 @@ The Plan presentation must show both marks as separate columns for every task. T
 
 ## Phase 0 · Architecture and baseline
 
-**Status:** Blueprint drafted; user review pending.
+**Status:** Assistant complete; awaiting independent user confirmation.  
+**Evidence:** [PHASE_0.md](PHASE_0.md), source audit and 17 existing test cases. The baseline test workflow is configured in GitHub Actions; no claim is made here that the tests were freshly executed during documentation authoring.
 
-- [ ] P0-1 Document world axes, body axes and quaternion orientation convention.
-- [ ] P0-2 Separate translational propulsion from orientation control in the architecture.
-- [ ] P0-3 Specify fixed-camera projection, depth scaling, blur and fade behaviour.
-- [ ] P0-4 Define locomotion acceptance tests and baseline metrics.
-- [ ] P0-5 Confirm phase boundaries and user approval process.
+- [x] P0-1 Document world axes, body axes and quaternion orientation convention.
+- [x] P0-2 Define separate translational propulsion and orientation-control pathways, their coupling, and the current implementation boundary.
+- [x] P0-3 Specify fixed-camera projection, depth scaling, blur/fade target and re-entry behaviour.
+- [x] P0-4 Define locomotion acceptance tests, baseline inventory and known limitations.
+- [x] P0-5 Confirm phase boundaries, dependencies and the two-key user approval process.
+
+**Phase 0 gate:** awaiting user review. Phase 1 remains locked until explicit approval.
 
 ## Phase 1 · True 3D locomotion foundation
 
@@ -126,7 +129,7 @@ Reviewed on 8 November 2026:
 
 | Phase | Status | Approval |
 |---|---|---|
-| 0 · Architecture | Draft for review | Pending |
+| 0 · Architecture | Assistant complete · review pending | Awaiting user confirmation |
 | 1 · 3D locomotion foundation | Locked pending plan approval | Not started |
 | 2 · Elementary movement primitives | Queued | Not started |
 | 3 · Basic composite motions | Queued | Not started |
@@ -135,10 +138,10 @@ Reviewed on 8 November 2026:
 | 6 · Environment | Deferred | Not started |
 | 7 · Integration and polish | Queued | Not started |
 
-**No Phase One code has been changed as part of this blueprint.**
+**Phase 0 defines the architecture and acceptance contract only. Phase One implementation has not started and remains locked pending user approval.**
 
 
-## Presentation architecture · Revision 03
+## Presentation architecture · Revision 04
 
 - **Plan** is the primary workspace: phases, hierarchical goals, atomic tasks, dependencies and progress tracking.
 - **Review** is the technical evidence workspace. It must explain coordinate frames, six degrees of freedom, world versus body-local axes, force and torque, momentum versus heading, orient-then-thrust diving, body curvature, fin attachment and perspective/depth rendering.
