@@ -2,11 +2,31 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { angleDelta, quatFromEuler, quatRotate, vec3, length3, wrapAngle, quatIntegrateAngularVelocity, perspectiveScale, distanceTreatment, habitatReturnGuidance } from '../src/core/math.js';
 import { stepDynamics } from '../src/core/dynamics.js';
+import { articulateFinPoint } from '../src/core/body.js';
 
 test('angle wrapping chooses the shortest signed rotation', () => {
   assert.ok(Math.abs(angleDelta(3.1, -3.1)) < 0.1);
   assert.ok(wrapAngle(5 * Math.PI) <= Math.PI);
 });
+test('pectoral fin articulation rotates around its local longitudinal hinge', () => {
+  const root = vec3(-0.22, -0.16, 0.27);
+  const tip = vec3(-0.62, -0.46, 0.72);
+  const angle = 0.31;
+  const moved = articulateFinPoint(tip, root, angle);
+  const radiusBefore = Math.hypot(tip.y - root.y, tip.z - root.z);
+  const radiusAfter = Math.hypot(moved.y - root.y, moved.z - root.z);
+  assert.deepEqual(articulateFinPoint(root, root, angle), root);
+  assert.ok(Math.abs(radiusAfter - radiusBefore) < 1e-12);
+  assert.ok(Math.abs(moved.y - tip.y) > 0.01);
+  assert.ok(Math.abs(moved.z - tip.z) > 0.01);
+
+  const mirroredRoot = vec3(root.x, root.y, -root.z);
+  const mirroredTip = vec3(tip.x, tip.y, -tip.z);
+  const mirrored = articulateFinPoint(mirroredTip, mirroredRoot, -angle);
+  assert.ok(Math.abs(mirrored.y - moved.y) < 1e-12);
+  assert.ok(Math.abs(mirrored.z + moved.z) < 1e-12);
+});
+
 test('identity orientation preserves a vector', () => {
   const v = vec3(1, 2, 3);
   const out = quatRotate(quatFromEuler(0, 0, 0), v);
