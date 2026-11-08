@@ -2,7 +2,7 @@
 
 **Revision:** 04 · 8 November 2026  
 **Status:** Phase 0 architecture and baseline complete; awaiting user review and confirmation.  
-**Implementation gate:** Phase One has not started.
+**Implementation gate:** Phase 1 has started; remaining phase tasks stay evidence-gated.
 
 ## Direction
 
@@ -55,11 +55,11 @@ The Plan presentation must show both marks as separate columns for every task. T
 
 ## Phase 1 · True 3D locomotion foundation
 
-**Status:** Locked until initial presentation approval.
+**Status:** In progress · Phase 0 delivered and Phase 1 explicitly authorised by the user.
 
-- [ ] P1-1 Build a coherent 3D orientation frame with quaternion-based attitude.
-- [ ] P1-2 Separate thrust, lift and lateral propulsion from pitch, yaw and roll control.
-- [ ] P1-3 Support forward, reverse, lateral, vertical and diagonal travel.
+- [x] P1-1 Build a coherent 3D orientation frame with quaternion-based attitude.
+- [x] P1-2 Separate thrust, lift and lateral propulsion from pitch, yaw and roll control.
+- [x] P1-3 Support forward, reverse, lateral, vertical and diagonal travel.
 - [ ] P1-4 Make depth travel visibly change perspective scale on the fixed camera.
 - [ ] P1-5 Add distance-based blur and fade near one-quarter apparent size.
 - [ ] P1-6 Return the fish to the visible habitat naturally after leaving frame.
@@ -130,7 +130,7 @@ Reviewed on 8 November 2026:
 | Phase | Status | Approval |
 |---|---|---|
 | 0 · Architecture | Assistant complete · review pending | Awaiting user confirmation |
-| 1 · 3D locomotion foundation | Locked pending plan approval | Not started |
+| 1 · 3D locomotion foundation | In progress | User review at phase gate |
 | 2 · Elementary movement primitives | Queued | Not started |
 | 3 · Basic composite motions | Queued | Not started |
 | 4 · Complex manoeuvre arrangements | Queued | Not started |
