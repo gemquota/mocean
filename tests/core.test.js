@@ -113,3 +113,27 @@ test('pectoral fin stroke and differential steering remain finite', () => {
   assert.ok(output.yawMoment < 0);
   assert.ok(Math.abs(output.finDrag) < 0.2);
 });
+
+
+test('sustained steering produces a visible whole-body turn', () => {
+  const body = { p: vec3(), vel: vec3(1,0,0), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  for (let i = 0; i < 240; i++) stepDynamics(body, { thrust: 0, turn: 1, pitch: 0 }, 1 / 120);
+  assert.ok(body.yaw > 1.1, 'yaw should exceed a barely-visible twitch');
+});
+
+test('strong steering recruits a smooth bend through the rear spine', () => {
+  const gait = createGait();
+  for (let i = 0; i < 480; i++) stepGait(gait, 'TURN', 0.8, 1, 1 / 120);
+  const head = deformPoint(vec3(0.8, 0, 0), gait);
+  const rear = deformPoint(vec3(-1.45, 0, 0), gait);
+  assert.ok(Math.abs(rear.z - head.z) > 0.18);
+  assert.ok(gait.spine.every(node => Number.isFinite(node.y)));
+});
+
+test('caudal fin attachment points follow the same continuous spine deformation', () => {
+  const gait = createGait();
+  for (let i = 0; i < 360; i++) stepGait(gait, 'TURN', 0.7, -0.9, 1 / 120);
+  const bodyEnd = deformPoint(vec3(-1.48, 0, 0), gait);
+  const finRoot = deformPoint(vec3(-1.55, 0, 0), gait);
+  assert.ok(Math.hypot(finRoot.x - bodyEnd.x, finRoot.z - bodyEnd.z) < 0.1);
+});
