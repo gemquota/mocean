@@ -498,9 +498,9 @@ test('depth approach reaches destination Z at half arc length and stays level', 
 
 test('depth approach is smooth and nearest-path progress is monotonic', () => {
  const path=createDepthApproach(vec3(0,0,5),vec3(8,2,-3));let previous=sampleDepthApproach(path,0),progress=0;
- for(let i=1;i<=100;i++){const current=sampleDepthApproach(path,i/100);
-  assert.ok(length3(vec3(current.position.x-previous.position.x,current.position.y-previous.position.y,current.position.z-previous.position.z))<.2);
-  assert.ok(length3(vec3(current.tangent.x-previous.tangent.x,current.tangent.y-previous.tangent.y,current.tangent.z-previous.tangent.z))<.08);
+ for(let i=1;i<=500;i++){const current=sampleDepthApproach(path,i/500);
+  assert.ok(length3(vec3(current.position.x-previous.position.x,current.position.y-previous.position.y,current.position.z-previous.position.z))<.06);
+  assert.ok(length3(vec3(current.tangent.x-previous.tangent.x,current.tangent.y-previous.tangent.y,current.tangent.z-previous.tangent.z))<.05);
   const next=nearestDepthApproachProgress(path,current.position,progress);assert.ok(next+1e-12>=progress);progress=next;previous=current;
  }
  assert.ok(progress>.99);
