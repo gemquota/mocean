@@ -1,12 +1,35 @@
 # Mocean Development Roadmap
 
-**Revision:** 02 · 8 November 2026  
+**Revision:** 03 · 8 November 2026  
 **Status:** Initial blueprint drafted; awaiting user approval.  
 **Implementation gate:** Phase One has not started.
 
 ## Direction
 
 A hybrid locomotion model: physically grounded forces, inertia, momentum and body deformation, tuned for natural-looking autonomous fish behaviour. The presentation uses interactive mini-simulations and current-vs-target comparisons with balanced technical detail.
+
+## Project planning hierarchy
+
+Every phase is managed through the same explicit hierarchy. This is the project-management structure for building Mocean, not a description of the fish's runtime intelligence:
+
+1. **Project objective:** the overall outcome Mocean is intended to achieve.
+2. **Phase goal:** the outcome a phase must deliver.
+3. **Subgoals:** coherent capabilities or decisions required to achieve that phase goal.
+4. **Atomic tasks:** small, verifiable implementation or documentation actions within each subgoal.
+5. **Dependencies:** prerequisites between tasks and subgoals; dependent work cannot be accepted ahead of its prerequisites.
+6. **Acceptance criteria:** observable conditions and tests that establish whether each task and subgoal is complete.
+7. **Evidence and review gate:** implementation evidence is recorded, then the user independently reviews and approves the phase before work advances.
+
+### Two-key completion record
+
+Each atomic task has two separate completion states:
+
+- **Assistant complete:** checked by the assistant only when implementation and the task's acceptance criteria have been verified with evidence.
+- **User confirmed:** checked by the user only after reviewing that evidence and accepting the result.
+
+These states are independent. Assistant completion never implies user confirmation; user confirmation is unavailable until assistant completion is recorded. A phase is not approved merely because its tasks have assistant-complete marks. The user must explicitly approve the phase gate.
+
+The Plan presentation must show both marks as separate columns for every task. The assistant column is an evidence-backed status maintained by development updates; the user column is the user's own review record. Browser-local user marks are a convenience and are not canonical repository evidence.
 
 ## Working agreement
 
@@ -63,7 +86,7 @@ A hybrid locomotion model: physically grounded forces, inertia, momentum and bod
 
 ## Phase 5 · Autonomous natural behaviour
 
-- [ ] P5-1 Add a goal/subgoal behaviour layer with persistent intent.
+- [ ] P5-1 Implement fish-level persistent behavioural intent and state transitions (runtime behaviour architecture, separate from the project-planning hierarchy).
 - [ ] P5-2 Blend cruise, explore, dart, glide, turn and recovery states.
 - [ ] P5-3 Plan smooth trajectories with anticipation and obstacle margins.
 - [ ] P5-4 Tune energy, rest and movement variation for a convincing rhythm.
@@ -115,7 +138,7 @@ Reviewed on 8 November 2026:
 **No Phase One code has been changed as part of this blueprint.**
 
 
-## Presentation architecture · Revision 02
+## Presentation architecture · Revision 03
 
 - **Plan** is the primary workspace: phases, hierarchical goals, atomic tasks, dependencies and progress tracking.
 - **Review** is the technical evidence workspace. It must explain coordinate frames, six degrees of freedom, world versus body-local axes, force and torque, momentum versus heading, orient-then-thrust diving, body curvature, fin attachment and perspective/depth rendering.
