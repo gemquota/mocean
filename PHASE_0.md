@@ -1,6 +1,6 @@
 # Phase 0 · Architecture and baseline
 
-**Status:** Engineering baseline complete; awaiting independent user review.  
+**Status:** Engineering baseline complete and user-confirmed on 8 November 2026.  
 **Scope:** Architecture definition, source audit, measurable acceptance contract and phase boundaries. No Phase 1 locomotion implementation is included.
 
 ## Phase goal
@@ -105,7 +105,7 @@ The two pathways interact through the orientation frame and hydrodynamic forces,
 | Phase | Goal | Dependency / gate |
 |---|---|---|
 | 0 | Architecture and baseline | Initial review and explicit user confirmation |
-| 1 | True 3D locomotion foundation | Phase 0 complete and explicit user authorisation; this user has now explicitly authorised Phase 1 to begin while retaining the independent Phase 0 review mark |
+| 1 | True 3D locomotion foundation | Phase 0 explicitly approved by the user on 8 November 2026; Phase 1 is authorised and underway |
 | 2 | Elementary movement primitives | Phase 1 approval |
 | 3 | Basic composite motions | Phase 2 approval |
 | 4 | Complex manoeuvre arrangements | Phase 3 approval |
@@ -113,7 +113,7 @@ The two pathways interact through the orientation frame and hydrodynamic forces,
 | 6 | Environment and water surface | Deferred until locomotion and behaviour are accepted |
 | 7 | Integration and polish | Prior phases accepted |
 
-Each task has two independent marks: assistant completion with evidence, then user confirmation after review. User confirmation is never inferred. The explicit phase approval is a separate gate from both task columns.
+Each task has two independent marks: assistant completion with evidence, then user confirmation after review. The user confirmed all five Phase 0 tasks on 8 November 2026. The explicit Phase 0 phase gate was also approved, authorising Phase 1.
 
 **Acceptance:** phase order, dependencies, two-key task completion and explicit phase approval are recorded.
 
