@@ -62,8 +62,10 @@ function simulate(dt){
  const guidedYaw=intentYaw+angleDelta(intentYaw,returnGuidance.yaw)*returnGuidance.weight;
  const guidedPitch=intentPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
  const command=sequenceSample?.command;
- const targetYaw=command?sim.sequence.startYaw+command.yawOffset:guidedYaw;
- const targetPitch=command?command.pitch:guidedPitch;
+ const sequenceYaw=command?sim.sequence.startYaw+command.yawOffset:guidedYaw;
+ const targetYaw=sequenceYaw+angleDelta(sequenceYaw,returnGuidance.yaw)*returnGuidance.weight;
+ const sequencePitch=command?command.pitch:guidedPitch;
+ const targetPitch=sequencePitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
  const yawError=angleDelta(sim.yaw,targetYaw);
  const turn=clamp(yawError*1.7,-1,1);
  const pitch=clamp((targetPitch-sim.pitch)*2.2,-.85,.85);
