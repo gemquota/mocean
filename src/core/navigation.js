@@ -1,6 +1,6 @@
 import { add3, dot3, scale3, vec3, normalize3 } from './math.js';
 
-export const TARGET_PLANE_Y = 0;
+export const TARGET_PLANE_Z = 0;
 export const WORLD_FLOOR_Y = -3.1;
 
 export function screenRay(camera, x, y, width, height) {
@@ -10,9 +10,9 @@ export function screenRay(camera, x, y, width, height) {
     scale3(camera.up, (height * 0.51 - y) / focalLength)
   )));
 }
-export function intersectHorizontalPlane(camera, ray, planeY) {
-  if (Math.abs(ray.y) < 1e-8) return null;
-  const distance = (planeY - camera.p.y) / ray.y;
+export function intersectXYPlane(camera, ray, planeZ) {
+  if (Math.abs(ray.z) < 1e-8) return null;
+  const distance = (planeZ - camera.p.z) / ray.z;
   if (distance <= 0 || !Number.isFinite(distance)) return null;
   return add3(camera.p, scale3(ray, distance));
 }
