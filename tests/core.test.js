@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { angleDelta, quatFromEuler, quatRotate, vec3, length3, wrapAngle, quatIntegrateAngularVelocity } from '../src/core/math.js';
+import { angleDelta, quatFromEuler, quatRotate, vec3, length3, wrapAngle, quatIntegrateAngularVelocity, perspectiveScale, distanceTreatment } from '../src/core/math.js';
 import { stepDynamics } from '../src/core/dynamics.js';
 
 test('angle wrapping chooses the shortest signed rotation', () => {
@@ -194,4 +194,20 @@ test('world-up yaw remains a world-axis rotation when the fish is pitched', () =
   // A world-Y rotation preserves the world-Y component of every rotated vector.
   const originalUp = quatRotate(pitched, vec3(0, 1, 0));
   assert.ok(Math.abs(up.y - originalUp.y) < 1e-8);
+});
+
+test('perspective scale decreases in direct proportion to camera depth', () => {
+  const near = perspectiveScale(800, 8);
+  const far = perspectiveScale(800, 16);
+  assert.equal(far, near / 2);
+  assert.equal(perspectiveScale(800, 0), 800 / 0.3);
+});
+
+test('distance blur and fade remain absent until apparent size falls below one quarter', () => {
+  assert.deepEqual(distanceTreatment(1), { blur: 0, opacity: 1 });
+  assert.deepEqual(distanceTreatment(0.25), { blur: 0, opacity: 1 });
+  const far = distanceTreatment(0.125);
+  assert.ok(far.blur > 0 && far.blur <= 1.8);
+  assert.ok(far.opacity < 1 && far.opacity >= 0.78);
+  assert.deepEqual(distanceTreatment(0), { blur: 1.8, opacity: 0.78 });
 });
