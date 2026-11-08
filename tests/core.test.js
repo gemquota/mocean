@@ -519,14 +519,32 @@ test('pursuit turns the nose toward a target in horizontal and vertical directio
   assert.ok(upward.turn === 0);
 });
 
-test('pursuit builds propulsion demand smoothly with target distance', () => {
+
+test('pursuit raises desired speed and propulsion demand with target distance', () => {
   const near = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(1, 0, 0));
   const middle = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(4, 0, 0));
   const far = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(9, 0, 0));
+  assert.ok(near.desiredSpeed < middle.desiredSpeed && middle.desiredSpeed < far.desiredSpeed);
   assert.ok(near.thrustScale < middle.thrustScale && middle.thrustScale < far.thrustScale);
-  assert.ok(far.thrustScale <= 1.85);
+  assert.ok(far.desiredSpeed <= 2.65);
+  assert.ok(far.thrustScale <= 3.2);
   const atTarget = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3());
   assert.equal(atTarget.thrustScale, 0);
+});
+
+test('pursuit reduces thrust when already moving faster than the distance-based speed target', () => {
+  const slow = createPursuitGuidance(vec3(), vec3(0.2, 0, 0), 0, 0, vec3(4, 0, 0));
+  const fast = createPursuitGuidance(vec3(), vec3(2.4, 0, 0), 0, 0, vec3(4, 0, 0));
+  assert.ok(fast.thrustScale < slow.thrustScale);
+  assert.equal(fast.brake, 1);
+  assert.equal(slow.brake, 0);
+});
+
+test('pursuit begins braking according to overspeed before entering a fixed arrival radius', () => {
+  const fastAndDistant = createPursuitGuidance(vec3(), vec3(2.2, 0, 0), 0, 0, vec3(4, 0, 0));
+  const fastAndNear = createPursuitGuidance(vec3(), vec3(2.2, 0, 0), 0, 0, vec3(1, 0, 0));
+  assert.equal(fastAndDistant.brake, 0);
+  assert.ok(fastAndNear.brake > 0);
 });
 
 test('pursuit brakes as it reaches the target and identifies a low-speed hover', () => {
