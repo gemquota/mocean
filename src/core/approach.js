@@ -2,15 +2,34 @@ import { clamp, add3, scale3, normalize3, length3 } from './math.js';
 const lerp=(a,b,t)=>a+(b-a)*t;
 const smoothstep=t=>t*t*(3-2*t);
 function pointAt(path,t){
- const depth=smoothstep(clamp(t*2,0,1));
+ const depth=smoothstep(clamp(t/path.depthEndT,0,1));
  return {x:lerp(path.start.x,path.target.x,t),y:lerp(path.start.y,path.target.y,t),z:lerp(path.start.z,path.target.z,depth)};
 }
-/** Steering-only path: converge to target depth by half its arc length, then stay level. */
-export function createDepthApproach(start,target,samples=240){
- const path={start:{...start},target:{...target},samples:[],length:0};
+function buildPath(start,target,samples,depthEndT){
+ const path={start:{...start},target:{...target},samples:[],length:0,depthEndT};
  let previous=pointAt(path,0);path.samples.push({t:0,distance:0,position:previous});
  for(let i=1;i<=samples;i++){const t=i/samples,p=pointAt(path,t);path.length+=length3(add3(p,scale3(previous,-1)));path.samples.push({t,distance:path.length,position:p});previous=p;}
  path.length=Math.max(path.length,1e-8);return path;
+}
+function distanceAtParameter(path,t){
+ const scaled=clamp(t,0,1)*(path.samples.length-1),index=Math.floor(scaled),fraction=scaled-index;
+ const a=path.samples[index],b=path.samples[Math.min(index+1,path.samples.length-1)];
+ return lerp(a.distance,b.distance,fraction);
+}
+/** Steering-only path: depth converges at half arc length, then stays level. */
+export function createDepthApproach(start,target,samples=240){
+ const horizontal=Math.hypot(target.x-start.x,target.y-start.y);
+ let depthEndT=.5;
+ if(horizontal>1e-6&&Math.abs(target.z-start.z)>1e-6){
+  let low=.005,high=.995;
+  for(let i=0;i<26;i++){
+   const mid=(low+high)*.5,path=buildPath(start,target,samples,mid);
+   const first=distanceAtParameter(path,mid);
+   if(first>path.length*.5)high=mid;else low=mid;
+  }
+  depthEndT=(low+high)*.5;
+ }
+ return buildPath(start,target,samples,depthEndT);
 }
 function parameterAt(path,progress){
  const distance=clamp(progress,0,1)*path.length;let low=0,high=path.samples.length-1;
