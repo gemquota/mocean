@@ -353,3 +353,27 @@ test('vertical excursion frequency follows the configured manoeuvre probability'
   for (let i = 0; i < count; i++) if (shouldMakeVerticalExcursion(random, 0.35)) excursions++;
   assert.ok(excursions / count > 0.33 && excursions / count < 0.37);
 });
+
+test('straight swimming accelerates, coasts under drag, and actively brakes without reverse thrust', () => {
+  const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  const dt = 1 / 120;
+  for (let i = 0; i < 240; i++) stepDynamics(body, { thrust: 0.8 }, dt);
+  const accelerated = length3(body.vel);
+  assert.ok(accelerated > 0.5);
+  for (let i = 0; i < 240; i++) stepDynamics(body, {}, dt);
+  const coasted = length3(body.vel);
+  assert.ok(coasted > 0 && coasted < accelerated);
+  for (let i = 0; i < 240; i++) stepDynamics(body, { brake: 1 }, dt);
+  const braked = length3(body.vel);
+  assert.ok(braked < coasted * 0.55);
+  assert.ok(body.vel.x > 0, 'braking drag must not become reverse thrust');
+});
+
+test('braking input is bounded and cannot inject energy', () => {
+  const low = { p: vec3(), vel: vec3(1, 0, 0), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  const high = structuredClone(low);
+  stepDynamics(low, { brake: 1 }, 1 / 60);
+  stepDynamics(high, { brake: 8 }, 1 / 60);
+  assert.ok(length3(high.vel) <= length3(low.vel) + 1e-12);
+  assert.ok(length3(low.vel) < 1);
+});
