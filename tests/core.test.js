@@ -445,3 +445,50 @@ test('axial roll command saturates and auxiliary roll moment remains bounded', (
   stepDynamics(excessive, { roll: 9, rollMoment: 30 }, 1 / 120);
   assert.ok(Math.abs(excessive.wr - normal.wr) < 1e-12);
 });
+
+
+import { screenRay, intersectWorldFloor, cameraDepth, pointOnCameraDepth, depthFromDrag, depthLineEndpoints } from '../src/core/navigation.js';
+
+test('screen-centre ray follows the fixed camera forward axis', () => {
+  const camera = createFixedCamera();
+  const ray = screenRay(camera, 500, 300, 1000, 600);
+  assert.ok(Math.abs(ray.x - camera.forward.x) < 1e-12);
+  assert.ok(Math.abs(ray.y - camera.forward.y) < 1e-12);
+  assert.ok(Math.abs(ray.z - camera.forward.z) < 1e-12);
+});
+
+test('tap ray intersects the world floor at the exact floor height', () => {
+  const camera = createFixedCamera();
+  const ray = screenRay(camera, 500, 300, 1000, 600);
+  const point = intersectWorldFloor(camera, ray);
+  assert.ok(point);
+  assert.ok(Math.abs(point.y) < 1e-10);
+  assert.ok(cameraDepth(camera, point) > 0);
+});
+
+test('depth-plane selection preserves the original screen ray', () => {
+  const camera = createFixedCamera();
+  const ray = screenRay(camera, 620, 340, 1000, 600);
+  const near = pointOnCameraDepth(camera, ray, 9);
+  const far = pointOnCameraDepth(camera, ray, 15);
+  assert.ok(Math.abs(cameraDepth(camera, near) - 9) < 1e-10);
+  assert.ok(Math.abs(cameraDepth(camera, far) - 15) < 1e-10);
+  const nearRay = vec3(near.x-camera.p.x, near.y-camera.p.y, near.z-camera.p.z);
+  const farRay = vec3(far.x-camera.p.x, far.y-camera.p.y, far.z-camera.p.z);
+  const cross = vec3(nearRay.y*farRay.z-nearRay.z*farRay.y, nearRay.z*farRay.x-nearRay.x*farRay.z, nearRay.x*farRay.y-nearRay.y*farRay.x);
+  assert.ok(length3(cross) < 1e-9, 'depth changes must not move the point off the tap ray');
+});
+
+test('vertical depth drag moves the selection plane predictably and remains bounded', () => {
+  assert.ok(depthFromDrag(12, -100, 600) > 12, 'dragging up selects farther depth');
+  assert.ok(depthFromDrag(12, 100, 600) < 12, 'dragging down selects nearer depth');
+  assert.equal(depthFromDrag(12, -100000, 600), 21);
+  assert.equal(depthFromDrag(12, 100000, 600), 5);
+});
+
+test('depth guide endpoints lie on one camera-depth plane', () => {
+  const camera = createFixedCamera();
+  const endpoints = depthLineEndpoints(camera, 320, 1000, 600, 14);
+  assert.ok(Math.abs(cameraDepth(camera, endpoints.left) - 14) < 1e-9);
+  assert.ok(Math.abs(cameraDepth(camera, endpoints.right) - 14) < 1e-9);
+});

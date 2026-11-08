@@ -5,10 +5,68 @@ import { createGait, stepGait, deformPoint } from './core/body.js';
 import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVerticalDirection } from './core/intent.js';
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createFixedCamera } from './core/camera.js';
+import { screenRay, intersectWorldFloor, cameraDepth, pointOnCameraDepth, depthFromDrag, depthLineEndpoints } from './core/navigation.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait()};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait(),userTarget:null,userTargetRay:null,userTargetScreen:null,userTargetDepthPlane:false};
 const camera=createFixedCamera();
+
+// Pointer selection is an external intent only; the fish still swims through its own dynamics.
+const activePointers=new Map();
+let depthGesture=null;
+function pointerPosition(event){
+  const rect=canvas.getBoundingClientRect();
+  return {x:event.clientX-rect.left,y:event.clientY-rect.top,width:rect.width,height:rect.height};
+}
+function averagePointerY(){
+  const values=[...activePointers.values()];
+  return values.reduce((sum,p)=>sum+p.y,0)/Math.max(1,values.length);
+}
+function updateDepthTarget(gesture,deltaY,height){
+  const depth=depthFromDrag(gesture.startDepth,deltaY,height);
+  const point=pointOnCameraDepth(camera,gesture.ray,depth);
+  if(!point)return;
+  sim.userTarget=point;
+  sim.userTargetDepthPlane=true;
+}
+canvas.addEventListener('pointerdown',event=>{
+  const point=pointerPosition(event);
+  activePointers.set(event.pointerId,point);
+  canvas.setPointerCapture?.(event.pointerId);
+  if(activePointers.size===1){
+    const ray=screenRay(camera,point.x,point.y,point.width,point.height);
+    const floorPoint=intersectWorldFloor(camera,ray,0);
+    if(!floorPoint)return;
+    sim.userTarget=floorPoint;
+    sim.userTargetRay=ray;
+    sim.userTargetScreen={x:point.x,y:point.y};
+    sim.userTargetDepthPlane=false;
+    depthGesture={kind:'single',startY:point.y,startDepth:cameraDepth(camera,floorPoint),ray};
+  }else if(activePointers.size===2&&sim.userTarget&&sim.userTargetRay){
+    depthGesture={kind:'multi',startY:averagePointerY(),startDepth:cameraDepth(camera,sim.userTarget),ray:sim.userTargetRay};
+  }
+});
+canvas.addEventListener('pointermove',event=>{
+  if(!activePointers.has(event.pointerId))return;
+  const point=pointerPosition(event);
+  activePointers.set(event.pointerId,point);
+  if(activePointers.size>=2&&sim.userTargetRay){
+    if(depthGesture?.kind!=='multi')depthGesture={kind:'multi',startY:averagePointerY(),startDepth:cameraDepth(camera,sim.userTarget),ray:sim.userTargetRay};
+    updateDepthTarget(depthGesture,averagePointerY()-depthGesture.startY,point.height);
+  }else if(activePointers.size===1&&depthGesture?.kind==='single'){
+    const deltaY=point.y-depthGesture.startY;
+    if(Math.abs(deltaY)>7)updateDepthTarget(depthGesture,deltaY,point.height);
+  }
+});
+function finishPointer(event){
+  activePointers.delete(event.pointerId);
+  if(activePointers.size===0)depthGesture=null;
+  else if(activePointers.size<2)depthGesture=null;
+}
+canvas.addEventListener('pointerup',finishPointer);
+canvas.addEventListener('pointercancel',finishPointer);
+canvas.addEventListener('lostpointercapture',finishPointer);
+canvas.addEventListener('contextmenu',event=>event.preventDefault());
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
 function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
@@ -41,7 +99,37 @@ function chooseBehaviour(){
  label.textContent=labels[sim.mode];
 }
 function simulate(dt){
- sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
+ sim.time+=dt;
+ if(sim.userTarget){
+  const offset=add(sim.userTarget,mul(sim.p,-1));
+  const distance=mag(offset);
+  const desiredDirection=unit(offset);
+  const targetYaw=Math.atan2(-desiredDirection.z,desiredDirection.x);
+  const targetPitch=Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
+  const yawError=angleDelta(sim.yaw,targetYaw);
+  const turn=clamp(yawError*1.7,-1,1);
+  const pitch=clamp((targetPitch-sim.pitch)*2.2,-.85,.85);
+  const forward=rotate(sim.orientation,V(1,0,0));
+  const alignment=dot(forward,desiredDirection);
+  const brakeIntent=clamp((0.95-distance)*1.15+mag(sim.vel)*.12,0,.9);
+  const gaitMode=Math.abs(yawError)>.38||Math.abs(targetPitch-sim.pitch)>.28?'TURN':'EXPLORE';
+  const gait=stepGait(sim.gait,gaitMode,mag(sim.vel),turn,dt,brakeIntent);
+  const alignmentFactor=clamp((alignment+.12)/1.12,.12,1);
+  const approachFactor=clamp(distance*.58,.1,1);
+  const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
+  stepDynamics(sim,{
+   thrust:gait.thrust*alignmentFactor*approachFactor+returnGuidance.thrust,
+   turn:gait.steering,pitch,finDrag:gait.finDrag,brake:gait.brake,
+   rollMoment:gait.rollMoment,yawMoment:gait.yawMoment
+  },dt);
+  label.textContent='NAVIGATING';
+  if(distance<.2&&mag(sim.vel)<.2){
+   sim.userTarget=null;sim.userTargetRay=null;sim.userTargetScreen=null;sim.userTargetDepthPlane=false;
+   sim.mode='CRUISE';sim.nextChoice=sim.time+.65;label.textContent=labels.CRUISE;
+  }
+  return;
+ }
+ if(sim.time>=sim.nextChoice)chooseBehaviour();
  const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
  const lookAhead=add(sampled.position,mul(sampled.tangent,.85));
  const desiredDirection=unit(add(lookAhead,mul(sim.p,-1)));
@@ -129,7 +217,28 @@ function drawEnvironment(w,h){
 function render(){
  const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
- ctx.setTransform(dpr,0,0,dpr,0,0);drawEnvironment(rect.width,rect.height);drawFish(rect.width,rect.height);
+ ctx.setTransform(dpr,0,0,dpr,0,0);drawEnvironment(rect.width,rect.height);drawFish(rect.width,rect.height);drawNavigationTarget(rect.width,rect.height);
+}
+
+function drawNavigationTarget(w,h){
+ if(!sim.userTarget)return;
+ const target=project(sim.userTarget,w,h);
+ if(sim.userTargetDepthPlane&&sim.userTargetScreen){
+  const ends=depthLineEndpoints(camera,sim.userTargetScreen.y,w,h,cameraDepth(camera,sim.userTarget));
+  if(ends.left&&ends.right){
+   const a=project(ends.left,w,h),b=project(ends.right,w,h);
+   if(a.z>.15&&b.z>.15){
+    ctx.save();ctx.strokeStyle='rgba(155,231,200,.78)';ctx.lineWidth=1.35;ctx.setLineDash([7,6]);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
+   }
+  }
+ }
+ if(target.z<=.15)return;
+ const radius=clamp(target.scale*.018,4,10);
+ ctx.save();ctx.strokeStyle='rgba(155,231,200,.95)';ctx.lineWidth=1.5;
+ ctx.beginPath();ctx.arc(target.x,target.y,radius*1.8,0,TAU);ctx.stroke();
+ ctx.fillStyle='rgba(155,231,200,.95)';ctx.beginPath();ctx.arc(target.x,target.y,radius*.58,0,TAU);ctx.fill();
+ ctx.restore();
 }
 let previous=performance.now(),accumulator=0;
 function frame(now){const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;const dt=1/120;let steps=0;
