@@ -341,12 +341,13 @@ function updateBubbleProgress(){
   const allConfirmed=tasks.length>0&&tasks.every(row=>row.querySelector('[data-user]')?.checked);
   const colours=tasks.map(row=>{
    const a=row.querySelector('[data-assistant]')?.checked,u=row.querySelector('[data-user]')?.checked;
-   return approved?'#397fba':allConfirmed?'#39b978':u?'#e9cf48':a?'#e58b3c':'#c94e48';
+   return approved?'#397fba':allConfirmed?'#39b978':u?'#e9cf48':a?'#e58b3c':'#080d13';
   });
   const count=Math.max(1,colours.length),step=360/count,gap=2;
-  const stops=colours.map((c,i)=>c+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #111820 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
-  const core=colours.map((c,i)=>c+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #111820 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
-  button.style.setProperty('--rim-gradient','conic-gradient(from -90deg,'+colours.map((c,i)=>c+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #17212b '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',')+')');
+  const core=colours.map((c,i)=>c+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #080d13 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
+  const rim='#397fba';
+  const rimSegments=Array.from({length:count},(_,i)=>rim+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #080d13 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
+  button.style.setProperty('--rim-gradient','conic-gradient(from -90deg,'+rimSegments+')');
   button.style.setProperty('--core-gradient','conic-gradient(from -90deg,'+core+')');
   button.style.setProperty('--slices',count);
   button.setAttribute('aria-label','Phase '+n+': '+(phaseInfo.find(x=>x.n===n)?.name||'')+', '+tasks.filter(r=>r.querySelector('[data-user]')?.checked).length+' of '+count+' goals confirmed');
