@@ -105,7 +105,7 @@ The two pathways interact through the orientation frame and hydrodynamic forces,
 | Phase | Goal | Dependency / gate |
 |---|---|---|
 | 0 | Architecture and baseline | Initial review and explicit user confirmation |
-| 1 | True 3D locomotion foundation | Phase 0 explicitly approved by the user on 8 November 2026; Phase 1 is authorised and underway |
+| 1 | True 3D locomotion foundation | Phase 0 explicitly approved by the user on 8 November 2026; Phase 1 is authorised and underway; all six Phase 1 tasks have been user-confirmed on 8 November 2026 |
 | 2 | Elementary movement primitives | Phase 1 approval |
 | 3 | Basic composite motions | Phase 2 approval |
 | 4 | Complex manoeuvre arrangements | Phase 3 approval |
