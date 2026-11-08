@@ -1,4 +1,4 @@
-import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta } from './core/math.js';
+import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta, perspectiveScale, distanceTreatment } from './core/math.js';
 import { stepDynamics } from './core/dynamics.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
@@ -36,8 +36,8 @@ function simulate(dt){
 }
 function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
 function project(world,w,h){
- const rel=add(world,mul(camera.p,-1)),x=dot(rel,camera.right),y=dot(rel,camera.up),z=dot(rel,camera.forward),f=Math.min(w,h)*1.34,d=Math.max(.3,z);
- return{x:w*.5+x*f/d,y:h*.51-y*f/d,z,scale:f/d};
+ const rel=add(world,mul(camera.p,-1)),x=dot(rel,camera.right),y=dot(rel,camera.up),z=dot(rel,camera.forward),f=Math.min(w,h)*1.34,d=Math.max(.3,z),scale=perspectiveScale(f,z);
+ return{x:w*.5+x*scale,y:h*.51-y*scale,z,scale};
 }
 const orientation=()=>sim.orientation;
 function deform(p){return deformPoint(p,sim.gait);}
@@ -61,6 +61,9 @@ function drawPolygon(points,color,w,h,outline=null){
  ctx.closePath();ctx.fillStyle=color;ctx.fill();if(outline){ctx.strokeStyle=outline;ctx.lineWidth=1.2;ctx.stroke();}
 }
 function drawFish(w,h){
+ const centre=project(sim.p,w,h),reference=project(V(0,0,0),w,h);
+ const treatment=distanceTreatment(centre.scale/reference.scale);
+ ctx.save();ctx.globalAlpha=treatment.opacity;ctx.filter=treatment.blur>0?'blur('+treatment.blur.toFixed(2)+'px)':'none';
  const beat=Math.sin(sim.gait.phase),sweep=Math.sin(sim.gait.phase+.7);
  // Fins are drawn behind the body. Their spread changes with steering and gliding.
  const finSpreadL=sim.gait.leftFin??.18,finSpreadR=sim.gait.rightFin??.18;
@@ -81,6 +84,7 @@ function drawFish(w,h){
  if(eye.z>.15){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(2.2,eye.scale*.028),0,TAU);ctx.fillStyle='#f3f0d8';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.scale*.008,eye.y,Math.max(1.2,eye.scale*.012),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
  const g1=projectLocal(V(.43,.22,.33),w,h),g2=projectLocal(V(.3,-.2,.34),w,h);
  ctx.beginPath();ctx.moveTo(g1.x,g1.y);ctx.quadraticCurveTo((g1.x+g2.x)/2+4,(g1.y+g2.y)/2,g2.x,g2.y);ctx.strokeStyle='rgba(15,64,73,.72)';ctx.lineWidth=1.5;ctx.stroke();
+ ctx.restore();
 }
 const particles=Array.from({length:110},()=>({x:(random()-.5)*22,y:(random()-.5)*12,z:(random()-.5)*16,r:.5+random()*1.5,phase:random()*TAU}));
 function drawEnvironment(w,h){
