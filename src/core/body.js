@@ -44,13 +44,14 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt, brakeIntent = 0
   const profiles = {
     CRUISE: [0.16, 1.12], EXPLORE: [0.205, 1.34],
     TURN: [0.255, 1.48], DART: [0.31, 2.05],
+    PURSUIT: [0.30, 2.15],
     GLIDE: [0.018, 0.32], RECOVER: [0.085, 0.72]
   };
   const [baseAmplitude, baseFrequency] = profiles[behaviour] ?? profiles.CRUISE;
   const cost = behaviour === 'DART' ? 0.19 * dt : behaviour === 'TURN' ? 0.035 * dt : 0;
   gait.energy = clamp(gait.energy - cost + (behaviour === 'RECOVER' ? 0.105 : 0.025) * dt, 0.1, 1);
   const reserve = 0.52 + gait.energy * 0.48;
-  const speedGain = clamp(speed / 3.2, 0, 0.14);
+  const speedGain = clamp(speed / 4.8, 0, 0.16);
   gait.amplitude = mix(gait.amplitude, (baseAmplitude + speedGain) * reserve, 1 - Math.exp(-dt * 2.2));
   gait.frequency = mix(gait.frequency, baseFrequency * (0.82 + gait.energy * 0.18), 1 - Math.exp(-dt * 1.8));
   gait.steering = mix(gait.steering, clamp(turnIntent, -1, 1), 1 - Math.exp(-dt * 4.6));
@@ -91,7 +92,8 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt, brakeIntent = 0
   // A slip correction reduces thrust as forward speed approaches the stroke's useful limit.
   const slip = clamp(speed / (0.55 + Math.abs(tail.v) * 2.8), 0, 0.82);
   const caudalArea = 0.34;
-  const thrust = clamp(caudalArea * 1.9 * tail.v * tail.v * (1 - slip), 0, behaviour === 'DART' ? 1.15 : 0.72);
+  const thrustCap = behaviour === 'PURSUIT' ? 1.55 : behaviour === 'DART' ? 1.15 : 0.72;
+  const thrust = clamp(caudalArea * 1.9 * tail.v * tail.v * (1 - slip), 0, thrustCap);
 
   const turn = gait.steering;
   gait.brake = mix(gait.brake, clamp(brakeIntent, 0, 1), 1 - Math.exp(-dt * 5.5));
