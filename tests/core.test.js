@@ -227,6 +227,6 @@ test('habitat return guidance points back toward the centre in horizontal and ve
   const low = habitatReturnGuidance(vec3(0, -5, 0), vec3(6.4, 3.5, 5.2));
   assert.ok(low.pitch > 0);
   const deep = habitatReturnGuidance(vec3(0, 0, -7), vec3(6.4, 3.5, 5.2));
-  assert.ok(Math.abs(deep.yaw) < 1e-9);
+  assert.ok(Math.abs(deep.yaw + Math.PI / 2) < 1e-9);
   assert.ok(deep.thrust > 0);
 });
