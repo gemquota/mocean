@@ -200,6 +200,23 @@ main{grid-column:1/-1;grid-row:2;min-width:0}
  .tabs{gap:0;padding:1px 0}
  .tab{padding:6px 6px;font-size:9px}
 }
+
+/* Phase progress bubbles: substantial segmented rim and independently filled goal core */
+.goal-bubbles{align-items:center}
+.phase-bubble{padding:0;background:var(--bubble);border:0;overflow:hidden;isolation:isolate}
+.phase-bubble:after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--rim-gradient);z-index:-1}
+.phase-bubble:before{inset:8px;background:var(--core-gradient,#9d2929);border:1px solid #ffffff38;box-shadow:inset 0 1px 8px #0008}
+.phase-bubble span{font-size:17px;font-weight:750}
+.phase-bubble .bubble-core{position:absolute;inset:8px;border-radius:50%;z-index:0;background:var(--core-gradient,#9d2929);box-shadow:inset 0 1px 8px #0008}
+.phase-bubble span{z-index:2}
+.phase-bubble[aria-pressed=true]{outline:2px solid #f2f7ff;outline-offset:3px;transform:scale(1.035)}
+.phase-card{display:none}
+.phase-card.is-expanded{display:block;animation:phase-open .18s ease-out}
+@keyframes phase-open{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:none}}
+.phase-card.goal-highlight{background:#101a25;outline:1px solid #5a91c8;outline-offset:4px}
+.phase-accordion{margin-top:10px}
+.phase-accordion .phase-card{scroll-margin-top:12px}
+@media(max-width:640px){.phase-bubble:before,.phase-bubble .bubble-core{inset:6px}.phase-bubble span{font-size:14px}}
 </style></head><body><div class="shell">
 <header class="top"><div class="brand"><span class="mark">M</span><span>MOCEAN / FIELD NOTES</span></div><div class="topmeta">DEVELOPMENT BLUEPRINT<br>REV 15 · 08 NOV 2026</div></header>
 <details class="simulation-drawer" aria-label="Live simulation drawer">
@@ -277,16 +294,22 @@ main{grid-column:1/-1;grid-row:2;min-width:0}
 
 // Interactive phase map: one segmented bubble per phase, linked to the matching plan section.
 const phaseInfo=[{"n":"0","name":"Architecture & baseline","desc":"Coordinate frames, force/attitude boundaries, fixed-camera contract, baseline tests and phase governance.","count":5},{"n":"1","name":"True 3D locomotion","desc":"Quaternion attitude, independent force channels, 3D travel, depth projection and habitat return.","count":6},{"n":"2","name":"Elementary primitives","desc":"Straight travel, acceleration, braking, independent pitch/yaw, axial roll and isolated validation.","count":5},{"n":"3","name":"Basic composites","desc":"Orient-then-propel dives and climbs, momentum-carrying turns, roll combinations and transitions.","count":5},{"n":"4","name":"Complex arrangements","desc":"Backwards drift, curved reversals, loop-the-loop and compound 3D sequences.","count":4},{"n":"5","name":"Autonomous behaviour","desc":"Persistent intent, blended states, anticipation, trajectory planning, energy and rest rhythms.","count":4},{"n":"6","name":"Environment","desc":"Bubbles, plankton, drifting objects, surface ripples and wind-driven chop. Deferred.","count":5},{"n":"7","name":"Integration & polish","desc":"Lighting, depth, fixed-step stability, profiling, regression, deployment and final acceptance.","count":4}];
-document.querySelectorAll('[data-phase-select]').forEach(button=>button.addEventListener('click',()=>{
- const info=phaseInfo.find(item=>item.n===button.dataset.phaseSelect);
- if(!info)return;
- document.querySelectorAll('[data-phase-select]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+function expandPhase(n,{scroll=true}={}){
+ const info=phaseInfo.find(item=>item.n===String(n));if(!info)return;
+ document.querySelectorAll('[data-phase-select]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.phaseSelect===String(n))));
  document.getElementById('goalTitle').textContent='Phase '+info.n+' · '+info.name;
  document.getElementById('goalDescription').textContent=info.desc;
- document.getElementById('goalCount').textContent=info.count+' GOALS / TASK GROUPS · '+(info.n==='6'?'DEFERRED':info.n==='0'?'APPROVED':info.n==='1'?'AWAITING GATE':'GATED');
- document.querySelectorAll('[data-phase-card]').forEach(card=>card.classList.toggle('goal-highlight',card.dataset.phaseCard===info.n));
  const target=document.getElementById('phase-'+info.n);
- if(target){document.querySelector('[data-tab=plan]').click();target.scrollIntoView({behavior:'smooth',block:'start'});}
+ document.querySelectorAll('[data-phase-card]').forEach(card=>{
+  const active=card===target;card.classList.toggle('is-expanded',active);card.classList.toggle('goal-highlight',active);
+  card.setAttribute('aria-hidden',String(!active));
+ });
+ if(target&&scroll){const y=target.getBoundingClientRect().top+window.scrollY-14;window.scrollTo({top:Math.max(0,y),behavior:'smooth'});}
+ updateBubbleProgress();
+}
+document.querySelectorAll('[data-phase-select]').forEach(button=>button.addEventListener('click',()=>{
+ document.querySelector('[data-tab=plan]').click();
+ expandPhase(button.dataset.phaseSelect);
 }));
 
 const storeKey='mocean-user-confirmations-v2';
@@ -310,6 +333,24 @@ rows.forEach(row=>{
   row.classList.toggle('user-done',user.checked);updateProgress();toast('Your review confirmation saved locally');
  });
 });
+function updateBubbleProgress(){
+ document.querySelectorAll('[data-phase-select]').forEach(button=>{
+  const n=button.dataset.phaseSelect,card=document.querySelector('[data-phase-card="'+n+'"]');
+  const tasks=card?[...card.querySelectorAll('[data-task-row]')]:[];
+  const approved=card?.dataset.phaseApproved==='true';
+  const colours=tasks.map(row=>{
+   const a=row.querySelector('[data-assistant]')?.checked,u=row.querySelector('[data-user]')?.checked;
+   return approved?'#397fba':u?'#39b978':a?'#e7c64d':'#c94e48';
+  });
+  const count=Math.max(1,colours.length),step=360/count,gap=2;
+  const stops=colours.map((c,i)=>c+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #111820 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
+  const core=colours.map((c,i)=>c+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #111820 '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',');
+  button.style.setProperty('--rim-gradient','conic-gradient(from -90deg,'+colours.map((c,i)=>(approved?'#397fba':c)+' '+(i*step)+'deg '+((i+1)*step-gap)+'deg, #17212b '+((i+1)*step-gap)+'deg '+((i+1)*step)+'deg').join(',')+')');
+  button.style.setProperty('--core-gradient','conic-gradient(from -90deg,'+core+')');
+  button.style.setProperty('--slices',count);
+  button.setAttribute('aria-label','Phase '+n+': '+(phaseInfo.find(x=>x.n===n)?.name||'')+', '+tasks.filter(r=>r.querySelector('[data-user]')?.checked).length+' of '+count+' goals confirmed');
+ });
+}
 function updateProgress(){
  const assistantDone=rows.filter(r=>r.querySelector('[data-assistant]').checked).length;
  const userDone=rows.filter(r=>r.querySelector('[data-user]').checked).length;
@@ -320,8 +361,10 @@ function updateProgress(){
  document.getElementById('overallBar').style.width=pct+'%';
  const approvedPhases=document.querySelectorAll('[data-phase-approved="true"]').length;
  document.getElementById('phaseApproved').textContent=approvedPhases+' / 8';
+ updateBubbleProgress();
 }
 updateProgress();
+expandPhase('0',{scroll:false});
 // Keep the sticky section navigation visually quiet once the reader has moved into the content.
 let scrollState=false;
 function syncScrollChrome(){
