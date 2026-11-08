@@ -1,6 +1,6 @@
 # Mocean Development Roadmap
 
-**Revision:** 04 · 8 November 2026  
+**Revision:** 05 · 8 November 2026  
 **Status:** Phase 0 architecture and baseline complete; awaiting user review and confirmation.  
 **Implementation gate:** Phase 1 has started; remaining phase tasks stay evidence-gated.
 
