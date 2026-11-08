@@ -445,3 +445,66 @@ test('axial roll command saturates and auxiliary roll moment remains bounded', (
   stepDynamics(excessive, { roll: 9, rollMoment: 30 }, 1 / 120);
   assert.ok(Math.abs(excessive.wr - normal.wr) < 1e-12);
 });
+
+
+import { createMotionSequence, sampleMotionSequence, MOTION_SEQUENCE_NAMES } from '../src/core/sequences.js';
+
+test('movement sequence library covers isolated primitives and the Phase 3–4 manoeuvre set', () => {
+  for (const name of ['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','loop-the-loop','dive-brake-reorient','compound-3d']) {
+    assert.ok(MOTION_SEQUENCE_NAMES.includes(name), name+' must be available');
+    const sequence = createMotionSequence(name);
+    assert.ok(sequence.duration > 0);
+    assert.ok(sequence.segments.every(item => item.duration > 0));
+  }
+});
+
+test('dive and climb orient before the main thrust pulse, then brake and recover', () => {
+  for (const [name, sign] of [['dive',-1],['climb',1]]) {
+    const sequence = createMotionSequence(name);
+    const orient = sampleMotionSequence(sequence, 0.9).command;
+    const propel = sampleMotionSequence(sequence, 1.8).command;
+    const brake = sampleMotionSequence(sequence, 3.3).command;
+    assert.equal(Math.sign(orient.pitch), sign);
+    assert.ok(Math.abs(orient.thrust) < 0.2, 'orientation precedes the propulsion pulse');
+    assert.equal(Math.sign(propel.pitch), sign);
+    assert.ok(propel.thrust > 0.6);
+    assert.ok(brake.brake > 0.5);
+  }
+});
+
+test('sequence segment hand-offs are continuous and outputs remain bounded', () => {
+  const sequence = createMotionSequence('compound-3d');
+  let previous = sampleMotionSequence(sequence, 0).command;
+  for (let t = 1/120; t <= sequence.duration; t += 1/120) {
+    const current = sampleMotionSequence(sequence, t).command;
+    for (const key of Object.keys(current)) {
+      assert.ok(Number.isFinite(current[key]), key+' must remain finite');
+      assert.ok(Math.abs(current[key] - previous[key]) < 0.12, key+' must not jump at a segment hand-off');
+    }
+    previous = current;
+  }
+  assert.equal(sampleMotionSequence(sequence, sequence.duration).complete, true);
+});
+
+test('backward drift turns the head against retained forward momentum before reverse thrust', () => {
+  const sequence = createMotionSequence('backward-drift');
+  const prepare = sampleMotionSequence(sequence, 1.1).command;
+  const counter = sampleMotionSequence(sequence, 2.3).command;
+  const reverse = sampleMotionSequence(sequence, 3.5).command;
+  assert.ok(prepare.thrust > 0.5);
+  assert.ok(counter.yawOffset > Math.PI * 0.7);
+  assert.ok(counter.thrust < 0.2);
+  assert.ok(reverse.yawOffset > Math.PI * 0.8);
+  assert.ok(reverse.thrust < 0);
+});
+
+test('loop and compound 3D sequences deliberately include pitch, yaw and axial roll', () => {
+  const loop = createMotionSequence('loop-the-loop');
+  const loopPeak = sampleMotionSequence(loop, 2.5).command;
+  assert.ok(loopPeak.pitch > Math.PI);
+  const compound = createMotionSequence('compound-3d');
+  const peak = sampleMotionSequence(compound, 3.1).command;
+  assert.ok(peak.yawOffset > 1);
+  assert.ok(peak.pitch > 0.8);
+  assert.ok(peak.roll > Math.PI);
+});
