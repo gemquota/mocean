@@ -224,11 +224,11 @@ function drawNavigationTarget(w,h){
  const target=project(sim.userTarget,w,h),floor=project(sim.userFloorPoint,w,h);
  if(target.z<=.15||floor.z<=.15)return;
  ctx.save();
- // During the two-finger depth gesture, show the world-X reference through
- // the destination. Its endpoints sit well beyond the viewport and are clipped.
+ // During the two-finger depth gesture, show the world-X reference across
+ // the floor plane through the lower handle. Its endpoints are viewport-clipped.
  if(depthGesture?.kind==='multi'){
-  const left=project(V(-100,sim.userTarget.y,sim.userTarget.z),w,h);
-  const right=project(V(100,sim.userTarget.y,sim.userTarget.z),w,h);
+  const left=project(V(-100,sim.userFloorPoint.y,sim.userFloorPoint.z),w,h);
+  const right=project(V(100,sim.userFloorPoint.y,sim.userFloorPoint.z),w,h);
   if(left.z>.15&&right.z>.15){
    ctx.strokeStyle='rgba(135,218,220,.28)';ctx.lineWidth=1;
    ctx.beginPath();ctx.moveTo(left.x,left.y);ctx.lineTo(right.x,right.y);ctx.stroke();
