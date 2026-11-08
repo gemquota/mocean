@@ -1,9 +1,9 @@
 import { clamp, mix } from './math.js';
 
 const NODE_COUNT = 19;
-const BODY_LENGTH = 2.18;
-const MUSCLE_STIFFNESS = 58;
-const AXIAL_COUPLING = 22;
+const BODY_LENGTH = 2.65;
+const MUSCLE_STIFFNESS = 76;
+const AXIAL_COUPLING = 27;
 const WATER_DAMPING = 8.5;
 
 export function createGait() {
@@ -20,7 +20,7 @@ function muscleWave(u, gait, turn) {
   const envelope = Math.pow(u, 1.65);
   const wave = Math.sin(gait.phase - u * 3.55);
   // Axial muscle recruitment grows toward the tail; turning adds a persistent bend.
-  return gait.amplitude * envelope * wave + turn * 0.24 * envelope * envelope;
+  return gait.amplitude * envelope * wave + turn * 0.72 * envelope * envelope;
 }
 
 function interpolateSpine(spine, u) {
@@ -53,7 +53,7 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt) {
   const speedGain = clamp(speed / 3.2, 0, 0.14);
   gait.amplitude = mix(gait.amplitude, (baseAmplitude + speedGain) * reserve, 1 - Math.exp(-dt * 2.2));
   gait.frequency = mix(gait.frequency, baseFrequency * (0.82 + gait.energy * 0.18), 1 - Math.exp(-dt * 1.8));
-  gait.steering = mix(gait.steering, clamp(turnIntent, -1, 1), 1 - Math.exp(-dt * 2.7));
+  gait.steering = mix(gait.steering, clamp(turnIntent, -1, 1), 1 - Math.exp(-dt * 4.6));
   gait.phase += dt * gait.frequency * Math.PI * 2;
 
   const previousTailVelocity = gait.tailVelocity;
@@ -95,9 +95,9 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt) {
 
   const turn = gait.steering;
   const glide = behaviour === 'GLIDE' ? 0.24 : 0;
-  const leftTarget = clamp(0.15 + Math.max(0, turn) * 0.58 + glide, 0.08, 0.82);
-  const rightTarget = clamp(0.15 + Math.max(0, -turn) * 0.58 + glide, 0.08, 0.82);
-  gait.leftFin = mix(gait.leftFin, leftTarget, 1 - Math.exp(-dt * 3.8));
+  const leftTarget = clamp(0.12 + Math.max(0, turn) * 0.72 + glide, 0.08, 0.9);
+  const rightTarget = clamp(0.12 + Math.max(0, -turn) * 0.72 + glide, 0.08, 0.9);
+  gait.leftFin = mix(gait.leftFin, leftTarget, 1 - Math.exp(-dt * 5.2));
   gait.rightFin = mix(gait.rightFin, rightTarget, 1 - Math.exp(-dt * 3.8));
   const finStroke = Math.sin(gait.phase * 0.5 + 0.4) * (0.12 + speed * 0.035);
   gait.leftFinAngle = mix(gait.leftFinAngle, finStroke + turn * 0.12, 1 - Math.exp(-dt * 5));
