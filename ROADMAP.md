@@ -104,11 +104,13 @@ Reviewed on 8 November 2026:
 | Phase | Status | Approval |
 |---|---|---|
 | 0 · Architecture | Draft for review | Pending |
-| 1 · 3D locomotion | Locked | Not started |
-| 2 · Inertia / manoeuvres | Queued | Not started |
-| 3 · Autonomy | Queued | Not started |
-| 4 · Environment | Deferred | Not started |
-| 5 · Polish | Queued | Not started |
+| 1 · 3D locomotion foundation | Locked pending plan approval | Not started |
+| 2 · Elementary movement primitives | Queued | Not started |
+| 3 · Basic composite motions | Queued | Not started |
+| 4 · Complex manoeuvre arrangements | Queued | Not started |
+| 5 · Autonomous natural behaviour | Queued | Not started |
+| 6 · Environment | Deferred | Not started |
+| 7 · Integration and polish | Queued | Not started |
 
 **No Phase One code has been changed as part of this blueprint.**
 
