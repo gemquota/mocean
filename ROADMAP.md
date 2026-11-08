@@ -65,6 +65,8 @@ The Plan presentation must show both marks as separate columns for every task. T
 - [x] P1-6 Guide the fish back toward the visible habitat using world-space heading, pitch and body-forward thrust.
 
 ### Phase 1 implementation evidence · current increment
+- Smooth manoeuvre refinement: autonomous intent now uses cubic Bézier curves for yaw, pitch and propulsion effort. Ordinary cruising resolves toward a level attitude; occasional EXPLORE and TURN transitions create upward/downward arcs, with rare steeper climbs or dives. Horizontal turns and vertical excursions are combined into diagonal trajectories when selected. Propulsion effort rises and falls smoothly through each curve while the existing tail-driven thrust, drag, inertia and attitude dynamics remain responsible for actual motion. Manoeuvre duration is aligned with behaviour-state duration so curves are not routinely interrupted. Regression tests cover endpoints, bounded frame-to-frame changes, effort variation and positive/negative pitch targets. These are guidance curves, not kinematic position rails: momentum and physical response may cause the fish to lag or overshoot, as intended.
+
 
 - P1-1 to P1-3: quaternion attitude, separated force/torque channels and 3D propulsion basis remain covered by the passing regression suite.
 - P1-4: perspective projection explicitly uses focal scale divided by camera-space depth.
