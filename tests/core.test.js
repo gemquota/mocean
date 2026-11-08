@@ -183,3 +183,15 @@ test('body-forward thrust follows arbitrary attitude while lift remains world ve
   stepDynamics(reverse, { thrust: -1 }, 1 / 120);
   assert.ok(reverse.vel.x < 0);
 });
+
+
+test('world-up yaw remains a world-axis rotation when the fish is pitched', () => {
+  const pitched = quatFromEuler(0, Math.PI / 3, 0);
+  const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: Math.PI / 3, roll: 0, wy: 1, wp: 0, wr: 0, orientation: pitched };
+  const dt = 1e-3;
+  stepDynamics(body, {}, dt);
+  const up = quatRotate(body.orientation, vec3(0, 1, 0));
+  // A world-Y rotation preserves the world-Y component of every rotated vector.
+  const originalUp = quatRotate(pitched, vec3(0, 1, 0));
+  assert.ok(Math.abs(up.y - originalUp.y) < 1e-8);
+});
