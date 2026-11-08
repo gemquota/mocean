@@ -451,7 +451,7 @@ import { screenRay, intersectWorldFloor, cameraDepth, pointOnCameraDepth, depthF
 
 test('screen-centre ray follows the fixed camera forward axis', () => {
   const camera = createFixedCamera();
-  const ray = screenRay(camera, 500, 300, 1000, 600);
+  const ray = screenRay(camera, 500, 306, 1000, 600);
   assert.ok(Math.abs(ray.x - camera.forward.x) < 1e-12);
   assert.ok(Math.abs(ray.y - camera.forward.y) < 1e-12);
   assert.ok(Math.abs(ray.z - camera.forward.z) < 1e-12);

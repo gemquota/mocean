@@ -125,7 +125,7 @@ function simulate(dt){
   label.textContent='NAVIGATING';
   if(distance<.2&&mag(sim.vel)<.2){
    sim.userTarget=null;sim.userTargetRay=null;sim.userTargetScreen=null;sim.userTargetDepthPlane=false;
-   sim.mode='CRUISE';sim.nextChoice=sim.time+.65;label.textContent=labels.CRUISE;
+   sim.mode='CRUISE';sim.maneuver=null;sim.nextChoice=sim.time;label.textContent=labels.CRUISE;
   }
   return;
  }

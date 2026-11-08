@@ -33,7 +33,7 @@ export function pointOnCameraDepth(camera, ray, depth) {
 
 /** Depth changes only; screen X/Y remain anchored to the original tap. */
 export function depthFromDrag(startDepth, deltaY, viewportHeight) {
-  const sensitivity = Math.max(0.004, startDepth * 0.0018);
+  const sensitivity = Math.max(0.004, startDepth * 1.08 / Math.max(1, viewportHeight));
   return clamp(startDepth - deltaY * sensitivity, 5, 21);
 }
 
