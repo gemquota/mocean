@@ -34,7 +34,8 @@ export function stepDynamics(body, command, dt) {
   body.wy += (yawDrive - body.wy * (1.05 + speed * 0.12)) * dt;
   const pitchDrive = clamp(command.pitch ?? 0, -1, 1) * 0.58;
   body.wp += (pitchDrive - body.wp * 1.25 - body.pitch * 0.12) * dt;
-  body.wr += ((command.rollMoment ?? 0) * 1.8 - body.wr * 1.35 - body.roll * 0.09) * dt;
+  const rollDrive = clamp(command.roll ?? 0, -1, 1) * 0.55 + clamp(command.rollMoment ?? 0, -0.35, 0.35);
+  body.wr += (rollDrive * 1.8 - body.wr * 1.35 - body.roll * 0.09) * dt;
 
   // Yaw is about world-up. Pitch and axial roll are body-local Z and X.
   // Split composition preserves those axis definitions at arbitrary attitude.
