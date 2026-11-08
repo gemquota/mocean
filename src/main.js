@@ -8,6 +8,7 @@ import { createMotionSequence, sampleMotionSequence } from './core/sequences.js'
 import { createFixedCamera } from './core/camera.js';
 import { screenRay, intersectHorizontalPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Y, WORLD_FLOOR_Y } from './core/navigation.js';
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
+import { createPursuitGuidance } from './core/pursuit.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
 const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,sequence:null,sequenceStartedAt:0,nextSequence:31,sequenceCount:0,lastVerticalDirection:1,gait:createGait()};
@@ -109,8 +110,24 @@ function beginMotionSequence(){
  label.textContent='MANOEUVRE / '+name.replaceAll('-',' ').toUpperCase();
 }
 function simulate(dt){
- sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
- if(!sim.sequence&&sim.time>=sim.nextSequence)beginMotionSequence();
+ sim.time+=dt;
+ const pursuing=Boolean(sim.userTarget&&sim.userApproach);
+ if(!pursuing&&sim.time>=sim.nextChoice)chooseBehaviour();
+ if(!pursuing&&!sim.sequence&&sim.time>=sim.nextSequence)beginMotionSequence();
+ if(pursuing){
+  const progress=nearestDepthApproachProgress(sim.userApproach,sim.p,sim.userApproachProgress??0);
+  sim.userApproachProgress=progress;
+  const distanceToTarget=mag(add(sim.userTarget,mul(sim.p,-1)));
+  const lookProgress=Math.min(1,progress+Math.min(.18,.035+distanceToTarget/Math.max(sim.userApproach.length,1)*.2));
+  const pathAim=sampleDepthApproach(sim.userApproach,lookProgress).position;
+  const guidance=createPursuitGuidance(sim.p,sim.vel,sim.yaw,sim.pitch,sim.userTarget,pathAim);
+  sim.mode=guidance.distance>3.6?'DART':'EXPLORE';
+  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),guidance.turn,dt,guidance.brake);
+  stepDynamics(sim,{thrust:gait.thrust*guidance.thrustScale,turn:gait.steering,pitch:guidance.pitch,
+   finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
+  label.textContent=guidance.hovering?'HOVERING':guidance.distance<1.15?'SLOWING / SETTLING':'SWIMMING TO TARGET';
+  return;
+ }
  let sequenceSample=sim.sequence?sampleMotionSequence(sim.sequence,sim.time-sim.sequenceStartedAt):null;
  if(sequenceSample?.complete){sim.sequence=null;sequenceSample=null;label.textContent=labels[sim.mode];}
  const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
