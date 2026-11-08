@@ -51,7 +51,7 @@ The Plan presentation must show both marks as separate columns for every task. T
 - [x] P0-4 Define locomotion acceptance tests, baseline inventory and known limitations.
 - [x] P0-5 Confirm phase boundaries, dependencies and the two-key user approval process.
 
-**Phase 0 gate:** implementation complete; awaiting independent user confirmation. Phase 1 is now in progress under the user's explicit instruction in this conversation.
+**Phase 0 gate:** implementation complete; awaiting independent user confirmation. Phase 1 is in progress under the user's explicit instruction, which authorises work to proceed while the Phase 0 review mark remains separate.
 
 ## Phase 1 · True 3D locomotion foundation
 
