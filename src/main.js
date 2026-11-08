@@ -2,12 +2,12 @@ import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 
 import { stepDynamics } from './core/dynamics.js';
 import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
-import { sampleHorizontalHeading, shouldMakeVerticalExcursion } from './core/intent.js';
+import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVerticalDirection } from './core/intent.js';
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createFixedCamera } from './core/camera.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,gait:createGait()};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait()};
 const camera=createFixedCamera();
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
 function chooseBehaviour(){
@@ -23,7 +23,8 @@ function chooseBehaviour(){
  let endPitch=0;
  const verticalExcursion=(sim.mode==='EXPLORE'&&shouldMakeVerticalExcursion(random,0.35))||(sim.mode==='TURN'&&random()<.25);
  if(verticalExcursion){
-  const direction=random()<.5?-1:1;
+  sim.lastVerticalDirection=alternateVerticalDirection(sim.lastVerticalDirection);
+  const direction=sim.lastVerticalDirection;
   const steep=random()<.2;
   endPitch=direction*(steep?0.95+random()*.23:0.45+random()*.4);
  }
