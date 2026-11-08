@@ -5,13 +5,13 @@ import { createGait, stepGait, deformPoint } from './core/body.js';
 import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVerticalDirection } from './core/intent.js';
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createFixedCamera } from './core/camera.js';
-import { screenRay, intersectWorldFloor, cameraDepth, pointOnCameraDepth, depthFromDrag, depthLineEndpoints } from './core/navigation.js';
+import { screenRay, intersectHorizontalPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Y, WORLD_FLOOR_Y } from './core/navigation.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait(),userTarget:null,userTargetRay:null,userTargetScreen:null,userTargetDepthPlane:false};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait(),userTarget:null,userFloorPoint:null};
 const camera=createFixedCamera();
 
-// Pointer selection is an external intent only; the fish still swims through its own dynamics.
+// Tap selects a mid-water destination; the floor projection is the two-finger depth handle.
 const activePointers=new Map();
 let depthGesture=null;
 function pointerPosition(event){
@@ -22,12 +22,13 @@ function averagePointerY(){
   const values=[...activePointers.values()];
   return values.reduce((sum,p)=>sum+p.y,0)/Math.max(1,values.length);
 }
-function updateDepthTarget(gesture,deltaY,height){
-  const depth=depthFromDrag(gesture.startDepth,deltaY,height);
-  const point=pointOnCameraDepth(camera,gesture.ray,depth);
-  if(!point)return;
-  sim.userTarget=point;
-  sim.userTargetDepthPlane=true;
+function updateFloorDepth(gesture,deltaY,width,height){
+  const desiredScreenY=gesture.startScreenY+deltaY;
+  const z=worldZAtScreenY(camera,gesture.startFloorPoint,desiredScreenY,width,height);
+  if(z===null)return;
+  const deltaZ=z-gesture.startFloorPoint.z;
+  sim.userFloorPoint=V(gesture.startFloorPoint.x,WORLD_FLOOR_Y,z);
+  sim.userTarget=V(gesture.startTarget.x,gesture.startTarget.y,gesture.startTarget.z+deltaZ);
 }
 canvas.addEventListener('pointerdown',event=>{
   const point=pointerPosition(event);
@@ -35,27 +36,23 @@ canvas.addEventListener('pointerdown',event=>{
   canvas.setPointerCapture?.(event.pointerId);
   if(activePointers.size===1){
     const ray=screenRay(camera,point.x,point.y,point.width,point.height);
-    const floorPoint=intersectWorldFloor(camera,ray,0);
-    if(!floorPoint)return;
-    sim.userTarget=floorPoint;
-    sim.userTargetRay=ray;
-    sim.userTargetScreen={x:point.x,y:point.y};
-    sim.userTargetDepthPlane=false;
-    depthGesture={kind:'single',startY:point.y,startDepth:cameraDepth(camera,floorPoint),ray};
-  }else if(activePointers.size===2&&sim.userTarget&&sim.userTargetRay){
-    depthGesture={kind:'multi',startY:averagePointerY(),startDepth:cameraDepth(camera,sim.userTarget),ray:sim.userTargetRay};
+    const target=intersectHorizontalPlane(camera,ray,TARGET_PLANE_Y);
+    if(!target)return;
+    sim.userTarget=target;
+    sim.userFloorPoint=projectToWorldFloor(target,WORLD_FLOOR_Y);
+    depthGesture={kind:'tap'};
+  }else if(activePointers.size===2&&sim.userTarget&&sim.userFloorPoint){
+    const floorScreenY=projectedScreenY(camera,sim.userFloorPoint,point.height,point.width);
+    depthGesture={kind:'multi',startY:averagePointerY(),startTarget:V(sim.userTarget.x,sim.userTarget.y,sim.userTarget.z),
+      startFloorPoint:V(sim.userFloorPoint.x,sim.userFloorPoint.y,sim.userFloorPoint.z),startScreenY:floorScreenY};
   }
 });
 canvas.addEventListener('pointermove',event=>{
   if(!activePointers.has(event.pointerId))return;
   const point=pointerPosition(event);
   activePointers.set(event.pointerId,point);
-  if(activePointers.size>=2&&sim.userTargetRay){
-    if(depthGesture?.kind!=='multi')depthGesture={kind:'multi',startY:averagePointerY(),startDepth:cameraDepth(camera,sim.userTarget),ray:sim.userTargetRay};
-    updateDepthTarget(depthGesture,averagePointerY()-depthGesture.startY,point.height);
-  }else if(activePointers.size===1&&depthGesture?.kind==='single'){
-    const deltaY=point.y-depthGesture.startY;
-    if(Math.abs(deltaY)>7)updateDepthTarget(depthGesture,deltaY,point.height);
+  if(activePointers.size>=2&&depthGesture?.kind==='multi'){
+    updateFloorDepth(depthGesture,averagePointerY()-depthGesture.startY,point.width,point.height);
   }
 });
 function finishPointer(event){
@@ -124,7 +121,7 @@ function simulate(dt){
   },dt);
   label.textContent='NAVIGATING';
   if(distance<.2&&mag(sim.vel)<.2){
-   sim.userTarget=null;sim.userTargetRay=null;sim.userTargetScreen=null;sim.userTargetDepthPlane=false;
+   sim.userTarget=null;sim.userFloorPoint=null;
    sim.mode='CRUISE';sim.maneuver=null;sim.nextChoice=sim.time;label.textContent=labels.CRUISE;
   }
   return;
@@ -221,21 +218,19 @@ function render(){
 }
 
 function drawNavigationTarget(w,h){
- if(!sim.userTarget)return;
- const target=project(sim.userTarget,w,h);
- if(sim.userTargetDepthPlane&&sim.userTargetScreen){
-  const ends=depthLineEndpoints(camera,sim.userTargetScreen.y,w,h,cameraDepth(camera,sim.userTarget));
-  if(ends.left&&ends.right){
-   const a=project(ends.left,w,h),b=project(ends.right,w,h);
-   if(a.z>.15&&b.z>.15){
-    ctx.save();ctx.strokeStyle='rgba(155,231,200,.78)';ctx.lineWidth=1.35;ctx.setLineDash([7,6]);
-    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
-   }
-  }
- }
- if(target.z<=.15)return;
+ if(!sim.userTarget||!sim.userFloorPoint)return;
+ const target=project(sim.userTarget,w,h),floor=project(sim.userFloorPoint,w,h);
+ if(target.z<=.15||floor.z<=.15)return;
+ ctx.save();
+ ctx.strokeStyle='rgba(135,218,220,.34)';ctx.lineWidth=1.15;
+ ctx.shadowColor='rgba(110,220,225,.22)';ctx.shadowBlur=5;
+ ctx.beginPath();ctx.moveTo(target.x,target.y);ctx.lineTo(floor.x,floor.y);ctx.stroke();
+ const floorRadius=clamp(floor.scale*.014,3.5,8);
+ ctx.shadowBlur=0;ctx.strokeStyle='rgba(135,218,220,.8)';ctx.lineWidth=1.25;
+ ctx.beginPath();ctx.arc(floor.x,floor.y,floorRadius*1.8,0,TAU);ctx.stroke();
+ ctx.fillStyle='rgba(135,218,220,.62)';ctx.beginPath();ctx.arc(floor.x,floor.y,floorRadius*.48,0,TAU);ctx.fill();
  const radius=clamp(target.scale*.018,4,10);
- ctx.save();ctx.strokeStyle='rgba(155,231,200,.95)';ctx.lineWidth=1.5;
+ ctx.strokeStyle='rgba(155,231,200,.95)';ctx.lineWidth=1.5;
  ctx.beginPath();ctx.arc(target.x,target.y,radius*1.8,0,TAU);ctx.stroke();
  ctx.fillStyle='rgba(155,231,200,.95)';ctx.beginPath();ctx.arc(target.x,target.y,radius*.58,0,TAU);ctx.fill();
  ctx.restore();
