@@ -98,7 +98,7 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt) {
   const leftTarget = clamp(0.12 + Math.max(0, turn) * 0.72 + glide, 0.08, 0.9);
   const rightTarget = clamp(0.12 + Math.max(0, -turn) * 0.72 + glide, 0.08, 0.9);
   gait.leftFin = mix(gait.leftFin, leftTarget, 1 - Math.exp(-dt * 5.2));
-  gait.rightFin = mix(gait.rightFin, rightTarget, 1 - Math.exp(-dt * 3.8));
+  gait.rightFin = mix(gait.rightFin, rightTarget, 1 - Math.exp(-dt * 5.2));
   const finStroke = Math.sin(gait.phase * 0.5 + 0.4) * (0.12 + speed * 0.035);
   gait.leftFinAngle = mix(gait.leftFinAngle, finStroke + turn * 0.12, 1 - Math.exp(-dt * 5));
   gait.rightFinAngle = mix(gait.rightFinAngle, -finStroke - turn * 0.12, 1 - Math.exp(-dt * 5));
