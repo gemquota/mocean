@@ -86,7 +86,7 @@ A live browser observation of the deployed simulation confirmed one continuously
 
 ## Phase 2 · Elementary movement primitives
 
-**Status:** In progress. P2-1 implementation and automated verification recorded; independent user confirmation pending.
+**Status:** In progress. P2-1 assistant-complete. Pitch and yaw primitives have bounded implementations and passing isolated tests; visual verification remains outstanding.
 
 - [x] P2-1 Straight swimming, acceleration, coasting and braking.
 - [ ] P2-2 Controlled pitch-up and pitch-down independently of translation.
@@ -184,3 +184,8 @@ The user explicitly approved the Phase 1 phase gate on 8 November 2026. Phase 2 
 - Braking increases hydrodynamic resistance, dissipating existing momentum; it does not apply reverse force or instantly change velocity direction.
 - Added automated coverage for acceleration, momentum retention during coasting, stronger braking deceleration and bounded braking input.
 - This validates the translational primitive in isolation. Visual fin deployment and fish-level braking gait remain to be verified.
+### Phase 2 implementation evidence · P2-2 and P2-3
+- Pitch input is clamped to a defined range and drives body-local pitch angular response. Positive and negative commands produce nose-up and nose-down attitude without directly adding translation or yaw/roll torque.
+- Yaw command and auxiliary yaw moment are bounded before entering the angular response. Sustained-turn coverage remains in the regression suite; excessive auxiliary moment saturates rather than injecting unbounded angular drive.
+- Automated verification: **41 tests passed, 0 failed** in GitHub Actions for commit 8099124ba673eb53487e2fca809ec58c9ba86616. GitHub Pages deployment succeeded for the same commit.
+- P2-2 and P2-3 remain unchecked until the actual fish's isolated pitch/yaw motion is visually inspected against the fixed camera and prior cruising quality.
