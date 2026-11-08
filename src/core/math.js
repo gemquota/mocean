@@ -57,3 +57,20 @@ export function distanceTreatment(apparentSizeRatio, threshold = 0.25) {
   const amount = clamp((threshold - apparentSizeRatio) / threshold, 0, 1);
   return { blur: amount * 1.8, opacity: 1 - amount * 0.22 };
 }
+
+/**
+ * Smooth world-space return guidance for a fixed habitat volume.
+ * Body-forward is +X at identity; positive pitch points nose-up.
+ */
+export function habitatReturnGuidance(position, radii, softStart = 0.88) {
+  const nx = position.x / radii.x, ny = position.y / radii.y, nz = position.z / radii.z;
+  const radius = Math.hypot(nx, ny, nz);
+  const weight = clamp((radius - softStart) / (1.12 - softStart), 0, 1);
+  const toCentre = vec3(-position.x, -position.y, -position.z);
+  return {
+    weight,
+    yaw: Math.atan2(-toCentre.z, toCentre.x),
+    pitch: Math.atan2(toCentre.y, Math.hypot(toCentre.x, toCentre.z)),
+    thrust: weight * 0.24
+  };
+}
