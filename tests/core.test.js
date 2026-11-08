@@ -167,3 +167,19 @@ test('torque-only input changes attitude without directly creating translation',
   assert.ok(Math.abs(body.vel.z) < 1e-12);
   assert.ok(Math.abs(body.orientation.y) > 0);
 });
+
+
+test('body-forward thrust follows arbitrary attitude while lift remains world vertical', () => {
+  const pitched = { p: vec3(), vel: vec3(), yaw: 0, pitch: -Math.PI / 4, roll: 0, wy: 0, wp: 0, wr: 0, orientation: quatFromEuler(0, -Math.PI / 4, 0) };
+  stepDynamics(pitched, { thrust: 1 }, 1 / 120);
+  assert.ok(pitched.vel.x > 0);
+  assert.ok(pitched.vel.y < 0);
+
+  const lateral = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  stepDynamics(lateral, { side: 1 }, 1 / 120);
+  assert.ok(lateral.vel.z > 0);
+
+  const reverse = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  stepDynamics(reverse, { thrust: -1 }, 1 / 120);
+  assert.ok(reverse.vel.x < 0);
+});
