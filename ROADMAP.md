@@ -1,8 +1,8 @@
 # Mocean Development Roadmap
 
-**Revision:** 10 · 8 November 2026  
-**Status:** Phase 0 confirmed by user; Phase 1 implementation complete and awaiting review of its latest increment.  
-**Implementation gate:** Phase 1 has started; remaining phase tasks stay evidence-gated.
+**Revision:** 11 · 8 November 2026  
+**Status:** Phase 0 and Phase 1 approved by user; Phase 2 implementation underway.  
+**Implementation gate:** Phase 1 gate approved by user on 8 November 2026; Phase 2 unlocked. Phases 3 and 4 remain dependency-gated.
 
 ## Direction
 
@@ -55,7 +55,7 @@ The Plan presentation must show both marks as separate columns for every task. T
 
 ## Phase 1 · True 3D locomotion foundation
 
-**Status:** All six tasks assistant-complete and user-confirmed on 8 November 2026; awaiting explicit Phase 1 gate approval.
+**Status:** All six tasks assistant-complete and user-confirmed; Phase 1 gate explicitly approved by the user on 8 November 2026.
 
 - [x] P1-1 Build a coherent 3D orientation frame with quaternion-based attitude.
 - [x] P1-2 Separate thrust, lift and lateral propulsion from pitch, yaw and roll control.
@@ -86,7 +86,9 @@ A live browser observation of the deployed simulation confirmed one continuously
 
 ## Phase 2 · Elementary movement primitives
 
-- [ ] P2-1 Straight swimming, acceleration, coasting and braking.
+**Status:** In progress. P2-1 implementation and automated verification recorded; independent user confirmation pending.
+
+- [x] P2-1 Straight swimming, acceleration, coasting and braking.
 - [ ] P2-2 Controlled pitch-up and pitch-down independently of translation.
 - [ ] P2-3 Controlled yaw turns with bounded angular acceleration.
 - [ ] P2-4 True axial roll around the local head-to-tail axis, independent of pitch and yaw.
@@ -150,8 +152,8 @@ Reviewed on 8 November 2026:
 | Phase | Status | Approval |
 |---|---|---|
 | 0 · Architecture | Assistant complete | User confirmed · 8 November 2026 |
-| 1 · 3D locomotion foundation | In progress | P1-1 to P1-3 confirmed · 8 November 2026; phase gate remains open |
-| 2 · Elementary movement primitives | Queued | Not started |
+| 1 · 3D locomotion foundation | Assistant complete | All six tasks confirmed; phase gate approved by user · 8 November 2026 |
+| 2 · Elementary movement primitives | In progress | P2-1 assistant complete; user review pending |
 | 3 · Basic composite motions | Queued | Not started |
 | 4 · Complex manoeuvre arrangements | Queued | Not started |
 | 5 · Autonomous natural behaviour | Queued | Not started |
@@ -173,3 +175,12 @@ Reviewed on 8 November 2026:
 - A dive is not an altitude offset. The fish pitches its nose downward, then accelerates forward along the new body-forward axis.
 - Axial roll is rotation around the fish's own longitudinal head-to-tail axis. It is not pitch rotation and must not introduce gratuitous yaw.
 - Manoeuvres progress from isolated primitives, to basic composites, to complex sequences such as backwards drift into a loop-the-loop.
+
+### Phase 1 gate approval · 8 November 2026
+The user explicitly approved the Phase 1 phase gate on 8 November 2026. Phase 2 is therefore unlocked. Phase 3 and Phase 4 remain sequentially gated by acceptance of their immediate predecessors.
+
+### Phase 2 implementation evidence · P2-1
+- Added a bounded brake input to translational dynamics.
+- Braking increases hydrodynamic resistance, dissipating existing momentum; it does not apply reverse force or instantly change velocity direction.
+- Added automated coverage for acceleration, momentum retention during coasting, stronger braking deceleration and bounded braking input.
+- This validates the translational primitive in isolation. Visual fin deployment and fish-level braking gait remain to be verified.
