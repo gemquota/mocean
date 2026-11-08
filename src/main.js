@@ -3,9 +3,10 @@ import { stepDynamics } from './core/dynamics.js';
 import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
 import { sampleHorizontalHeading, shouldMakeVerticalExcursion } from './core/intent.js';
+import { createManeuver, sampleManeuver } from './core/maneuver.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,targetDepth:0,gait:createGait()};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,gait:createGait()};
 const camera={p:V(0,2.15,10),target:V(0,0,0),forward:V(),right:V(),up:V()};
 camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross(camera.forward,V(0,1,0)));camera.up=unit(cross(camera.right,camera.forward));
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
@@ -13,31 +14,43 @@ function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
  const duration={CRUISE:4+random()*5,EXPLORE:3+random()*4,TURN:1.7+random()*2.2,DART:.45+random()*.45,GLIDE:1.5+random()*2,RECOVER:2+random()*2.5};
  sim.nextChoice=sim.time+duration[sim.mode];
- if(sim.mode==='TURN'||sim.mode==='EXPLORE'||sim.mode==='DART')sim.targetYaw=sampleHorizontalHeading(random);
- // Y-axis movement is an occasional exploratory choice, not a constant oscillation.
- if(sim.mode==='EXPLORE'&&shouldMakeVerticalExcursion(random)){
+
+ let endYaw=sim.yaw;
+ if(sim.mode==='TURN'||sim.mode==='EXPLORE')endYaw=sampleHorizontalHeading(random);
+ if(sim.mode==='DART')endYaw=sim.yaw+(random()-.5)*.65;
+
+ // Most trajectories stay level. A minority arc above or below the cruising plane.
+ let endPitch=0;
+ const verticalExcursion=(sim.mode==='EXPLORE'&&shouldMakeVerticalExcursion(random))||(sim.mode==='TURN'&&random()<.12);
+ if(verticalExcursion){
   const direction=random()<.5?-1:1;
-  sim.targetPitch=direction*(.12+random()*.12);
-  sim.targetDepth=direction*(.8+random()*.6);
- }else{
-  sim.targetPitch*=.35;
-  sim.targetDepth*=.35;
+  const steep=random()<.12;
+  endPitch=direction*(steep?0.88+random()*.24:0.24+random()*.48);
  }
+ const curve=(random()-.5)*1.25;
+ const speedPeak=sim.mode==='DART'?1.42:sim.mode==='GLIDE'?.96:1.12+random()*.18;
+ sim.maneuver=createManeuver({
+  startYaw:sim.yaw,startPitch:sim.pitch,endYaw,endPitch,
+  duration:sim.mode==='DART'?1.4+random()*.5:2.8+random()*2.8,
+  curve,speedPeak
+ });
+ sim.maneuverStartedAt=sim.time;
+ sim.targetYaw=endYaw;sim.targetPitch=endPitch;
  label.textContent=labels[sim.mode];
 }
 function simulate(dt){
  sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
- const wander=Math.sin(sim.time*.17)*.22+Math.sin(sim.time*.071+1.7)*.13;
+ const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
+ const intent=sampled?.complete?{yaw:sim.targetYaw,pitch:sim.targetPitch,speed:1}:sampled??{yaw:sim.yaw,pitch:0,speed:1};
  const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
- const guidedYaw=sim.targetYaw+angleDelta(sim.targetYaw,returnGuidance.yaw)*returnGuidance.weight;
- const guidedPitch=sim.targetPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
- const yawError=angleDelta(sim.yaw,guidedYaw+wander);
+ const guidedYaw=intent.yaw+angleDelta(intent.yaw,returnGuidance.yaw)*returnGuidance.weight;
+ const guidedPitch=intent.pitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
+ const yawError=angleDelta(sim.yaw,guidedYaw);
  const turn=clamp(yawError*1.7,-1,1);
  const pitch=clamp((guidedPitch-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
- const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
- stepDynamics(sim,{thrust:gait.thrust+returnGuidance.thrust,turn:gait.steering,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
- // Roll is integrated from the differential pectoral-fin moment in stepDynamics.
+ stepDynamics(sim,{thrust:gait.thrust*intent.speed+returnGuidance.thrust,turn:gait.steering,pitch,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
+ // The path is an intent curve; momentum, drag and attitude inertia determine the actual trajectory.
 }
 function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
 function project(world,w,h){
