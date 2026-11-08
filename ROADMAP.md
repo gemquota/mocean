@@ -36,14 +36,14 @@ The Plan presentation must show both marks as separate columns for every task. T
 1. Implement one phase at a time.
 2. Each phase has atomic tasks, tests and explicit acceptance criteria.
 3. At phase completion, deploy and present evidence for user review.
-4. Do not begin the next phase until the user explicitly approves the previous one.
+4. Do not begin the next phase until the user explicitly approves the previous one, unless the user gives a clear subsequent instruction authorising that next phase.
 5. Keep environmental development deferred until locomotion and autonomous movement are convincing.
 6. The HTML presentation checklist is a browser-local convenience. This file is the canonical engineering record; update it as work is completed.
 
 ## Phase 0 · Architecture and baseline
 
 **Status:** Assistant complete; awaiting independent user confirmation.  
-**Evidence:** [PHASE_0.md](PHASE_0.md), source audit and 17 existing test cases. The baseline test workflow is configured in GitHub Actions; no claim is made here that the tests were freshly executed during documentation authoring.
+**Evidence:** [PHASE_0.md](PHASE_0.md), source audit, acceptance matrix and regression tests. The Phase 0 architecture contract is complete; the user confirmation mark remains theirs to set.
 
 - [x] P0-1 Document world axes, body axes and quaternion orientation convention.
 - [x] P0-2 Define separate translational propulsion and orientation-control pathways, their coupling, and the current implementation boundary.
@@ -51,7 +51,7 @@ The Plan presentation must show both marks as separate columns for every task. T
 - [x] P0-4 Define locomotion acceptance tests, baseline inventory and known limitations.
 - [x] P0-5 Confirm phase boundaries, dependencies and the two-key user approval process.
 
-**Phase 0 gate:** awaiting user review. Phase 1 remains locked until explicit approval.
+**Phase 0 gate:** implementation complete; awaiting independent user confirmation. Phase 1 is now in progress under the user's explicit instruction in this conversation.
 
 ## Phase 1 · True 3D locomotion foundation
 
@@ -119,13 +119,13 @@ Reviewed on 8 November 2026:
 
 ### Confirmed gaps to address
 - The body spine currently bends primarily along one lateral coordinate; vertical body curvature is not modelled as a second independent bend axis.
-- Translational forces are tied to body-forward/right/up axes. Independent vertical propulsion and heading are not yet a full capability.
-- Pitch and roll are clamped; unrestricted arbitrary attitude and full axial roll are not yet supported.
+- Forward, reverse, lateral and world-vertical translation channels now exist independently of attitude control. Hydrodynamic realism and combined manoeuvre quality remain unvalidated.
+- Quaternion attitude is now integrated without Euler pitch/roll clamps. The rotational response is an initial foundation and still needs broader visual validation and more complete control tuning.
 - The caudal fin is drawn as a separate polygon rather than being fully deformed from the body attachment frame.
 - The current perspective projection exists, but robust depth travel, scale threshold, blur/fade and natural re-entry need implementation and acceptance tests.
 - The current model is a phenomenological approximation, not a validated animal model or CFD solver.
 
-## Phase approval record
+### Phase 1 implementation evidence · initial increment\n\n- P1-1: persistent body-to-world quaternion attitude is integrated from angular velocity, with world-up yaw and body-local pitch/roll composition.\n- P1-2: translational and attitude inputs are separate; lift is world-vertical, while thrust and lateral force follow body axes.\n- P1-3: forward, reverse, lateral, vertical and combined-direction travel are supported by the force basis. Regression tests cover pitched thrust, reverse thrust, lateral thrust, world lift and torque-only attitude.\n- P1-4 through P1-6 remain open: depth-scale validation, distance blur/fade and natural re-entry.\n\nPhase 1 is underway, not complete. Automated tests are recorded in source; the current repository CI run must be checked before claiming a passing build.\n\n## Phase approval record
 
 | Phase | Status | Approval |
 |---|---|---|
@@ -138,10 +138,10 @@ Reviewed on 8 November 2026:
 | 6 · Environment | Deferred | Not started |
 | 7 · Integration and polish | Queued | Not started |
 
-**Phase 0 defines the architecture and acceptance contract only. Phase One implementation has not started and remains locked pending user approval.**
+**Phase 0 implementation is complete and awaits your independent confirmation. Phase 1 has started under your explicit instruction; its remaining tasks and phase gate are still open.**
 
 
-## Presentation architecture · Revision 04
+## Presentation architecture · Revision 05
 
 - **Plan** is the primary workspace: phases, hierarchical goals, atomic tasks, dependencies and progress tracking.
 - **Review** is the technical evidence workspace. It must explain coordinate frames, six degrees of freedom, world versus body-local axes, force and torque, momentum versus heading, orient-then-thrust diving, body curvature, fin attachment and perspective/depth rendering.
