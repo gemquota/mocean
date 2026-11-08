@@ -1,4 +1,4 @@
-import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta, perspectiveScale, distanceTreatment } from './core/math.js';
+import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta, perspectiveScale, distanceTreatment, habitatReturnGuidance } from './core/math.js';
 import { stepDynamics } from './core/dynamics.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
@@ -21,17 +21,15 @@ function chooseBehaviour(){
 function simulate(dt){
  sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
  const wander=Math.sin(sim.time*.17)*.22+Math.sin(sim.time*.071+1.7)*.13;
- const boundaryX=clamp(sim.p.x/3.6,-1,1),boundaryZ=clamp(sim.p.z/2.35,-1,1);
- if(Math.abs(boundaryX)>.78||Math.abs(boundaryZ)>.78){
-  const away=Math.atan2(boundaryZ,-boundaryX);
-  sim.targetYaw=away;
- }
- const yawError=angleDelta(sim.yaw,sim.targetYaw+wander);
+ const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
+ const guidedYaw=sim.targetYaw+angleDelta(sim.targetYaw,returnGuidance.yaw)*returnGuidance.weight;
+ const guidedPitch=sim.targetPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
+ const yawError=angleDelta(sim.yaw,guidedYaw+wander);
  const turn=clamp(yawError*1.7,-1,1);
- const pitch=clamp((sim.targetPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
+ const pitch=clamp((guidedPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
- stepDynamics(sim,{thrust:gait.thrust,turn:gait.steering,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
+ stepDynamics(sim,{thrust:gait.thrust+returnGuidance.thrust,turn:gait.steering,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
  // Roll is integrated from the differential pectoral-fin moment in stepDynamics.
 }
 function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
