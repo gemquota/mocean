@@ -1,4 +1,4 @@
-import { add3, clamp, length3, quatFromEuler, quatIntegrateAngularVelocity, quatRotate, scale3, vec3 } from './math.js';
+import { add3, clamp, length3, quatFromEuler, quatIntegrateAngularVelocity, quatMultiply, quatRotate, scale3, vec3 } from './math.js';
 
 /**
  * Rigid-body translation and attitude response coupled to fish-body propulsion.
@@ -33,9 +33,12 @@ export function stepDynamics(body, command, dt) {
   body.wp += ((command.pitch ?? 0) * 0.58 - body.wp * 1.25 - body.pitch * 0.12) * dt;
   body.wr += ((command.rollMoment ?? 0) * 1.8 - body.wr * 1.35 - body.roll * 0.09) * dt;
 
-  // Angular rates are body-local: X roll, Y yaw, Z pitch. Quaternion
-  // integration allows the frame to pass through vertical and inverted poses.
-  body.orientation = quatIntegrateAngularVelocity(q, vec3(body.wr, body.wy, body.wp), dt);
+  // Yaw is about world-up. Pitch and axial roll are body-local Z and X.
+  // Split composition preserves those axis definitions at arbitrary attitude.
+  const halfYaw = body.wy * dt * 0.5;
+  const worldYaw = { w: Math.cos(halfYaw), x: 0, y: Math.sin(halfYaw), z: 0 };
+  const afterYaw = quatMultiply(worldYaw, q);
+  body.orientation = quatIntegrateAngularVelocity(afterYaw, vec3(body.wr, 0, body.wp), dt);
 
   // Euler values remain approximate telemetry for the current behaviour controller.
   body.yaw += body.wy * dt;
