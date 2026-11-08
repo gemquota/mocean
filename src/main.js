@@ -4,12 +4,13 @@ import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
 import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVerticalDirection } from './core/intent.js';
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
+import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
 import { screenRay, intersectHorizontalPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Y, WORLD_FLOOR_Y } from './core/navigation.js';
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,lastVerticalDirection:1,gait:createGait(),userTarget:null,userFloorPoint:null,userApproach:null,userApproachProgress:0};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,sequence:null,sequenceStartedAt:0,nextSequence:31,sequenceCount:0,lastVerticalDirection:1,gait:createGait()};
 const camera=createFixedCamera();
 
 // Tap selects a mid-water destination; the floor projection is the two-finger depth handle.
@@ -100,44 +101,18 @@ function chooseBehaviour(){
  sim.targetYaw=endYaw;sim.targetPitch=endPitch;
  label.textContent=labels[sim.mode];
 }
+const sequenceOrder=['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','curved-reversal','loop-the-loop','dive-brake-reorient','compound-3d'];
+function beginMotionSequence(){
+ const name=sequenceOrder[Math.floor(random()*sequenceOrder.length)];sim.sequenceCount++;
+ sim.sequence=createMotionSequence(name,{yaw:sim.yaw,pitch:sim.pitch,roll:sim.roll});sim.sequenceStartedAt=sim.time;
+ sim.nextSequence=sim.time+24+random()*18;
+ label.textContent='MANOEUVRE / '+name.replaceAll('-',' ').toUpperCase();
+}
 function simulate(dt){
- sim.time+=dt;
- if(sim.userTarget){
-  const offset=add(sim.userTarget,mul(sim.p,-1));
-  const distance=mag(offset);
-  sim.userApproachProgress=nearestDepthApproachProgress(sim.userApproach,sim.p,sim.userApproachProgress);
-  const lookAheadProgress=Math.min(1,sim.userApproachProgress+clamp(.6/sim.userApproach.length,.015,.12));
-  const pathSample=sampleDepthApproach(sim.userApproach,lookAheadProgress);
-  const steeringPoint=lookAheadProgress>=.999?sim.userTarget:pathSample.position;
-  const desiredDirection=unit(add(steeringPoint,mul(sim.p,-1)));
-  const targetYaw=Math.atan2(-desiredDirection.z,desiredDirection.x);
-  const targetPitch=Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
-  const yawError=angleDelta(sim.yaw,targetYaw);
-  const turn=clamp(yawError*2.1,-1,1);
-  const pitch=clamp((targetPitch-sim.pitch)*2.6,-.85,.85);
-  const forward=rotate(sim.orientation,V(1,0,0));
-  const alignment=dot(forward,desiredDirection);
-  const brakeIntent=clamp((0.95-distance)*1.15+mag(sim.vel)*.12,0,.9);
-  // A sustained approach recruits the existing burst gait; close-range steering
-  // returns to the more controlled turn/explore profiles.
-  const gaitMode=distance>2.4?'DART':Math.abs(yawError)>.3||Math.abs(targetPitch-sim.pitch)>.22?'TURN':'EXPLORE';
-  const gait=stepGait(sim.gait,gaitMode,mag(sim.vel),turn,dt,brakeIntent);
-  const alignmentFactor=clamp((alignment+.12)/1.12,.12,1);
-  const approachFactor=clamp(distance*.58,.1,1);
-  const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
-  stepDynamics(sim,{
-   thrust:gait.thrust*(1.05+.4*clamp(distance/8,0,1))*alignmentFactor*approachFactor+returnGuidance.thrust,
-   turn:gait.steering,pitch,finDrag:gait.finDrag,brake:gait.brake,
-   rollMoment:gait.rollMoment,yawMoment:gait.yawMoment
-  },dt);
-  label.textContent='NAVIGATING';
-  if(distance<.2&&mag(sim.vel)<.2){
-   sim.userTarget=null;sim.userFloorPoint=null;sim.userApproach=null;sim.userApproachProgress=0;
-   sim.mode='CRUISE';sim.maneuver=null;sim.nextChoice=sim.time;label.textContent=labels.CRUISE;
-  }
-  return;
- }
- if(sim.time>=sim.nextChoice)chooseBehaviour();
+ sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
+ if(!sim.sequence&&sim.time>=sim.nextSequence)beginMotionSequence();
+ let sequenceSample=sim.sequence?sampleMotionSequence(sim.sequence,sim.time-sim.sequenceStartedAt):null;
+ if(sequenceSample?.complete){sim.sequence=null;sequenceSample=null;label.textContent=labels[sim.mode];}
  const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
  const lookAhead=add(sampled.position,mul(sampled.tangent,.85));
  const desiredDirection=unit(add(lookAhead,mul(sim.p,-1)));
@@ -146,12 +121,19 @@ function simulate(dt){
  const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
  const guidedYaw=intentYaw+angleDelta(intentYaw,returnGuidance.yaw)*returnGuidance.weight;
  const guidedPitch=intentPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
- const yawError=angleDelta(sim.yaw,guidedYaw);
+ const command=sequenceSample?.command;
+ const sequenceYaw=command?sim.sequence.startYaw+command.yawOffset:guidedYaw;
+ const targetYaw=sequenceYaw+angleDelta(sequenceYaw,returnGuidance.yaw)*returnGuidance.weight;
+ const sequencePitch=command?command.pitch:guidedPitch;
+ const targetPitch=sequencePitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
+ const yawError=angleDelta(sim.yaw,targetYaw);
  const turn=clamp(yawError*1.7,-1,1);
- const pitch=clamp((guidedPitch-sim.pitch)*2.2,-.85,.85);
- const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
- stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+returnGuidance.thrust,turn:gait.steering,pitch,finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
- // The path is an intent curve; momentum, drag and attitude inertia determine the actual trajectory.
+ const pitch=clamp((targetPitch-sim.pitch)*2.2,-.85,.85);
+ const roll=command?clamp((sim.sequence.startRoll+command.roll-sim.roll)*1.15,-1,1):0;
+ const brakeIntent=command?command.brake:0;
+ const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt,brakeIntent);
+ stepDynamics(sim,{thrust:gait.thrust*(sampled?.speed??1)+(command?.thrust??0)+returnGuidance.thrust,side:command?.side??0,turn:gait.steering,pitch,pitchMoment:command?.pitchMoment??0,roll,finDrag:gait.finDrag,brake:gait.brake,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
+ // Sequence commands alter attitude/force intent only; inertia and drag still determine the path.
 }
 function updateCamera(){ /* Fixed side-on habitat camera: the fish moves, never the viewpoint. */ }
 function project(world,w,h){
