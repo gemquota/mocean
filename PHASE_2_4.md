@@ -25,6 +25,11 @@ Sequence segments use eased hand-offs. The live scheduler inserts one occasional
 | P2-4 · True axial roll | Local longitudinal roll integrated separately from pitch and yaw. | Automated tests pass; visual primitive inspection pending. |
 | P2-5 · Isolated visual validation | Dorsal ridge is attached to the deforming body frame and makes axial orientation observable. | Live inspection of deliberate isolated commands remains pending. |
 
+### Pectoral-fin articulation increment · 9 November 2026
+The pectoral fins now articulate around body-local longitudinal hinges. The fin root remains fixed, the hinge radius is preserved, and mirrored left/right commands produce mirrored movement. Stroke magnitude is still a bounded output of the existing gait state (phase, speed and steering); the renderer adds subtle fin-ray highlights to make the changing fin plane easier to read.
+
+The new kinematic test is included in the **61/61 passing** Node 22 regression run at [commit c9c71ab](https://github.com/gemquota/mocean/commit/c9c71ab244c344cbe707d68561470214b33cb721). This is implementation and mathematical evidence only. Live visual inspection of isolated pitch, yaw and axial roll is still required before Phase 2 assistant completion.
+
 ## Phase 3 · Basic composite motions
 
 Implemented sequence profiles:
