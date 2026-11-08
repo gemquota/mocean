@@ -248,3 +248,32 @@ test('initial spawn starts farther from the fixed camera with a comfortable fram
   const habitatRadius = Math.hypot(INITIAL_SPAWN_POSITION.x/6.4, INITIAL_SPAWN_POSITION.y/3.5, INITIAL_SPAWN_POSITION.z/5.2);
   assert.ok(habitatRadius < 0.88, 'spawn must remain inside the inactive region of the soft habitat boundary');
 });
+
+import { sampleHorizontalHeading, shouldMakeVerticalExcursion } from '../src/core/intent.js';
+
+test('autonomous horizontal heading samples cover X and Z symmetrically', () => {
+  let seed = 91357;
+  const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const quadrants = [0, 0, 0, 0];
+  let meanX = 0, meanZ = 0;
+  const count = 8000;
+  for (let i = 0; i < count; i++) {
+    const heading = sampleHorizontalHeading(random);
+    assert.ok(heading >= -Math.PI && heading <= Math.PI);
+    meanX += Math.cos(heading);
+    meanZ += Math.sin(heading);
+    quadrants[Math.min(3, Math.floor((heading + Math.PI) / (Math.PI / 2)))]++;
+  }
+  assert.ok(Math.abs(meanX / count) < 0.025);
+  assert.ok(Math.abs(meanZ / count) < 0.025);
+  for (const occupancy of quadrants) assert.ok(Math.abs(occupancy / count - 0.25) < 0.025);
+});
+
+test('vertical excursions are selected occasionally rather than continuously', () => {
+  let seed = 27183;
+  const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  let excursions = 0;
+  const count = 10000;
+  for (let i = 0; i < count; i++) if (shouldMakeVerticalExcursion(random)) excursions++;
+  assert.ok(excursions / count > 0.18 && excursions / count < 0.22);
+});
