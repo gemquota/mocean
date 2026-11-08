@@ -483,3 +483,25 @@ test('two-finger floor drag moves the handle along world Z and tracks screen Y e
   assert.ok(Math.abs(projectedScreenY(camera, { ...floor, z: fartherZ }, 600, 1000) - (startY - 35)) < 1e-8);
   assert.ok(Math.abs(projectedScreenY(camera, { ...floor, z: closerZ }, 600, 1000) - (startY + 35)) < 1e-8);
 });
+
+
+import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from '../src/core/approach.js';
+
+test('depth approach reaches destination Z at half arc length and stays level', () => {
+ const start=vec3(-3,-1,4),target=vec3(5,2,-4),path=createDepthApproach(start,target);
+ const quarter=sampleDepthApproach(path,.25),half=sampleDepthApproach(path,.5),threeQuarter=sampleDepthApproach(path,.75);
+ assert.ok(quarter.position.z<start.z&&quarter.position.z>target.z);
+ assert.ok(Math.abs(half.position.z-target.z)<1e-8);
+ assert.ok(Math.abs(threeQuarter.position.z-target.z)<1e-8);
+ assert.ok(Math.abs(half.tangent.z)<1e-6&&Math.abs(threeQuarter.tangent.z)<1e-6);
+});
+
+test('depth approach is smooth and nearest-path progress is monotonic', () => {
+ const path=createDepthApproach(vec3(0,0,5),vec3(8,2,-3));let previous=sampleDepthApproach(path,0),progress=0;
+ for(let i=1;i<=100;i++){const current=sampleDepthApproach(path,i/100);
+  assert.ok(length3(vec3(current.position.x-previous.position.x,current.position.y-previous.position.y,current.position.z-previous.position.z))<.2);
+  assert.ok(length3(vec3(current.tangent.x-previous.tangent.x,current.tangent.y-previous.tangent.y,current.tangent.z-previous.tangent.z))<.08);
+  const next=nearestDepthApproachProgress(path,current.position,progress);assert.ok(next+1e-12>=progress);progress=next;previous=current;
+ }
+ assert.ok(progress>.99);
+});
