@@ -1,6 +1,6 @@
 import { clamp, mix } from './math.js';
 
-const zero = () => ({ yawOffset: 0, pitch: 0, roll: 0, thrust: 0, brake: 0, side: 0 });
+const zero = () => ({ yawOffset: 0, pitch: 0, roll: 0, thrust: 0, brake: 0, side: 0, pitchMoment: 0 });
 const segment = (duration, command) => ({ duration, command: { ...zero(), ...command } });
 
 /**
