@@ -505,3 +505,30 @@ test('depth approach is smooth and nearest-path progress is monotonic', () => {
  }
  assert.ok(progress>.99);
 });
+
+
+import { createPursuitGuidance } from '../src/core/pursuit.js';
+
+test('pursuit turns the nose toward a target in horizontal and vertical directions', () => {
+  const horizontal = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(0, 0, -5));
+  assert.ok(horizontal.turn > 0.99);
+  const upward = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(4, 3, 0));
+  assert.ok(upward.pitch > 0);
+  assert.ok(upward.turn === 0);
+});
+
+test('pursuit builds propulsion demand smoothly with target distance', () => {
+  const near = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(1, 0, 0));
+  const middle = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(4, 0, 0));
+  const far = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(9, 0, 0));
+  assert.ok(near.thrustScale < middle.thrustScale && middle.thrustScale < far.thrustScale);
+  assert.ok(far.thrustScale <= 1.85);
+});
+
+test('pursuit brakes as it reaches the target and identifies a low-speed hover', () => {
+  const approaching = createPursuitGuidance(vec3(), vec3(1, 0, 0), 0, 0, vec3(.5, 0, 0));
+  const settled = createPursuitGuidance(vec3(), vec3(.08, 0, 0), 0, 0, vec3(.1, 0, 0));
+  assert.ok(approaching.brake > 0);
+  assert.equal(settled.hovering, true);
+  assert.ok(settled.brake > 0);
+});
