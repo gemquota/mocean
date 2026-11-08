@@ -401,3 +401,27 @@ test('braking intent deploys both pectoral fins symmetrically and returns bounde
   assert.equal(output.brake, gait.brake);
   assert.ok(output.brake <= 1);
 });
+
+test('pitch primitive is bidirectional, bounded, and independent of translation and yaw', () => {
+  const run = pitch => {
+    const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+    for (let i = 0; i < 360; i++) stepDynamics(body, { pitch }, 1 / 120);
+    return body;
+  };
+  const up = run(1), down = run(-1), excessive = run(9);
+  assert.ok(up.wp > 0 && down.wp < 0);
+  assert.ok(up.orientation.z > 0 && down.orientation.z < 0);
+  assert.ok(Math.abs(up.vel.x) < 1e-12 && Math.abs(up.vel.y) < 1e-12 && Math.abs(up.vel.z) < 1e-12);
+  assert.ok(Math.abs(up.wy) < 1e-12 && Math.abs(up.wr) < 1e-12);
+  assert.ok(Math.abs(excessive.pitch - up.pitch) < 1e-10, 'pitch command must saturate at its defined bound');
+});
+
+test('yaw primitive has bounded angular drive even with excessive moment input', () => {
+  const normal = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0 };
+  const excessive = structuredClone(normal);
+  stepDynamics(normal, { turn: 1, yawMoment: 0.35 }, 1 / 120);
+  stepDynamics(excessive, { turn: 1, yawMoment: 30 }, 1 / 120);
+  assert.ok(Math.abs(excessive.wy - normal.wy) < 1e-12);
+  assert.ok(Math.abs(excessive.wp) < 1e-12 && Math.abs(excessive.wr) < 1e-12);
+  assert.ok(Math.abs(excessive.vel.x) < 1e-12 && Math.abs(excessive.vel.z) < 1e-12);
+});
