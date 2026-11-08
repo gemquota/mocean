@@ -78,7 +78,7 @@ The Plan presentation must show both marks as separate columns for every task. T
 - Automated verification: **27 tests passed** in GitHub Actions at commit `425bf1cf048608e93b76dceef709a978e3c1cafa`.
 - GitHub Pages deployment succeeded for that commit.
 
-The user independently confirmed P1-4 to P1-6 on 8 November 2026. All six Phase 1 tasks now carry both completion marks. The implementation is backed by 26 passing automated tests and a successful GitHub Pages deployment. Phase 2 remains gated until explicit Phase 1 phase-gate approval.
+The user independently confirmed P1-4 to P1-6 on 8 November 2026. All six Phase 1 tasks now carry both completion marks. The implementation is backed by 26 passing automated tests and a successful GitHub Pages deployment. Phase 1 gate is approved; Phase 2 implementation is underway.
 
 ### Visual verification record · 8 November 2026
 
@@ -86,7 +86,7 @@ A live browser observation of the deployed simulation confirmed one continuously
 
 ## Phase 2 · Elementary movement primitives
 
-**Status:** In progress. P2-1 assistant-complete. Pitch and yaw primitives have bounded implementations and passing isolated tests; visual verification remains outstanding.
+**Status:** P2-1 assistant-complete. P2-2 to P2-5 remain open pending deliberate live visual validation; user confirmation and the Phase 2 gate are pending.
 
 - [x] P2-1 Straight swimming, acceleration, coasting and braking.
 - [ ] P2-2 Controlled pitch-up and pitch-down independently of translation.
@@ -94,7 +94,11 @@ A live browser observation of the deployed simulation confirmed one continuously
 - [ ] P2-4 True axial roll around the local head-to-tail axis, independent of pitch and yaw.
 - [ ] P2-5 Validate each primitive alone with local-axis visual cues.
 
+**Evidence:** the regression suite covers bounded pitch/yaw/roll, torque-only attitude changes, axial roll around local X without pitch/yaw/translation, acceleration, coasting and fin braking. The dorsal ridge remains attached to the deforming body frame. A deliberate isolated live-browser inspection is still required for P2-5.
+
 ## Phase 3 · Basic composite motions
+
+**Status:** Sequence implementation integrated; all five kinematic checks pass. Assistant task completion is withheld until live visual playback confirms the manoeuvres and preserves cruising quality.
 
 - [ ] P3-1 Proper dive: pitch nose down first, then accelerate forward along the new heading.
 - [ ] P3-2 Climb using the same orient-then-propel sequence.
@@ -102,12 +106,20 @@ A live browser observation of the deployed simulation confirmed one continuously
 - [ ] P3-4 Axial roll combined with a turn or glide without unwanted yaw spin.
 - [ ] P3-5 Smooth transitions between composite motions and calm cruising.
 
+**Evidence:** sequence hand-offs are eased; the test suite integrates the commands through rigid-body dynamics and checks vertical momentum, heading/velocity divergence, roll-turn separation and passive momentum decay after a sequence. Visual playback against the accepted cruising baseline remains required before user confirmation.
+
 ## Phase 4 · Complex manoeuvre arrangements
+
+**Status:** Compound sequence implementation integrated; all four kinematic checks pass. Assistant task completion is withheld pending live visual review of complete manoeuvres.
 
 - [ ] P4-1 Backwards drift while the head turns against current travel direction.
 - [ ] P4-2 Momentum-carrying curved reversal and controlled loop-the-loop.
 - [ ] P4-3 Continuous dive, braking, reorientation and recovery sequence.
 - [ ] P4-4 Full 3D compound sequences with axial roll as a deliberate component.
+
+**Evidence:** physics-integration tests check counter-heading drift with retained world momentum, curved reversal, a complete pitch revolution, braking and reorientation, and combined yaw/pitch/axial-roll attitude. These tests establish bounded numerical/kinematic behaviour, not biological realism. Visual inspection remains an acceptance requirement.
+
+**Implementation details:** [PHASE_2_4.md](PHASE_2_4.md) documents the sequence architecture, task evidence and remaining limitations. The sequence layer emits intent only; it never scripts position, velocity or camera movement.
 
 ## Phase 5 · Autonomous natural behaviour
 
@@ -153,14 +165,14 @@ Reviewed on 8 November 2026:
 |---|---|---|
 | 0 · Architecture | Assistant complete | User confirmed · 8 November 2026 |
 | 1 · 3D locomotion foundation | Assistant complete | All six tasks confirmed; phase gate approved by user · 8 November 2026 |
-| 2 · Elementary movement primitives | In progress | P2-1 assistant complete; user review pending |
-| 3 · Basic composite motions | Queued | Not started |
-| 4 · Complex manoeuvre arrangements | Queued | Not started |
+| 2 · Elementary movement primitives | In progress | P2-1 assistant complete; P2-2 to P2-5 visual review pending; user gate open |
+| 3 · Basic composite motions | Prototype integrated · visual review open | Kinematic tests pass; assistant task completion withheld; user gate open |
+| 4 · Complex manoeuvre arrangements | Prototype integrated · visual review open | Kinematic tests pass; assistant task completion withheld; user gate open |
 | 5 · Autonomous natural behaviour | Queued | Not started |
 | 6 · Environment | Deferred | Not started |
 | 7 · Integration and polish | Queued | Not started |
 
-**Phase 0 implementation and all five tasks were independently confirmed by the user on 8 November 2026. The user also confirmed the three completed Phase 1 tasks. Phase 1 continues; its remaining tasks and phase gate are open.**
+**Phase 0:** all five tasks independently confirmed and its gate approved on 8 November 2026. **Phase 1:** all six tasks independently confirmed and its gate approved on 8 November 2026. **Phases 2–4:** implementation work was explicitly authorised by the user on 9 November 2026; assistant evidence is recorded separately from user confirmation. No Phase 2, 3 or 4 user marks or phase approvals are inferred.
 
 
 ## Presentation architecture · Revision 05
@@ -177,7 +189,7 @@ Reviewed on 8 November 2026:
 - Manoeuvres progress from isolated primitives, to basic composites, to complex sequences such as backwards drift into a loop-the-loop.
 
 ### Phase 1 gate approval · 8 November 2026
-The user explicitly approved the Phase 1 phase gate on 8 November 2026. Phase 2 is therefore unlocked. Phase 3 and Phase 4 remain sequentially gated by acceptance of their immediate predecessors.
+The user explicitly approved the Phase 1 phase gate on 8 November 2026. On 9 November 2026 the user explicitly authorised the implementation sprint through Phase 4. This permits work across the requested sequence; each phase still requires its own evidence, user confirmation and explicit acceptance gate before it can be recorded as approved.
 
 ### Phase 2 implementation evidence · P2-1
 - Added a bounded brake input to translational dynamics.

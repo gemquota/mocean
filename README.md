@@ -15,7 +15,7 @@ The first creature is a flexible-bodied swimmer:
 - Propulsive acceleration is derived from tail motion and is bounded.
 - Burst swimming consumes an energy reserve; recovery restores it.
 - Momentum, speed-dependent drag, buoyancy, angular inertia and soft spatial limits shape the motion.
-- A smoothed chase camera follows the creature through its orientation changes.
+- A fixed world-space camera observes the creature; the fish moves through the habitat without camera chasing.
 
 Autonomous behaviour transitions between cruising, exploring, turning, darting, gliding and recovering. Randomness changes behavioural intent; it does not teleport the creature or bypass the physical model.
 
@@ -24,7 +24,10 @@ Autonomous behaviour transitions between cruising, exploring, turning, darting, 
 - `src/core/math.js`: vector operations, quaternion rotation and angle handling.
 - `src/core/body.js`: travelling-wave body deformation, gait adaptation, tail-driven propulsion and burst-energy costs.
 - `src/core/dynamics.js`: fixed-step motion, drag, buoyancy, rotational response and soft habitat boundaries.
-- `src/main.js`: autonomous behaviour, follow camera and the first full-screen procedural pixel rendering experiment.
+- `src/core/maneuver.js`: spatial Bézier steering intent with smooth endpoint tangents.
+- `src/core/sequences.js`: eased isolated primitives, composite motions and longer compound manoeuvre intent.
+- `src/core/camera.js`: fixed-camera basis and projection framing.
+- `src/main.js`: autonomous behaviour, sparse manoeuvre sequencing, fixed-camera projection and full-screen procedural rendering.
 
 ## Tests
 

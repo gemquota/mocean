@@ -445,3 +445,192 @@ test('axial roll command saturates and auxiliary roll moment remains bounded', (
   stepDynamics(excessive, { roll: 9, rollMoment: 30 }, 1 / 120);
   assert.ok(Math.abs(excessive.wr - normal.wr) < 1e-12);
 });
+
+
+import { createMotionSequence, sampleMotionSequence, MOTION_SEQUENCE_NAMES } from '../src/core/sequences.js';
+
+test('movement sequence library covers isolated primitives and the Phase 3–4 manoeuvre set', () => {
+  for (const name of ['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','curved-reversal','loop-the-loop','dive-brake-reorient','compound-3d']) {
+    assert.ok(MOTION_SEQUENCE_NAMES.includes(name), name+' must be available');
+    const sequence = createMotionSequence(name);
+    assert.ok(sequence.duration > 0);
+    assert.ok(sequence.segments.every(item => item.duration > 0));
+  }
+});
+
+test('dive and climb orient before the main thrust pulse, then brake and recover', () => {
+  for (const [name, sign] of [['dive',-1],['climb',1]]) {
+    const sequence = createMotionSequence(name);
+    const orient = sampleMotionSequence(sequence, 0.9).command;
+    const propel = sampleMotionSequence(sequence, 1.8).command;
+    const brake = sampleMotionSequence(sequence, 3.3).command;
+    assert.equal(Math.sign(orient.pitch), sign);
+    assert.ok(Math.abs(orient.thrust) < 0.2, 'orientation precedes the propulsion pulse');
+    assert.equal(Math.sign(propel.pitch), sign);
+    assert.ok(propel.thrust > 0.6);
+    assert.ok(brake.brake > 0.5);
+  }
+});
+
+test('sequence segment hand-offs are continuous and outputs remain bounded', () => {
+  const sequence = createMotionSequence('compound-3d');
+  let previous = sampleMotionSequence(sequence, 0).command;
+  for (let t = 1/120; t <= sequence.duration; t += 1/120) {
+    const current = sampleMotionSequence(sequence, t).command;
+    for (const key of Object.keys(current)) {
+      assert.ok(Number.isFinite(current[key]), key+' must remain finite');
+      assert.ok(Math.abs(current[key] - previous[key]) < 0.12, key+' must not jump at a segment hand-off');
+    }
+    previous = current;
+  }
+  assert.equal(sampleMotionSequence(sequence, sequence.duration).complete, true);
+});
+
+test('backward drift turns the head against retained forward momentum before reverse thrust', () => {
+  const sequence = createMotionSequence('backward-drift');
+  const prepare = sampleMotionSequence(sequence, 1.1).command;
+  const counter = sampleMotionSequence(sequence, 2.3).command;
+  const reverse = sampleMotionSequence(sequence, 4.3).command;
+  assert.ok(prepare.thrust > 0.5);
+  assert.ok(counter.yawOffset > Math.PI * 0.7);
+  assert.ok(counter.thrust < 0.2);
+  assert.ok(reverse.yawOffset > Math.PI * 0.8);
+  assert.ok(reverse.thrust < 0);
+});
+
+test('loop and compound 3D sequences deliberately include pitch, yaw and axial roll', () => {
+  const loop = createMotionSequence('loop-the-loop');
+  const loopPeak = sampleMotionSequence(loop, 7.5).command;
+  assert.ok(loopPeak.pitch > Math.PI);
+  assert.ok(loopPeak.pitchMoment > 0.3 && loopPeak.pitchMoment <= 0.4);
+  const compound = createMotionSequence('compound-3d');
+  const peak = sampleMotionSequence(compound, 2.6).command;
+  assert.ok(peak.yawOffset > 1);
+  assert.ok(peak.pitch > 0.8);
+  assert.ok(peak.roll > 0.8);
+});
+
+
+function runIntentSequence(name, initialVelocity = vec3(), duration = Infinity) {
+  const sequence = createMotionSequence(name);
+  const body = { p: vec3(), vel: initialVelocity, yaw: 0, pitch: 0, roll: 0, wy: 0, wp: 0, wr: 0, orientation: quatFromEuler(0,0,0) };
+  const dt = 1/120;
+  for (let t = 0; t < Math.min(sequence.duration,duration); t += dt) {
+    const command = sampleMotionSequence(sequence, t).command;
+    const turn = Math.max(-1, Math.min(1, angleDelta(body.yaw, sequence.startYaw + command.yawOffset) * 1.7));
+    const pitch = Math.max(-0.85, Math.min(0.85, (command.pitch - body.pitch) * 2.2));
+    const roll = Math.max(-1, Math.min(1, (sequence.startRoll + command.roll - body.roll) * 1.15));
+    stepDynamics(body, { thrust: command.thrust, turn, pitch, pitchMoment: command.pitchMoment, roll, brake: command.brake }, dt);
+  }
+  return body;
+}
+
+test('physics integration turns the dive and climb intents into vertical momentum', () => {
+  const dive = runIntentSequence('dive', vec3(), 3.04);
+  const climb = runIntentSequence('climb', vec3(), 3.04);
+  assert.ok(dive.pitch < -0.2, 'dive must pitch the nose down');
+  assert.ok(dive.vel.y < -0.1, 'body-forward thrust must build downward momentum');
+  assert.ok(climb.pitch > 0.2, 'climb must pitch the nose up');
+  assert.ok(climb.vel.y > 0.1, 'body-forward thrust must build upward momentum');
+});
+
+test('physics integration preserves momentum while the fish turns and brakes', () => {
+  const body = runIntentSequence('turn-accelerate-coast-brake', vec3(1.1,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  assert.ok(Math.hypot(body.vel.x,body.vel.y,body.vel.z) > 0.12);
+  assert.ok(Math.hypot(forward.x-body.vel.x,forward.y-body.vel.y,forward.z-body.vel.z) > 0.2,
+    'heading and velocity must remain distinct during the turn');
+  assert.ok(body.vel.x > 0, 'the turn must not teleport or reverse retained momentum');
+});
+
+test('physics integration produces visible axial roll without changing body-forward heading', () => {
+  const body = runIntentSequence('axial-roll', vec3(0.6,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  const dorsal = quatRotate(body.orientation, vec3(0,1,0));
+  assert.ok(Math.abs(forward.x-1) < 1e-5 && Math.abs(forward.y) < 1e-5 && Math.abs(forward.z) < 1e-5);
+  assert.ok(Math.abs(dorsal.y-1) > 0.12, 'dorsal axis must visibly rotate around the longitudinal axis');
+});
+
+test('complex sequence integration remains finite under combined 3D attitude and force commands', () => {
+  for (const name of ['backward-drift','loop-the-loop','dive-brake-reorient','compound-3d']) {
+    const body = runIntentSequence(name, vec3(0.8,0.05,0));
+    assert.ok([body.p.x,body.p.y,body.p.z,body.vel.x,body.vel.y,body.vel.z,body.yaw,body.pitch,body.roll].every(Number.isFinite), name+' must remain finite');
+    const q = body.orientation;
+    assert.ok(Math.abs(Math.hypot(q.w,q.x,q.y,q.z)-1) < 1e-9, name+' quaternion must remain normalized');
+  }
+});
+
+
+test('backward drift produces a head direction opposed to retained world momentum', () => {
+  const body = runIntentSequence('backward-drift', vec3(1.1,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  const velocity = body.vel;
+  const alignment = forward.x*velocity.x + forward.y*velocity.y + forward.z*velocity.z;
+  assert.ok(velocity.x > 0.12, 'the fish must retain forward world-space drift');
+  assert.ok(alignment < 0, 'the head must point against the direction of travel');
+});
+
+test('loop-the-loop carries pitch through a complete revolution and returns near its starting heading', () => {
+  const body = runIntentSequence('loop-the-loop', vec3(0.4,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  assert.ok(body.pitch > Math.PI*1.8, 'pitch must pass through a full somersault');
+  assert.ok(forward.x > 0.75, 'body-forward should return toward its original direction');
+  assert.ok(Math.abs(forward.y) < 0.65, 'body-forward should finish near the starting plane');
+});
+
+
+test('roll-turn composite couples axial roll and yaw without introducing a pitch spin', () => {
+  const body = runIntentSequence('roll-turn', vec3(0.7,0,0));
+  assert.ok(body.yaw > 0.25, 'the fish should turn around world-up');
+  assert.ok(Math.abs(body.roll) > 0.25, 'the fish should roll around its local longitudinal axis');
+  assert.ok(Math.abs(body.pitch) < 0.3, 'roll-turn should not become an accidental somersault');
+});
+
+test('curved reversal turns the head while retaining a curved, momentum-led path', () => {
+  const body = runIntentSequence('curved-reversal', vec3(1.05,0,0));
+  const forward = quatRotate(body.orientation, vec3(1,0,0));
+  const velocity = body.vel;
+  const alignment = forward.x*velocity.x + forward.y*velocity.y + forward.z*velocity.z;
+  assert.ok(body.yaw > 1.2, 'heading must make a substantial reversal');
+  assert.ok(length3(velocity) > 0.12, 'momentum must persist through the turn');
+  assert.ok(alignment < 0.5, 'the path must lag behind the changing heading');
+});
+
+test('dive, braking and reorientation are distinct consecutive phases', () => {
+  const sequence = createMotionSequence('dive-brake-reorient');
+  const dive = sampleMotionSequence(sequence, 2.2).command;
+  const brake = sampleMotionSequence(sequence, 3.1).command;
+  const reorient = sampleMotionSequence(sequence, 4.2).command;
+  assert.ok(dive.pitch < -0.5 && dive.thrust > 0.6);
+  assert.ok(brake.brake > 0.7 && brake.pitch < 0);
+  assert.ok(reorient.yawOffset > Math.PI*0.6 && reorient.brake < 0.1);
+});
+
+test('compound 3D manoeuvre changes yaw, pitch and axial roll through the dynamics', () => {
+  const body = runIntentSequence('compound-3d', vec3(0.8,0.05,0));
+  assert.ok(body.yaw > 0.8);
+  assert.ok(body.pitch > 0.25);
+  assert.ok(body.roll > 0.25);
+});
+
+
+test('composite manoeuvre hands back to passive dynamics without an impulse', () => {
+  const body = runIntentSequence('turn-accelerate-coast-brake', vec3(0.9,0,0));
+  const before = length3(body.vel);
+  const positionBefore = { ...body.p };
+  for (let i = 0; i < 240; i++) stepDynamics(body, {}, 1/120);
+  const after = length3(body.vel);
+  assert.ok(after < before, 'calm coasting should dissipate residual momentum');
+  assert.ok(Math.hypot(body.p.x-positionBefore.x,body.p.y-positionBefore.y,body.p.z-positionBefore.z) > 0);
+  assert.ok([body.p.x,body.p.y,body.p.z,body.vel.x,body.vel.y,body.vel.z].every(Number.isFinite));
+});
+
+test('dive-brake-reorient sequence converts downward motion, sheds speed, then changes heading', () => {
+  const name = 'dive-brake-reorient';
+  const duringDive = runIntentSequence(name, vec3(), 2.7);
+  const afterBrake = runIntentSequence(name, vec3(), 3.55);
+  const recovered = runIntentSequence(name, vec3(), 5.9);
+  assert.ok(duringDive.vel.y < -0.05, 'the dive should create downward momentum');
+  assert.ok(length3(afterBrake.vel) < length3(duringDive.vel), 'deployed fins should dissipate speed');
+  assert.ok(recovered.yaw > 1.0, 'the fish should reorient after braking');
+});
