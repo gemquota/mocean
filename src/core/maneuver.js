@@ -17,7 +17,7 @@ export function createManeuver({ startYaw, startPitch, endYaw, endPitch, duratio
     duration: Math.max(0.1, duration),
     yaw: [startYaw, startYaw + yawDelta * 0.28 + bend * 0.32, startYaw + yawDelta * 0.72 + bend * 0.32, startYaw + yawDelta],
     pitch: [startPitch, startPitch + pitchDelta * 0.28 + bend * 0.12, startPitch + pitchDelta * 0.72 - bend * 0.12, endPitch],
-    speed: [0.88, speedPeak, speedPeak * 1.04, 0.82]
+    speed: [0.88, speedPeak * 1.12, speedPeak * 1.12, 0.82]
   };
 }
 
