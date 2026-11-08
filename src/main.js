@@ -103,6 +103,13 @@ function drawFish(w,h){
  const faces=mesh.faces.map(face=>({face,depth:face.reduce((s,i)=>s+project(add(sim.p,rotate(orientation(),deformed[i])),w,h).z,0)/3})).sort((a,b)=>b.depth-a.depth);
  for(const{face}of faces){const points=face.map(i=>deformed[i]),p=points.map(v=>project(add(sim.p,rotate(orientation(),v)),w,h));if(p.some(v=>v.z<.15))continue;
   ctx.beginPath();p.forEach((v,i)=>{const x=Math.round(v.x/3.2)*3.2,y=Math.round(v.y/3.2)*3.2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.fillStyle=faceColour(points);ctx.fill();}
+ // A narrow dorsal pigment ridge gives the fish a persistent body-local up cue.
+ // It is attached to the deforming mesh frame, so it follows pitch, yaw and axial roll.
+ const dorsalRidge=[V(.58,.27,0),V(.3,.34,0),V(-.12,.32,0),V(-.62,.24,0),V(-1.12,.12,0),V(-1.42,.055,0)].map(v=>projectLocal(v,w,h));
+ if(dorsalRidge.every(p=>p.z>.15)){
+  ctx.beginPath();dorsalRidge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+  ctx.strokeStyle='rgba(177,235,207,.82)';ctx.lineWidth=Math.max(1.1,centre.scale*.009);ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+ }
  const eye=projectLocal(V(.72,.13,.2),w,h);
  if(eye.z>.15){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(2.2,eye.scale*.028),0,TAU);ctx.fillStyle='#f3f0d8';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.scale*.008,eye.y,Math.max(1.2,eye.scale*.012),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
  const g1=projectLocal(V(.43,.22,.33),w,h),g2=projectLocal(V(.3,-.2,.34),w,h);
