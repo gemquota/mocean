@@ -1,7 +1,7 @@
 # Mocean Development Roadmap
 
-**Revision:** 07 · 8 November 2026  
-**Status:** Phase 0 architecture and baseline complete; awaiting user review and confirmation.  
+**Revision:** 08 · 8 November 2026  
+**Status:** Phase 0 confirmed by user; Phase 1 implementation complete and awaiting review of its latest increment.  
 **Implementation gate:** Phase 1 has started; remaining phase tasks stay evidence-gated.
 
 ## Direction
@@ -42,8 +42,8 @@ The Plan presentation must show both marks as separate columns for every task. T
 
 ## Phase 0 · Architecture and baseline
 
-**Status:** Assistant complete; awaiting independent user confirmation.  
-**Evidence:** [PHASE_0.md](PHASE_0.md), source audit, acceptance matrix and regression tests. The Phase 0 architecture contract is complete; the user confirmation mark remains theirs to set.
+**Status:** Assistant complete and user confirmed on 8 November 2026.  
+**Evidence:** [PHASE_0.md](PHASE_0.md), source audit, acceptance matrix and regression tests. All five Phase 0 tasks have both completion marks.
 
 - [x] P0-1 Document world axes, body axes and quaternion orientation convention.
 - [x] P0-2 Define separate translational propulsion and orientation-control pathways, their coupling, and the current implementation boundary.
@@ -51,11 +51,11 @@ The Plan presentation must show both marks as separate columns for every task. T
 - [x] P0-4 Define locomotion acceptance tests, baseline inventory and known limitations.
 - [x] P0-5 Confirm phase boundaries, dependencies and the two-key user approval process.
 
-**Phase 0 gate:** implementation complete; awaiting independent user confirmation. Phase 1 is in progress under the user's explicit instruction, which authorises work to proceed while the Phase 0 review mark remains separate.
+**Phase 0 gate:** approved by the user on 8 November 2026. All five Phase 0 tasks are independently confirmed.
 
 ## Phase 1 · True 3D locomotion foundation
 
-**Status:** In progress · Phase 0 delivered and Phase 1 explicitly authorised by the user.
+**Status:** Assistant implementation complete · awaiting user review of P1-4 to P1-6 and explicit Phase 1 gate approval.
 
 - [x] P1-1 Build a coherent 3D orientation frame with quaternion-based attitude.
 - [x] P1-2 Separate thrust, lift and lateral propulsion from pitch, yaw and roll control.
@@ -63,6 +63,17 @@ The Plan presentation must show both marks as separate columns for every task. T
 - [x] P1-4 Make depth travel visibly change perspective scale on the fixed camera.
 - [x] P1-5 Add distance-based blur and fade near one-quarter apparent size.
 - [x] P1-6 Guide the fish back toward the visible habitat using world-space heading, pitch and body-forward thrust.
+
+### Phase 1 implementation evidence · current increment
+
+- P1-1 to P1-3: quaternion attitude, separated force/torque channels and 3D propulsion basis remain covered by the passing regression suite.
+- P1-4: perspective projection explicitly uses focal scale divided by camera-space depth.
+- P1-5: fish-only blur and restrained opacity reduction begin below one-quarter baseline apparent size.
+- P1-6: world-space habitat-return guidance blends heading and pitch toward the habitat centre and adds bounded body-forward thrust. It does not reposition the fish or move the camera.
+- Automated verification: **26 tests passed** in GitHub Actions at commit `425bf1cf048608e93b76dceef709a978e3c1cafa`.
+- GitHub Pages deployment succeeded for that commit.
+
+The assistant marks all six Phase 1 tasks complete. P1-4 to P1-6 have not yet received the user's independent confirmation. Phase 2 remains gated until the user reviews the new increment and explicitly approves the Phase 1 gate.
 
 ## Phase 2 · Elementary movement primitives
 
