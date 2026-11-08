@@ -187,7 +187,7 @@ test('body-forward thrust follows arbitrary attitude while lift remains world ve
 
 test('world-up yaw remains a world-axis rotation when the fish is pitched', () => {
   const pitched = quatFromEuler(0, Math.PI / 3, 0);
-  const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: Math.PI / 3, roll: 0, wy: 1, wp: 0, wr: 0, orientation: pitched };
+  const body = { p: vec3(), vel: vec3(), yaw: 0, pitch: 0, roll: 0, wy: 1, wp: 0, wr: 0, orientation: pitched };
   const dt = 1e-3;
   stepDynamics(body, {}, dt);
   const up = quatRotate(body.orientation, vec3(0, 1, 0));
