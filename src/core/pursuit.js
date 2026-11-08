@@ -23,7 +23,7 @@ export function createPursuitGuidance(position, velocity, yaw, pitch, target, ai
     targetPitch,
     turn: clamp(angleDelta(yaw, targetYaw) * 2.15, -1, 1),
     pitch: clamp((targetPitch - pitch) * 2.25, -0.9, 0.9),
-    thrustScale: clamp(0.78 + distance * 0.115, 0.78, 1.85),
+    thrustScale: clamp(distance / 1.15, 0, 1) * clamp(0.82 + distance * 0.12, 0.82, 1.85),
     brake: hovering ? clamp(speed / 0.12, 0, 1) : brake,
     hovering
   };
