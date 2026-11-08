@@ -1,6 +1,6 @@
 # Mocean Development Roadmap
 
-**Revision:** 06 · 8 November 2026  
+**Revision:** 07 · 8 November 2026  
 **Status:** Phase 0 architecture and baseline complete; awaiting user review and confirmation.  
 **Implementation gate:** Phase 1 has started; remaining phase tasks stay evidence-gated.
 
@@ -62,7 +62,7 @@ The Plan presentation must show both marks as separate columns for every task. T
 - [x] P1-3 Support forward, reverse, lateral, vertical and diagonal travel.
 - [x] P1-4 Make depth travel visibly change perspective scale on the fixed camera.
 - [x] P1-5 Add distance-based blur and fade near one-quarter apparent size.
-- [ ] P1-6 Return the fish to the visible habitat naturally after leaving frame.
+- [x] P1-6 Guide the fish back toward the visible habitat using world-space heading, pitch and body-forward thrust.
 
 ## Phase 2 · Elementary movement primitives
 
@@ -125,7 +125,7 @@ Reviewed on 8 November 2026:
 - The current perspective projection exists, but robust depth travel, scale threshold, blur/fade and natural re-entry need implementation and acceptance tests.
 - The current model is a phenomenological approximation, not a validated animal model or CFD solver.
 
-### Phase 1 implementation evidence · current increment\n\n- P1-1: persistent body-to-world quaternion attitude is integrated from angular velocity, with world-up yaw and body-local pitch/roll composition.\n- P1-2: translational and attitude inputs are separate; lift is world-vertical, while thrust and lateral force follow body axes.\n- P1-3: forward, reverse, lateral, vertical and combined-direction travel are supported by the force basis. Regression tests cover pitched thrust, reverse thrust, lateral thrust, world lift and torque-only attitude.\n- P1-4 and P1-5 are now implemented with automated perspective and threshold tests. P1-6 remains open: natural re-entry.\n\nPhase 1 is underway, not complete. The GitHub Actions Core tests workflow passed for the Phase 1 code increment at commit `1f3381a9c81c0c1d097f6d376e0c311cd486bf53` (22 tests, 22 passed).\n\n## Phase approval record
+### Phase 1 implementation evidence · current increment\n\n- P1-1: persistent body-to-world quaternion attitude is integrated from angular velocity, with world-up yaw and body-local pitch/roll composition.\n- P1-2: translational and attitude inputs are separate; lift is world-vertical, while thrust and lateral force follow body axes.\n- P1-3: forward, reverse, lateral, vertical and combined-direction travel are supported by the force basis. Regression tests cover pitched thrust, reverse thrust, lateral thrust, world lift and torque-only attitude.\n- P1-4 and P1-5 implement depth-scaled perspective and thresholded fish-only distance treatment. P1-6 adds a smooth world-space habitat-return controller: it blends the desired yaw and pitch toward the habitat centre and adds bounded forward thrust along the fish's current body-forward axis. It does not move the camera or directly reposition the fish.\n\nPhase 1 is underway, not complete. The GitHub Actions Core tests workflow passed for the Phase 1 code increment at commit `1f3381a9c81c0c1d097f6d376e0c311cd486bf53` (22 tests, 22 passed).\n\n## Phase approval record
 
 | Phase | Status | Approval |
 |---|---|---|
