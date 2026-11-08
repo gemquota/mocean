@@ -1,9 +1,10 @@
 import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 as cross, length3 as mag, normalize3 as unit, quatFromEuler as quatEuler, quatRotate as rotate, angleDelta, perspectiveScale, distanceTreatment, habitatReturnGuidance } from './core/math.js';
 import { stepDynamics } from './core/dynamics.js';
+import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,targetDepth:0,gait:createGait()};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,targetDepth:0,gait:createGait()};
 const camera={p:V(0,2.15,10),target:V(0,0,0),forward:V(),right:V(),up:V()};
 camera.forward=unit(add(camera.target,mul(camera.p,-1)));camera.right=unit(cross(camera.forward,V(0,1,0)));camera.up=unit(cross(camera.right,camera.forward));
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
