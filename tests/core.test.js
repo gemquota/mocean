@@ -523,6 +523,8 @@ test('pursuit builds propulsion demand smoothly with target distance', () => {
   const far = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(9, 0, 0));
   assert.ok(near.thrustScale < middle.thrustScale && middle.thrustScale < far.thrustScale);
   assert.ok(far.thrustScale <= 1.85);
+  const atTarget = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3());
+  assert.equal(atTarget.thrustScale, 0);
 });
 
 test('pursuit brakes as it reaches the target and identifies a low-speed hover', () => {
