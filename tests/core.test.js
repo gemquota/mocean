@@ -520,7 +520,7 @@ function runIntentSequence(name, initialVelocity = vec3(), duration = Infinity) 
     const turn = Math.max(-1, Math.min(1, angleDelta(body.yaw, sequence.startYaw + command.yawOffset) * 1.7));
     const pitch = Math.max(-0.85, Math.min(0.85, (command.pitch - body.pitch) * 2.2));
     const roll = Math.max(-1, Math.min(1, (sequence.startRoll + command.roll - body.roll) * 1.15));
-    stepDynamics(body, { thrust: command.thrust, turn, pitch, roll, brake: command.brake }, dt);
+    stepDynamics(body, { thrust: command.thrust, turn, pitch, pitchMoment: command.pitchMoment, roll, brake: command.brake }, dt);
   }
   return body;
 }
