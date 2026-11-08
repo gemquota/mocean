@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07171d"><title>Mocean / Development blueprint</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080808"><title>Mocean / Development blueprint</title>
 <style>
 :root{color-scheme:dark;--bg:#07171d;--panel:#0d222a;--line:#24434a;--text:#e4f0e9;--muted:#91aaa4;--mint:#8bd8ba;--aqua:#58b8bb;--amber:#e8c58c;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;--sans:Inter,ui-sans-serif,system-ui,sans-serif}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 70% -20%,#16404a 0,transparent 45%),var(--bg);color:var(--text);font:15px/1.55 var(--sans)}a{color:var(--mint);text-decoration:none}a:hover{text-decoration:underline}button{font:inherit;color:inherit;cursor:pointer}.shell{max-width:1240px;margin:auto;padding:28px clamp(16px,4vw,52px) 70px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);padding:8px 0 12px;transition:padding .22s ease,opacity .22s ease,transform .22s ease}.brand{display:flex;gap:9px;align-items:center;letter-spacing:.16em;font-size:10px;font-weight:700}.mark{display:grid;place-items:center;width:28px;height:28px;border:1px solid #4b827d;border-radius:50%;color:var(--mint);font:15px Georgia}.topmeta{color:var(--muted);font:9px var(--mono);text-align:right;transition:opacity .2s ease}.tabs{transition:padding .2s ease,background .2s ease}.tab{transition:padding .2s ease,font-size .2s ease}
@@ -69,12 +69,40 @@ body.scrolled .tabs{padding:3px 0;background:#080a09}
  .tab{padding:7px 9px;font-size:11px}
  .simulation-drawer{margin-top:8px}
 }
+
+/* Monochrome brutalist palette and edge-mounted simulation pull tab */
+:root{--bg:#080808;--panel:#111;--line:#414141;--text:#f4f4f0;--muted:#aaa;--mint:#f4f4f0;--aqua:#f4f4f0;--amber:#f4f4f0}
+body{background:#080808;color:#f4f4f0}
+a{color:#f4f4f0;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.mark{border-color:#f4f4f0;color:#f4f4f0}
+.tab[aria-selected=true]{background:#f4f4f0;color:#080808}
+.progress i{background:#f4f4f0}
+.goalband{border-left-color:#f4f4f0}
+.goalband strong,.pill.hold,.pill.active,.simulation-drawer summary strong{color:#f4f4f0}
+.pill.hold,.pill.active{border-color:#f4f4f0}
+.tick input{accent-color:#f4f4f0}
+.btn{border-color:#f4f4f0;background:#f4f4f0;color:#080808}
+.btn:hover{background:#d8d8d2}
+.note{border-left-color:#f4f4f0}
+.phasegate{border-color:#f4f4f0}
+.diagram .arrow{stroke:#f4f4f0}
+.simulation-drawer{position:fixed;z-index:30;top:0;left:50%;transform:translateX(-50%);width:52px;margin:0;border:0;border-radius:0;background:transparent;overflow:visible}
+.simulation-drawer>summary{width:52px;height:25px;margin:0 auto;padding:0;display:flex;justify-content:center;align-items:center;background:#f4f4f0;color:#080808;border:0;border-radius:0 0 2px 2px;box-shadow:0 2px 8px #0008;cursor:pointer;list-style:none}
+.simulation-drawer>summary::-webkit-details-marker{display:none}
+.simulation-drawer>summary span{font-size:17px;line-height:1;filter:grayscale(1)}
+.simulation-drawer[open]{width:min(920px,100vw);background:#080808;box-shadow:0 12px 35px #000b}
+.simulation-drawer[open]>summary{position:relative}
+.simulation-frame{height:min(68vh,700px);min-height:280px;border:1px solid #414141;border-top:0;background:#080808}
+.simulation-frame iframe{background:#080808}
+.simulation-foot{background:#111;border:1px solid #414141;border-top:0;color:#aaa;padding:8px 11px}
+.simulation-foot a{color:#f4f4f0}
+@media(max-width:640px){.simulation-frame{height:58vh;min-height:260px}.simulation-drawer[open]{width:100vw}}
 </style></head><body><div class="shell">
 <header class="top"><div class="brand"><span class="mark">M</span><span>MOCEAN / FIELD NOTES</span></div><div class="topmeta">DEVELOPMENT BLUEPRINT<br>REV 13 · 08 NOV 2026</div></header>
-<details class="simulation-drawer">
-<summary><span><strong>Live simulation</strong><small>Expand to watch the current fish implementation</small></span><span class="drawer-action">OPEN / CLOSE</span></summary>
+<details class="simulation-drawer" aria-label="Live simulation drawer">
+<summary aria-label="Toggle live fish simulation" title="Toggle live simulation"><span aria-hidden="true">🐟</span></summary>
 <div class="simulation-frame"><iframe src="https://gemquota.github.io/mocean/" title="Live Mocean fish simulation" loading="lazy" allow="fullscreen"></iframe></div>
-<div class="simulation-foot"><span>Live GitHub Pages build · fixed-camera simulation</span><a href="https://gemquota.github.io/mocean/" target="_blank" rel="noopener">Open simulation in a new tab ↗</a></div>
+<div class="simulation-foot"><span>LIVE SIMULATION · FIXED CAMERA</span><a href="https://gemquota.github.io/mocean/" target="_blank" rel="noopener">OPEN FULL SCREEN ↗</a></div>
 </details>
 
 <nav class="tabs" role="tablist" aria-label="Presentation sections"><button class="tab" role="tab" aria-selected="true" aria-controls="plan" data-tab="plan">01 / Plan</button><button class="tab" role="tab" aria-selected="false" aria-controls="review" data-tab="review">02 / Review</button><button class="tab" role="tab" aria-selected="false" aria-controls="present" data-tab="present">03 / Present</button></nav><main>
