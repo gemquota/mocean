@@ -30,10 +30,10 @@ export function stepDynamics(body, command, dt) {
 
   // A bounded hydrodynamic steering moment gives the fish enough authority to
   // complete broad arcs and full reversals without snapping its heading.
-  const yawDrive = clamp(command.turn ?? 0, -1, 1) * 1.65 + (command.yawMoment ?? 0);
-  body.wy += (yawDrive - body.wy * (1.45 + speed * 0.16)) * dt;
-  body.wp += ((command.pitch ?? 0) * 0.34 - body.wp * 1.65 - body.pitch * 0.18) * dt;
-  body.wr += ((command.rollMoment ?? 0) - body.wr * 1.9 - body.roll * 0.12) * dt;
+  const yawDrive = clamp(command.turn ?? 0, -1, 1) * 3.1 + (command.yawMoment ?? 0);
+  body.wy += (yawDrive - body.wy * (1.05 + speed * 0.12)) * dt;
+  body.wp += ((command.pitch ?? 0) * 0.58 - body.wp * 1.25 - body.pitch * 0.12) * dt;
+  body.wr += ((command.rollMoment ?? 0) * 1.8 - body.wr * 1.35 - body.roll * 0.09) * dt;
   body.yaw += body.wy * dt;
   body.pitch = clamp(body.pitch + body.wp * dt, -0.68, 0.68);
   body.roll = clamp(body.roll + body.wr * dt, -0.46, 0.46);
