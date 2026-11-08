@@ -1,6 +1,6 @@
 # Mocean Development Roadmap
 
-**Revision:** 01 · 8 November 2026  
+**Revision:** 02 · 8 November 2026  
 **Status:** Initial blueprint drafted; awaiting user approval.  
 **Implementation gate:** Phase One has not started.
 
@@ -38,36 +38,50 @@ A hybrid locomotion model: physically grounded forces, inertia, momentum and bod
 - [ ] P1-5 Add distance-based blur and fade near one-quarter apparent size.
 - [ ] P1-6 Return the fish to the visible habitat naturally after leaving frame.
 
-## Phase 2 · Inertia and manoeuvres
+## Phase 2 · Elementary movement primitives
 
-- [ ] P2-1 Tune mass, acceleration, drag and angular inertia as a consistent model.
-- [ ] P2-2 Implement counter-steering and visible drift while heading changes.
-- [ ] P2-3 Couple body curvature and tail/fin forces to manoeuvre intent.
-- [ ] P2-4 Create a momentum-carrying reversal and controlled loop manoeuvre.
-- [ ] P2-5 Implement dive, braking, recovery and calm resumption.
-- [ ] P2-6 Allow full axial roll without artificial roll clamping.
+- [ ] P2-1 Straight swimming, acceleration, coasting and braking.
+- [ ] P2-2 Controlled pitch-up and pitch-down independently of translation.
+- [ ] P2-3 Controlled yaw turns with bounded angular acceleration.
+- [ ] P2-4 True axial roll around the local head-to-tail axis, independent of pitch and yaw.
+- [ ] P2-5 Validate each primitive alone with local-axis visual cues.
 
-## Phase 3 · Autonomous natural behaviour
+## Phase 3 · Basic composite motions
 
-- [ ] P3-1 Add a goal/subgoal behaviour layer with persistent intent.
-- [ ] P3-2 Blend cruise, explore, dart, glide, turn and recovery states.
-- [ ] P3-3 Plan smooth trajectories with anticipation and obstacle margins.
-- [ ] P3-4 Tune energy, rest and movement variation for a convincing rhythm.
+- [ ] P3-1 Proper dive: pitch nose down first, then accelerate forward along the new heading.
+- [ ] P3-2 Climb using the same orient-then-propel sequence.
+- [ ] P3-3 Turns combined with acceleration, coasting and braking while preserving momentum.
+- [ ] P3-4 Axial roll combined with a turn or glide without unwanted yaw spin.
+- [ ] P3-5 Smooth transitions between composite motions and calm cruising.
 
-## Phase 4 · Environment and water surface (deferred)
+## Phase 4 · Complex manoeuvre arrangements
 
-- [ ] P4-1 Add sparse bubbles with buoyant rise and size variation.
-- [ ] P4-2 Add tiny plankton/detritus with layered drift and parallax.
-- [ ] P4-3 Add occasional drifting sticks with believable passive motion.
-- [ ] P4-4 Build a visible water surface with travelling ripples and swells.
-- [ ] P4-5 Add a basic wind field driving small waves and intermittent chop.
+- [ ] P4-1 Backwards drift while the head turns against current travel direction.
+- [ ] P4-2 Momentum-carrying curved reversal and controlled loop-the-loop.
+- [ ] P4-3 Continuous dive, braking, reorientation and recovery sequence.
+- [ ] P4-4 Full 3D compound sequences with axial roll as a deliberate component.
 
-## Phase 5 · Integration and polish
+## Phase 5 · Autonomous natural behaviour
 
-- [ ] P5-1 Tune lighting, depth cues, silhouette and material response.
-- [ ] P5-2 Profile simulation and rendering; stabilise fixed-step behaviour.
-- [ ] P5-3 Run regression tests and verify public Pages deployment.
-- [ ] P5-4 Complete final visual and behavioural acceptance review.
+- [ ] P5-1 Add a goal/subgoal behaviour layer with persistent intent.
+- [ ] P5-2 Blend cruise, explore, dart, glide, turn and recovery states.
+- [ ] P5-3 Plan smooth trajectories with anticipation and obstacle margins.
+- [ ] P5-4 Tune energy, rest and movement variation for a convincing rhythm.
+
+## Phase 6 · Environment and water surface (deferred)
+
+- [ ] P6-1 Add sparse bubbles with buoyant rise and size variation.
+- [ ] P6-2 Add tiny plankton/detritus with layered drift and parallax.
+- [ ] P6-3 Add occasional drifting sticks with believable passive motion.
+- [ ] P6-4 Build a visible water surface with travelling ripples and swells.
+- [ ] P6-5 Add a basic wind field driving small waves and intermittent chop.
+
+## Phase 7 · Integration and polish
+
+- [ ] P7-1 Tune lighting, depth cues, silhouette and material response.
+- [ ] P7-2 Profile simulation and rendering; stabilise fixed-step behaviour.
+- [ ] P7-3 Run regression tests and verify public Pages deployment.
+- [ ] P7-4 Complete final visual and behavioural acceptance review.
 
 ## Baseline source audit
 
@@ -97,3 +111,17 @@ Reviewed on 8 November 2026:
 | 5 · Polish | Queued | Not started |
 
 **No Phase One code has been changed as part of this blueprint.**
+
+
+## Presentation architecture · Revision 02
+
+- **Plan** is the primary workspace: phases, hierarchical goals, atomic tasks, dependencies and progress tracking.
+- **Review** is the technical evidence workspace. It must explain coordinate frames, six degrees of freedom, world versus body-local axes, force and torque, momentum versus heading, orient-then-thrust diving, body curvature, fin attachment and perspective/depth rendering.
+- **Present** is deliberately deferred until Plan and Review are substantially complete. The interactive simulation is a secondary sub-tab inside Present, not the main presentation.
+- Every implementation task should eventually link its design diagram, source excerpt, test evidence and visible acceptance result.
+
+### Motion semantics clarified
+
+- A dive is not an altitude offset. The fish pitches its nose downward, then accelerates forward along the new body-forward axis.
+- Axial roll is rotation around the fish's own longitudinal head-to-tail axis. It is not pitch rotation and must not introduce gratuitous yaw.
+- Manoeuvres progress from isolated primitives, to basic composites, to complex sequences such as backwards drift into a loop-the-loop.
