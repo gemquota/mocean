@@ -2,6 +2,7 @@ import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 
 import { stepDynamics } from './core/dynamics.js';
 import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
 import { createGait, stepGait, deformPoint } from './core/body.js';
+import { sampleHorizontalHeading, shouldMakeVerticalExcursion } from './core/intent.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
 const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,targetDepth:0,gait:createGait()};
@@ -12,11 +13,16 @@ function chooseBehaviour(){
  const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
  const duration={CRUISE:4+random()*5,EXPLORE:3+random()*4,TURN:1.7+random()*2.2,DART:.45+random()*.45,GLIDE:1.5+random()*2,RECOVER:2+random()*2.5};
  sim.nextChoice=sim.time+duration[sim.mode];
- if(sim.mode==='TURN'){sim.targetYaw+=(random()<.5?-1:1)*(1.8+random()*1.05);sim.targetPitch+=(random()-.5)*.38;}
- if(sim.mode==='EXPLORE'){sim.targetYaw+=(random()-.5)*1.5;sim.targetDepth=clamp((random()-.5)*3,-1.5,1.5);}
- if(sim.mode==='DART'){sim.targetYaw+=(random()-.5)*.7;sim.targetPitch+=(random()-.5)*.18;}
- if(sim.mode==='GLIDE')sim.targetDepth*=.5;
- if(sim.mode==='RECOVER'){sim.targetPitch*=.35;sim.targetDepth*=.35;}
+ if(sim.mode==='TURN'||sim.mode==='EXPLORE'||sim.mode==='DART')sim.targetYaw=sampleHorizontalHeading(random);
+ // Y-axis movement is an occasional exploratory choice, not a constant oscillation.
+ if(sim.mode==='EXPLORE'&&shouldMakeVerticalExcursion(random)){
+  const direction=random()<.5?-1:1;
+  sim.targetPitch=direction*(.12+random()*.12);
+  sim.targetDepth=direction*(.8+random()*.6);
+ }else{
+  sim.targetPitch*=.35;
+  sim.targetDepth*=.35;
+ }
  label.textContent=labels[sim.mode];
 }
 function simulate(dt){
@@ -27,7 +33,7 @@ function simulate(dt){
  const guidedPitch=sim.targetPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
  const yawError=angleDelta(sim.yaw,guidedYaw+wander);
  const turn=clamp(yawError*1.7,-1,1);
- const pitch=clamp((guidedPitch+Math.sin(sim.time*.31)*.055-sim.pitch)*.9,-.32,.32);
+ const pitch=clamp((guidedPitch-sim.pitch)*.9,-.32,.32);
  const gait=stepGait(sim.gait,sim.mode,mag(sim.vel),turn,dt);
  const depthError=clamp((sim.targetDepth-sim.p.y)*.055,-.12,.12);
  stepDynamics(sim,{thrust:gait.thrust+returnGuidance.thrust,turn:gait.steering,pitch,lift:depthError,finDrag:gait.finDrag,rollMoment:gait.rollMoment,yawMoment:gait.yawMoment},dt);
