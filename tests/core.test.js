@@ -230,3 +230,21 @@ test('habitat return guidance points back toward the centre in horizontal and ve
   assert.ok(Math.abs(deep.yaw + Math.PI / 2) < 1e-9);
   assert.ok(deep.thrust > 0);
 });
+
+import { INITIAL_SPAWN_POSITION } from '../src/core/spawn.js';
+
+test('initial spawn starts farther from the fixed camera with a comfortable framing margin', () => {
+  const camera = vec3(0, 2.15, 10);
+  const target = vec3();
+  const forward = vec3(target.x-camera.x, target.y-camera.y, target.z-camera.z);
+  const cameraLength = length3(forward);
+  const unitForward = vec3(forward.x/cameraLength, forward.y/cameraLength, forward.z/cameraLength);
+  const depthAtOrigin = cameraLength;
+  const rel = vec3(INITIAL_SPAWN_POSITION.x-camera.x, INITIAL_SPAWN_POSITION.y-camera.y, INITIAL_SPAWN_POSITION.z-camera.z);
+  const depthAtSpawn = rel.x*unitForward.x + rel.y*unitForward.y + rel.z*unitForward.z;
+  assert.ok(depthAtSpawn > depthAtOrigin + 2.5, 'spawn should begin farther from the camera');
+  assert.ok(perspectiveScale(1, depthAtSpawn) < perspectiveScale(1, depthAtOrigin) * 0.82,
+    'initial apparent scale should be meaningfully smaller');
+  const habitatRadius = Math.hypot(INITIAL_SPAWN_POSITION.x/6.4, INITIAL_SPAWN_POSITION.y/3.5, INITIAL_SPAWN_POSITION.z/5.2);
+  assert.ok(habitatRadius < 0.88, 'spawn must remain inside the inactive region of the soft habitat boundary');
+});
