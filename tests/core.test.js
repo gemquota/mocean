@@ -503,7 +503,7 @@ test('loop and compound 3D sequences deliberately include pitch, yaw and axial r
   const loopPeak = sampleMotionSequence(loop, 2.5).command;
   assert.ok(loopPeak.pitch > Math.PI);
   const compound = createMotionSequence('compound-3d');
-  const peak = sampleMotionSequence(compound, 3.1).command;
+  const peak = sampleMotionSequence(compound, 2.6).command;
   assert.ok(peak.yawOffset > 1);
   assert.ok(peak.pitch > 0.8);
   assert.ok(peak.roll > Math.PI);
