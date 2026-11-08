@@ -6,7 +6,7 @@ import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVertical
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
-import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, dominantPointerDelta, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
@@ -57,10 +57,7 @@ canvas.addEventListener('pointermove',event=>{
   const point=pointerPosition(event);
   activePointers.set(event.pointerId,point);
   if(activePointers.size>=2&&depthGesture?.kind==='multi'){
-    const dragDelta=[...activePointers].reduce((largest,[id,p])=>{
-      const delta=p.y-(depthGesture.pointerStartY.get(id)??p.y);
-      return Math.abs(delta)>Math.abs(largest)?delta:largest;
-    },0);
+    const dragDelta=dominantPointerDelta(activePointers,depthGesture.pointerStartY);
     updateFloorDepth(depthGesture,dragDelta,point.width,point.height);
   }
 });
