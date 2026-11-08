@@ -612,3 +612,25 @@ test('compound 3D manoeuvre changes yaw, pitch and axial roll through the dynami
   assert.ok(body.pitch > 0.25);
   assert.ok(body.roll > 0.25);
 });
+
+
+test('composite manoeuvre hands back to passive dynamics without an impulse', () => {
+  const body = runIntentSequence('turn-accelerate-coast-brake', vec3(0.9,0,0));
+  const before = length3(body.vel);
+  const positionBefore = { ...body.p };
+  for (let i = 0; i < 240; i++) stepDynamics(body, {}, 1/120);
+  const after = length3(body.vel);
+  assert.ok(after < before, 'calm coasting should dissipate residual momentum');
+  assert.ok(Math.hypot(body.p.x-positionBefore.x,body.p.y-positionBefore.y,body.p.z-positionBefore.z) > 0);
+  assert.ok([body.p.x,body.p.y,body.p.z,body.vel.x,body.vel.y,body.vel.z].every(Number.isFinite));
+});
+
+test('dive-brake-reorient sequence converts downward motion, sheds speed, then changes heading', () => {
+  const name = 'dive-brake-reorient';
+  const duringDive = runIntentSequence(name, vec3(), 2.7);
+  const afterBrake = runIntentSequence(name, vec3(), 3.55);
+  const recovered = runIntentSequence(name, vec3(), 5.9);
+  assert.ok(duringDive.vel.y < -0.05, 'the dive should create downward momentum');
+  assert.ok(length3(afterBrake.vel) < length3(duringDive.vel), 'deployed fins should dissipate speed');
+  assert.ok(recovered.yaw > 1.0, 'the fish should reorient after braking');
+});
