@@ -6,7 +6,7 @@ import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVertical
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
-import { screenRay, intersectHorizontalPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Y, WORLD_FLOOR_Y } from './core/navigation.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
@@ -41,7 +41,7 @@ canvas.addEventListener('pointerdown',event=>{
   canvas.setPointerCapture?.(event.pointerId);
   if(activePointers.size===1){
     const ray=screenRay(camera,point.x,point.y,point.width,point.height);
-    const target=intersectHorizontalPlane(camera,ray,TARGET_PLANE_Y);
+    const target=intersectXYPlane(camera,ray,TARGET_PLANE_Z);
     if(!target)return;
     sim.userTarget=target;
     sim.userFloorPoint=projectToWorldFloor(target,WORLD_FLOOR_Y);
