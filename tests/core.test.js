@@ -277,3 +277,40 @@ test('vertical excursions are selected occasionally rather than continuously', (
   for (let i = 0; i < count; i++) if (shouldMakeVerticalExcursion(random)) excursions++;
   assert.ok(excursions / count > 0.18 && excursions / count < 0.22);
 });
+
+import { createManeuver, sampleManeuver } from '../src/core/maneuver.js';
+
+test('Bezier manoeuvre intent begins and ends at its requested attitude', () => {
+  const path = createManeuver({ startYaw: 0.2, startPitch: 0, endYaw: 1.4, endPitch: 0.65, duration: 4, curve: 0.4 });
+  const start = sampleManeuver(path, 0);
+  const end = sampleManeuver(path, 4);
+  assert.ok(Math.abs(start.yaw - 0.2) < 1e-12);
+  assert.ok(Math.abs(start.pitch) < 1e-12);
+  assert.ok(Math.abs(end.yaw - 1.4) < 1e-12);
+  assert.ok(Math.abs(end.pitch - 0.65) < 1e-12);
+  assert.equal(end.complete, true);
+});
+
+test('Bezier manoeuvre varies heading, pitch and propulsion effort continuously', () => {
+  const path = createManeuver({ startYaw: -0.3, startPitch: 0, endYaw: 0.8, endPitch: -0.72, duration: 5, curve: -0.5, speedPeak: 1.3 });
+  let previous = sampleManeuver(path, 0);
+  let peakSpeed = previous.speed;
+  for (let i = 1; i <= 500; i++) {
+    const current = sampleManeuver(path, i / 100);
+    assert.ok(Math.abs(current.yaw - previous.yaw) < 0.04);
+    assert.ok(Math.abs(current.pitch - previous.pitch) < 0.04);
+    assert.ok(Math.abs(current.speed - previous.speed) < 0.02);
+    peakSpeed = Math.max(peakSpeed, current.speed);
+    previous = current;
+  }
+  assert.ok(peakSpeed > 1.25);
+  assert.ok(sampleManeuver(path, 5).speed < peakSpeed);
+});
+
+test('vertical manoeuvres can be upward or downward without changing horizontal heading target', () => {
+  const up = sampleManeuver(createManeuver({ startYaw: 0.6, startPitch: 0, endYaw: 0.6, endPitch: 0.9, duration: 3 }), 3);
+  const down = sampleManeuver(createManeuver({ startYaw: 0.6, startPitch: 0, endYaw: 0.6, endPitch: -0.9, duration: 3 }), 3);
+  assert.ok(up.pitch > 0.8);
+  assert.ok(down.pitch < -0.8);
+  assert.ok(Math.abs(up.yaw - down.yaw) < 1e-12);
+});
