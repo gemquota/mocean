@@ -447,7 +447,7 @@ test('axial roll command saturates and auxiliary roll moment remains bounded', (
 });
 
 
-import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Z, WORLD_FLOOR_Y } from '../src/core/navigation.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, dominantPointerDelta, TARGET_PLANE_Z, WORLD_FLOOR_Y } from '../src/core/navigation.js';
 
 test('screen-centre ray follows the fixed camera forward axis', () => {
   const camera = createFixedCamera();
@@ -487,6 +487,17 @@ test('two-finger vertical drag changes shared Z depth while preserving XY', () =
   assert.ok(Math.abs(projectedScreenY(camera, { ...floor, z: closerZ }, 600, 1000) - (startY + 35)) < 1e-8);
 });
 
+
+test('two-finger depth drag uses full displacement when one finger is the anchor', () => {
+  const start = new Map([[1, 200], [2, 200]]);
+  const oneFingerMoves = new Map([[1, { y: 245 }], [2, { y: 200 }]]);
+  const bothMove = new Map([[1, { y: 245 }], [2, { y: 245 }]]);
+  assert.equal(dominantPointerDelta(oneFingerMoves, start), 45);
+  assert.equal(dominantPointerDelta(bothMove, start), 45);
+  const upward = new Map([[1, { y: 165 }], [2, { y: 200 }]]);
+  assert.equal(dominantPointerDelta(upward, start), -35);
+});
+
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from '../src/core/approach.js';
 
 test('depth approach reaches destination Z at half arc length and stays level', () => {
@@ -509,7 +520,7 @@ test('depth approach is smooth and nearest-path progress is monotonic', () => {
 });
 
 
-import { createPursuitGuidance } from '../src/core/pursuit.js';
+import { createPursuitGuidance, MAX_PURSUIT_SPEED } from '../src/core/pursuit.js';
 
 test('pursuit turns the nose toward a target in horizontal and vertical directions', () => {
   const horizontal = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(0, 0, -5));
@@ -519,14 +530,38 @@ test('pursuit turns the nose toward a target in horizontal and vertical directio
   assert.ok(upward.turn === 0);
 });
 
-test('pursuit builds propulsion demand smoothly with target distance', () => {
+test('pursuit speed target and acceleration demand rise substantially with distance', () => {
   const near = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(1, 0, 0));
   const middle = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(4, 0, 0));
   const far = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(9, 0, 0));
+  assert.ok(near.desiredSpeed < middle.desiredSpeed && middle.desiredSpeed < far.desiredSpeed);
   assert.ok(near.thrustScale < middle.thrustScale && middle.thrustScale < far.thrustScale);
-  assert.ok(far.thrustScale <= 1.85);
+  assert.ok(far.desiredSpeed > 4.5 && far.desiredSpeed <= MAX_PURSUIT_SPEED);
+  assert.ok(far.thrustScale > 5 && far.thrustScale <= 5.5);
   const atTarget = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3());
   assert.equal(atTarget.thrustScale, 0);
+});
+
+
+test('pursuit reduces thrust at overspeed and brakes before arrival', () => {
+  const target = vec3(4, 0, 0);
+  const slow = createPursuitGuidance(vec3(), vec3(0.2, 0, 0), 0, 0, target);
+  const fast = createPursuitGuidance(vec3(), vec3(5.2, 0, 0), 0, 0, target);
+  assert.ok(fast.thrustScale < slow.thrustScale);
+  assert.equal(fast.brake, 1);
+  assert.equal(slow.brake, 0);
+});
+
+test('pursuit gait has stronger travelling-wave drive and a higher tail-thrust ceiling', () => {
+  const pursuit = createGait(), explore = createGait();
+  let pursuitOutput, exploreOutput;
+  for (let i = 0; i < 240; i++) {
+    pursuitOutput = stepGait(pursuit, 'PURSUIT', 0.5, 0, 1 / 120);
+    exploreOutput = stepGait(explore, 'EXPLORE', 0.5, 0, 1 / 120);
+  }
+  assert.ok(pursuit.frequency > explore.frequency);
+  assert.ok(pursuit.amplitude > explore.amplitude);
+  assert.ok(pursuitOutput.thrust > exploreOutput.thrust);
 });
 
 test('pursuit brakes as it reaches the target and identifies a low-speed hover', () => {
