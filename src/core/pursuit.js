@@ -24,12 +24,15 @@ export function createPursuitGuidance(position, velocity, yaw, pitch, target, ai
   // without demanding an unbounded sprint as distance grows.
   const desiredSpeed = Math.min(2.65, Math.sqrt(distance) * 0.85);
   const distanceGate = clamp(distance / 0.38, 0, 1);
-  const thrustScale = clamp(0.55 + (desiredSpeed - speed) * 1.25, 0, 3.2) * distanceGate;
+  const approachThrust = clamp(0.55 + (desiredSpeed - speed) * 1.25, 0, 3.2) * distanceGate;
+  const hovering = distance < 0.42 && speed < 0.2;
+  // Once inside the arrival envelope, retain only a tiny corrective tail effort.
+  // This allows a slow approach/hold without snapping position or cancelling momentum.
+  const thrustScale = hovering ? Math.min(approachThrust, 0.12) : approachThrust;
 
   // Brake when actual speed exceeds the distance-appropriate approach speed.
   // This makes stopping distance respond to momentum rather than a fixed radius.
   const brake = clamp((speed - desiredSpeed - 0.15) / 0.85, 0, 1);
-  const hovering = distance < 0.42 && speed < 0.2;
   return {
     distance,
     speed,
