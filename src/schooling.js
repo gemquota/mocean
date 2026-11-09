@@ -20,14 +20,14 @@ const NEIGHBOUR_RADIUS = 2.7;
 const SEPARATION_RADIUS = 0.78;
 const MAX_SPEED = 2.0;
 const MAX_ACCELERATION = 1.25;
-const GRID_CELL_SIZE = NEIGHBOUR_RADIUS;
+const GRID_CELL_SIZE = NEIGHBOUR_RADIUS;\nconst MAX_HEADING_RATE = 1.35;
 
 function makeRandom(seed) {
   let state = seed >>> 0;
   return () => ((state = (state * 1664525 + 1013904223) >>> 0) / 4294967296);
 }
 
-function cellKey(x, y, z) {
+function turnDirection(current, target, maxAngle) {\n  const cosine = clamp(dot(current, target), -1, 1);\n  const angle = Math.acos(cosine);\n  if (angle < 1e-6) return target;\n  const fraction = Math.min(1, maxAngle / angle);\n  return normalize({\n    x: current.x * (1 - fraction) + target.x * fraction,\n    y: current.y * (1 - fraction) + target.y * fraction,\n    z: current.z * (1 - fraction) + target.z * fraction\n  });\n}\n\nfunction cellKey(x, y, z) {
   return x + ',' + y + ',' + z;
 }
 function cellOf(p) {
