@@ -10,7 +10,7 @@ import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, wor
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
 import { selectBehaviour } from './core/behaviour.js';
-const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
+const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour'),directionToggle=document.getElementById('directionToggle');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
 const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,sequence:null,sequenceStartedAt:0,nextSequence:31,sequenceCount:0,lastVerticalDirection:1,lastDartAt:-Infinity,directedSwimming:false,gait:createGait()};
 const camera=createFixedCamera();
@@ -32,6 +32,13 @@ function updateFloorDepth(gesture,deltaY,width,height){
   sim.userApproach=createDepthApproach(sim.p,sim.userTarget);
   sim.userApproachProgress=0;
 }
+directionToggle?.addEventListener('click',()=>{
+ sim.directedSwimming=!sim.directedSwimming;
+ directionToggle.textContent=sim.directedSwimming?'DIRECT':'AUTO';
+ directionToggle.setAttribute('aria-pressed',String(sim.directedSwimming));
+ directionToggle.title=sim.directedSwimming?'Tap to set a swimming destination; two-finger drag changes depth':'Autonomous swimming is active';
+ if(!sim.directedSwimming){activePointers.clear();depthGesture=null;sim.userTarget=null;sim.userFloorPoint=null;sim.userApproach=null;}
+});
 canvas.addEventListener('pointerdown',event=>{
   if(!sim.directedSwimming)return;
   const point=pointerPosition(event);
@@ -119,7 +126,7 @@ function beginMotionSequence(){
 }
 function simulate(dt){
  sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
- if(!sim.sequence&&sim.time>=sim.nextSequence){
+ if(!sim.directedSwimming&&!sim.sequence&&sim.time>=sim.nextSequence){
   if(sim.gait.energy>.62&&sim.mode!=='RECOVER')beginMotionSequence();
   else sim.nextSequence=sim.time+7;
  }
@@ -134,14 +141,14 @@ function simulate(dt){
   pursuit=createPursuitGuidance(sim.p,sim.vel,sim.yaw,sim.pitch,sim.userTarget,aim.position);
  }
  const activePath=pursuit?sampleDepthApproach(sim.userApproach,Math.min(1,sim.userApproachProgress+.035)):sampled;
- const lookAhead=add(activePath.position,mul(activePath.tangent,pursuit?.distance<1?.28:.85));
+ const lookAhead=add(activePath.position,mul(activePath.tangent,(pursuit&&pursuit.distance<1)?0.28:0.85));
  const desiredDirection=unit(add(lookAhead,mul(sim.p,-1)));
  const intentYaw=pursuit?.targetYaw??Math.atan2(-desiredDirection.z,desiredDirection.x);
  const intentPitch=pursuit?.targetPitch??Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
  const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
  const guidedYaw=intentYaw+angleDelta(intentYaw,returnGuidance.yaw)*returnGuidance.weight;
  const guidedPitch=intentPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
- const command=sequenceSample?.command;
+ const command=sim.directedSwimming?null:sequenceSample?.command;
  const sequenceYaw=command?sim.sequence.startYaw+command.yawOffset:guidedYaw;
  const targetYaw=sequenceYaw+angleDelta(sequenceYaw,returnGuidance.yaw)*returnGuidance.weight;
  const sequencePitch=command?command.pitch:guidedPitch;
