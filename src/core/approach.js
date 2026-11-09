@@ -26,3 +26,14 @@ export function nearestDepthApproachProgress(path,point,minimumProgress=0){
  for(let i=first;i<path.samples.length;i++){const d=add3(path.samples[i].position,scale3(point,-1)),d2=d.x*d.x+d.y*d.y+d.z*d.z;if(d2<bestD){bestD=d2;best=i;}}
  return path.samples[best].t;
 }
+
+/**
+ * Rate-limit geometric path progress so a noisy nearest-sample change cannot
+ * jump the steering target forward. Progress remains monotonic and scales with
+ * actual swimming speed and path length.
+ */
+export function advanceDepthApproachProgress(path, point, current, speed, dt) {
+ const nearest=nearestDepthApproachProgress(path,point,current);
+ const rate=clamp((speed/Math.max(path.length,0.25))*1.5,0.06,0.8);
+ return Math.max(current,Math.min(nearest,current+rate*Math.max(0,dt)));
+}
