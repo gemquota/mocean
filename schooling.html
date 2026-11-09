@@ -45,7 +45,7 @@ function project(point){
  return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};
 }
 function makeMesh(){
- const vertices=[],faces=[],rings=12,sides=10;
+ const vertices=[],faces=[],rings=6,sides=6;
  for(let i=0;i<=rings;i++){
   const t=i/rings,x=.98-2.65*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68);
   const ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
@@ -83,14 +83,26 @@ function drawFish(fish){
  polygon(fish,q,[vec3(-1.48,.02,0),vec3(-2.12,.5+load*.08,0),vec3(-1.82,.04,0),vec3(-2.12,-.48-load*.08,0)],'#388d8e',alpha,'#174e5c');
  polygon(fish,q,[vec3(-.55,.3,0),vec3(-.82,.58+load*.04,0),vec3(-.12,.32,0)],'#4ca99c',alpha);
  polygon(fish,q,[vec3(-.58,-.29,0),vec3(-.82,-.48,0),vec3(-.12,-.29,0)],'#347e85',alpha);
- const deformed=mesh.vertices.map(v=>scale3(deformPoint(v,fish.gait),SCHOOLING_FISH_SCALE));
- const projected=deformed.map(v=>project(add3(fish.p,quatRotate(q,v))));
- const faces=mesh.faces.map(face=>({face,depth:(projected[face.indices[0]].depth+projected[face.indices[1]].depth+projected[face.indices[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
- for(const item of faces){
-  const p=item.face.indices.map(i=>projected[i]);
-  if(p.some(v=>v.depth<2.5))continue;
-  ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();
-  ctx.fillStyle=item.face.fill;ctx.fill();
+ // Distant quarter-scale fish occupy only a few screen pixels. A single
+ // deformed silhouette is both more legible and dramatically cheaper than
+ // depth-sorting dozens of triangles that cannot be resolved at this scale.
+ if(centre.size<17){
+  polygon(fish,q,[
+   vec3(.98,0,0),vec3(.72,.29,0),vec3(.18,.34,0),
+   vec3(-.48,.25,0),vec3(-1.12,.13,0),vec3(-1.58,.035,0),
+   vec3(-1.12,-.13,0),vec3(-.48,-.25,0),vec3(.18,-.34,0),
+   vec3(.72,-.29,0)
+  ],'#469d98',alpha,'#174e5c');
+ }else{
+  const deformed=mesh.vertices.map(v=>scale3(deformPoint(v,fish.gait),SCHOOLING_FISH_SCALE));
+  const projected=deformed.map(v=>project(add3(fish.p,quatRotate(q,v))));
+  const faces=mesh.faces.map(face=>({face,depth:(projected[face.indices[0]].depth+projected[face.indices[1]].depth+projected[face.indices[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
+  for(const item of faces){
+   const p=item.face.indices.map(i=>projected[i]);
+   if(p.some(v=>v.depth<2.5))continue;
+   ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();
+   ctx.fillStyle=item.face.fill;ctx.fill();
+  }
  }
  const ridge=[vec3(.58,.27,0),vec3(.3,.34,0),vec3(-.12,.32,0),vec3(-.62,.24,0),vec3(-1.12,.12,0),vec3(-1.42,.055,0)].map(v=>project(worldPoint(fish,q,v)));
  if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.strokeStyle='rgba(177,235,207,.82)';ctx.lineWidth=Math.max(.7,centre.size*.009);ctx.lineCap='round';ctx.stroke();}
