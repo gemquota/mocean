@@ -654,3 +654,45 @@ test('dive-brake-reorient sequence converts downward motion, sheds speed, then c
   assert.ok(length3(afterBrake.vel) < length3(duringDive.vel), 'deployed fins should dissipate speed');
   assert.ok(recovered.yaw > 1.0, 'the fish should reorient after braking');
 });
+
+import { selectBehaviour } from '../src/core/behaviour.js';
+
+function seededRandom(seed) {
+  return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+}
+
+test('low energy shifts autonomous state selection toward recovery and glide', () => {
+  const lowRandom = seededRandom(19283), highRandom = seededRandom(19283);
+  const low = { RECOVER: 0, GLIDE: 0 }, high = { RECOVER: 0, GLIDE: 0 };
+  for (let i = 0; i < 3000; i++) {
+    const a = selectBehaviour({ energy: 0.18, time: i * 20 }, lowRandom);
+    const b = selectBehaviour({ energy: 0.95, time: i * 20 }, highRandom);
+    if (a.mode in low) low[a.mode]++;
+    if (b.mode in high) high[b.mode]++;
+  }
+  assert.ok(low.RECOVER + low.GLIDE > high.RECOVER + high.GLIDE);
+});
+
+test('dart behaviour requires adequate reserve and a completed burst cooldown', () => {
+  const random = seededRandom(7331);
+  for (let i = 0; i < 1000; i++) {
+    assert.notEqual(selectBehaviour({ energy: 0.2, time: i * 30 }, random).mode, 'DART');
+    assert.notEqual(selectBehaviour({ energy: 0.95, time: i * 2, lastBurstAt: i * 2 - 4 }, random).mode, 'DART');
+  }
+  let bursts = 0;
+  const ready = seededRandom(7331);
+  for (let i = 0; i < 3000; i++) {
+    if (selectBehaviour({ energy: 0.95, time: i * 30 }, ready).mode === 'DART') bursts++;
+  }
+  assert.ok(bursts > 0);
+});
+
+test('behaviour transitions do not immediately repeat the previous state', () => {
+  const random = seededRandom(381);
+  for (const previousMode of ['CRUISE', 'EXPLORE', 'TURN', 'DART', 'GLIDE', 'RECOVER']) {
+    const next = selectBehaviour({ energy: 0.9, previousMode, time: 60 }, random);
+    assert.notEqual(next.mode, previousMode);
+    assert.ok(next.duration >= 1.3 && next.duration <= 9);
+    assert.ok(next.verticalProbability >= 0 && next.verticalProbability <= 1);
+  }
+});
