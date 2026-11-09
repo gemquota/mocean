@@ -2,7 +2,7 @@ import { TAU, clamp, vec3 as V, add3 as add, scale3 as mul, dot3 as dot, cross3 
 import { stepDynamics } from './core/dynamics.js';
 import { INITIAL_SPAWN_POSITION } from './core/spawn.js';
 import { createGait, stepGait, deformPoint, articulateFinPoint } from './core/body.js';
-import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVerticalDirection } from './core/intent.js';
+import { sampleHorizontalHeading, alternateVerticalDirection } from './core/intent.js';
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
@@ -125,7 +125,7 @@ function beginMotionSequence(){
  label.textContent='MANOEUVRE / '+name.replaceAll('-',' ').toUpperCase();
 }
 function simulate(dt){
- sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
+ sim.time+=dt;if(!sim.directedSwimming&&sim.time>=sim.nextChoice)chooseBehaviour();
  if(!sim.directedSwimming&&!sim.sequence&&sim.time>=sim.nextSequence){
   if(sim.gait.energy>.62&&sim.mode!=='RECOVER')beginMotionSequence();
   else sim.nextSequence=sim.time+7;
@@ -143,8 +143,9 @@ function simulate(dt){
  const activePath=pursuit?sampleDepthApproach(sim.userApproach,Math.min(1,sim.userApproachProgress+.035)):sampled;
  const lookAhead=add(activePath.position,mul(activePath.tangent,(pursuit&&pursuit.distance<1)?0.28:0.85));
  const desiredDirection=unit(add(lookAhead,mul(sim.p,-1)));
- const intentYaw=pursuit?.targetYaw??Math.atan2(-desiredDirection.z,desiredDirection.x);
- const intentPitch=pursuit?.targetPitch??Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
+ const intentYaw=pursuit?(pursuit.hovering?sim.yaw:pursuit.targetYaw):Math.atan2(-desiredDirection.z,desiredDirection.x);
+ const intentPitch=pursuit?(pursuit.hovering?sim.pitch:pursuit.targetPitch):Math.atan2(desiredDirection.y,Math.hypot(desiredDirection.x,desiredDirection.z));
+ if(pursuit)label.textContent=pursuit.hovering?'HOLDING':'DIRECTED';
  const returnGuidance=habitatReturnGuidance(sim.p,V(6.4,3.5,5.2));
  const guidedYaw=intentYaw+angleDelta(intentYaw,returnGuidance.yaw)*returnGuidance.weight;
  const guidedPitch=intentPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
