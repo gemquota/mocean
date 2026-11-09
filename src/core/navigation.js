@@ -51,3 +51,9 @@ export function dominantPointerDelta(currentPointers, startPointerY) {
   }
   return largest;
 }
+
+export const DEPTH_DRAG_SCALE = 0.018;
+/** Two-finger vertical drag changes only the selected world-Z plane. */
+export function targetDepthFromDrag(startDepth, deltaY) {
+  return startDepth - deltaY * DEPTH_DRAG_SCALE;
+}
