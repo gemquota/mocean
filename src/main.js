@@ -9,9 +9,10 @@ import { createFixedCamera } from './core/camera.js';
 import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, dominantPointerDelta, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
+import { selectBehaviour } from './core/behaviour.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
 let seed=433841;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
-const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,sequence:null,sequenceStartedAt:0,nextSequence:31,sequenceCount:0,lastVerticalDirection:1,gait:createGait()};
+const sim={p:V(INITIAL_SPAWN_POSITION.x,INITIAL_SPAWN_POSITION.y,INITIAL_SPAWN_POSITION.z),vel:V(.18,0,0),yaw:0,pitch:0,roll:0,orientation:quatEuler(0,0,0),wy:0,wp:0,wr:0,time:0,mode:'CRUISE',nextChoice:3,targetYaw:0,targetPitch:0,maneuver:null,maneuverStartedAt:0,sequence:null,sequenceStartedAt:0,nextSequence:31,sequenceCount:0,lastVerticalDirection:1,lastDartAt:-Infinity,directedSwimming:false,gait:createGait()};
 const camera=createFixedCamera();
 
 // Tap selects a mid-water destination; the floor projection is the two-finger depth handle.
@@ -32,6 +33,7 @@ function updateFloorDepth(gesture,deltaY,width,height){
   sim.userApproachProgress=0;
 }
 canvas.addEventListener('pointerdown',event=>{
+  if(!sim.directedSwimming)return;
   const point=pointerPosition(event);
   activePointers.set(event.pointerId,point);
   canvas.setPointerCapture?.(event.pointerId);
@@ -72,17 +74,23 @@ canvas.addEventListener('lostpointercapture',finishPointer);
 canvas.addEventListener('contextmenu',event=>event.preventDefault());
 const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING',GLIDE:'GLIDING',RECOVER:'RECOVERING'};
 function chooseBehaviour(){
- const r=random();sim.mode=r<.35?'CRUISE':r<.60?'EXPLORE':r<.78?'TURN':r<.85?'DART':r<.94?'GLIDE':'RECOVER';
- const duration={CRUISE:4+random()*5,EXPLORE:3.5+random()*2.5,TURN:2.8+random()*2.2,DART:1.4+random()*.5,GLIDE:2.8+random()*2,RECOVER:2.5+random()*2};
- sim.nextChoice=sim.time+duration[sim.mode];
+ const habitatRadius=Math.hypot(sim.p.x/6.4,sim.p.y/3.5,sim.p.z/5.2);
+ const choice=selectBehaviour({
+  energy:sim.gait.energy,speed:mag(sim.vel),previousMode:sim.mode,time:sim.time,
+  lastBurstAt:sim.lastDartAt,boundaryPressure:clamp((habitatRadius-.72)/.4,0,1)
+ },random);
+ sim.mode=choice.mode;
+ const duration=choice.duration;
+ sim.nextChoice=sim.time+duration;
+ if(choice.burst)sim.lastDartAt=sim.time;
 
  let endYaw=sim.yaw;
  if(sim.mode==='TURN'||sim.mode==='EXPLORE')endYaw=sampleHorizontalHeading(random);
  if(sim.mode==='DART')endYaw=sim.yaw+(random()-.5)*.65;
 
- // Most trajectories stay level. A minority arc above or below the cruising plane.
+ // Vertical arcs are rare, state-dependent excursions rather than constant wobble.
+ const verticalExcursion=random()<choice.verticalProbability;
  let endPitch=0;
- const verticalExcursion=(sim.mode==='EXPLORE'&&shouldMakeVerticalExcursion(random,0.35))||(sim.mode==='TURN'&&random()<.25);
  if(verticalExcursion){
   sim.lastVerticalDirection=alternateVerticalDirection(sim.lastVerticalDirection);
   const direction=sim.lastVerticalDirection;
@@ -90,27 +98,31 @@ function chooseBehaviour(){
   endPitch=direction*(steep?0.95+random()*.23:0.45+random()*.4);
  }
  const curve=(random()-.5)*1.25;
- const speedPeak=sim.mode==='DART'?1.42:sim.mode==='GLIDE'?.96:1.12+random()*.18;
+ const boundaryScale=1-clamp((habitatRadius-.68)/.52,0,.42);
+ const distance=(2.6+random()*2.1)*boundaryScale;
  const startDirection=rotate(sim.orientation,V(1,0,0));
  const endDirection=V(Math.cos(endPitch)*Math.cos(endYaw),Math.sin(endPitch),-Math.cos(endPitch)*Math.sin(endYaw));
  sim.maneuver=createManeuver({
   start:V(sim.p.x,sim.p.y,sim.p.z),startDirection,endDirection,
-  distance:2.6+random()*2.1,duration:duration[sim.mode],curve,speedPeak
+  distance,duration,curve,speedPeak:choice.speedPeak
  });
  sim.maneuverStartedAt=sim.time;
  sim.targetYaw=endYaw;sim.targetPitch=endPitch;
  label.textContent=labels[sim.mode];
 }
-const sequenceOrder=['pitch-up','pitch-down','yaw-left','yaw-right','accelerate','coast','brake','axial-roll','dive','climb','turn-accelerate-coast-brake','roll-turn','backward-drift','curved-reversal','loop-the-loop','dive-brake-reorient','compound-3d'];
+const sequenceOrder=['accelerate','coast','brake','dive','climb','turn-accelerate-coast-brake','roll-turn'];
 function beginMotionSequence(){
  const name=sequenceOrder[Math.floor(random()*sequenceOrder.length)];sim.sequenceCount++;
  sim.sequence=createMotionSequence(name,{yaw:sim.yaw,pitch:sim.pitch,roll:sim.roll});sim.sequenceStartedAt=sim.time;
- sim.nextSequence=sim.time+24+random()*18;
+ sim.nextSequence=sim.time+42+random()*24;
  label.textContent='MANOEUVRE / '+name.replaceAll('-',' ').toUpperCase();
 }
 function simulate(dt){
  sim.time+=dt;if(sim.time>=sim.nextChoice)chooseBehaviour();
- if(!sim.sequence&&sim.time>=sim.nextSequence)beginMotionSequence();
+ if(!sim.sequence&&sim.time>=sim.nextSequence){
+  if(sim.gait.energy>.62&&sim.mode!=='RECOVER')beginMotionSequence();
+  else sim.nextSequence=sim.time+7;
+ }
  let sequenceSample=sim.sequence?sampleMotionSequence(sim.sequence,sim.time-sim.sequenceStartedAt):null;
  if(sequenceSample?.complete){sim.sequence=null;sequenceSample=null;label.textContent=labels[sim.mode];}
  const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
@@ -226,7 +238,7 @@ function render(){
 }
 
 function drawNavigationTarget(w,h){
- if(!sim.userTarget||!sim.userFloorPoint)return;
+ if(!sim.directedSwimming||!sim.userTarget||!sim.userFloorPoint)return;
  const target=project(sim.userTarget,w,h),floor=project(sim.userFloorPoint,w,h);
  if(target.z<=.15||floor.z<=.15)return;
  ctx.save();
