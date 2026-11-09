@@ -1,4 +1,4 @@
-# 100-fish schooling experiment
+# 1000-fish schooling experiment
 
 **Status:** isolated prototype · not part of the production single-fish simulation.
 
@@ -15,7 +15,7 @@ Each fish has independent 3D position, velocity, body-forward direction and gait
 - **Habitat pressure:** a smooth ellipsoidal force steers fish away from the soft boundary.
 - **Individual variation:** slow phase-offset drift prevents a rigid rotating formation.
 
-The rendered body is 25% of the previous schooling prototype's dimensions. Its gait and articulated geometry are shared with the single-fish body implementation. The schooling scene uses a lower polygon mesh and renders at 30 Hz while simulation continues at a 60 Hz fixed step.
+The rendered body is 25% of the previous schooling prototype's dimensions. The habitat extents are five times the previous experiment in all three axes, and the default population is 1,000 fish. Its gait and articulated geometry are shared with the single-fish body implementation. The schooling scene uses a lower polygon mesh and renders at 30 Hz while simulation continues at a 60 Hz fixed step.
 
 ## Performance strategy
 
@@ -26,7 +26,7 @@ This reduces work substantially for a spatially distributed school, but actual f
 ## Acceptance checks
 
 - Deterministic initialisation.
-- Spatial-hash candidate work remains below all-pairs scanning for the 100-agent test distribution.
+- Spatial-hash candidate work remains below all-pairs scanning for the 1,000-agent test distribution.
 - Close fish increase separation and overlapping capsules produce contact response.
 - Heading change is bounded by a finite angular rate.
 - State remains finite and speed bounded during sustained simulation.
