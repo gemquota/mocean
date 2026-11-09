@@ -123,9 +123,9 @@ test('fish body heading turns at a bounded angular rate instead of snapping to v
 });
 
 
-test('1000-fish experiment uses a five-times-larger habitat on every axis', () => {
+test('1000-agent capacity retains the five-times-larger habitat on every axis', () => {
   assert.deepEqual(SCHOOLING_LIMITS, { x: 41, y: 15.5, z: 31 });
-  const school = createSchool();
+  const school = createSchool(1000);
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
     Math.abs(f.p.x) <= 23.5 && Math.abs(f.p.y) <= 8 && Math.abs(f.p.z) <= 18
