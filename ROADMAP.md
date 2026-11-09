@@ -112,7 +112,7 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 ## Phase 5 · Autonomous natural behaviour
 
-**Status:** Prototype integrated on `phase-5-autonomy`. **67 automated tests pass (0 fail) at commit `4e5e4df1920416f1ff3e747f42bfe0a01755b585`. Live visual review and user confirmation remain open.**
+**Status:** Prototype integrated on `phase-5-autonomy`. **68 automated tests pass (0 fail) at commit `8aae7739a248c7f1d15b698dd0664cd9d9804c28`. Live visual review and user confirmation remain open.**
 
 - [ ] P5-1 Persistent behavioural intent, state transitions and burst cooldown.
 - [ ] P5-2 Blend cruise, explore, dart, glide, turn and recovery according to energy and context.
@@ -125,7 +125,7 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 - Existing quintic spatial manoeuvres remain steering intent. Manoeuvre distance contracts as the fish approaches the soft habitat boundary; return guidance remains a separate bounded controller.
 - Sequence events are less frequent and are deferred while the fish is recovering or has insufficient energy. High-cost loops and backwards-drift sequences are not injected into ordinary autonomous swimming.
 - Directed swimming is optional and defaults to **AUTO**. The AUTO/DIRECT control enables tap-to-target steering. Tap position selects XY on the fixed target plane; two-finger vertical dragging changes world Z. The depth approach reaches its selected Z by halfway path progress and then levels. Pursuit changes heading and tail-generated thrust/braking demand, but translation and attitude still pass through the normal gait and rigid-body pathways.
-- Automated coverage includes energy-biased state selection, burst eligibility/cooldown, transition variety, depth-path geometry, monotonic path progress and distance-shaped pursuit. GitHub Actions run [42544509794](https://github.com/gemquota/mocean/actions/runs/42544509794) passed all 67 tests.
+- Automated coverage includes energy-biased state selection, burst eligibility/cooldown, transition variety, depth-path geometry, monotonic path progress and distance-shaped pursuit. GitHub Actions run [42544791895](https://github.com/gemquota/mocean/actions/runs/42544791895) passed all 68 tests, including a low-effort near-target hold check.
 
 **Unresolved acceptance:** watch the actual fish in AUTO and DIRECT modes; compare cruising, acceleration, turn radius, overshoot, braking and near-target hovering against the accepted baseline. The current habitat boundary is not a general obstacle field. Do not mark Phase 5 tasks or the phase gate complete until visual evidence and user review exist.
 
