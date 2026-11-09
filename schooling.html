@@ -12,18 +12,24 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06141b;ove
 body{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9eee5}
 canvas{display:block;width:100%;height:100%;touch-action:none}
 header,footer{position:fixed;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;gap:14px;pointer-events:none}
+.population-control{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);width:min(360px,calc(100vw - 40px));padding:10px 13px 9px;border:1px solid rgba(155,231,200,.18);border-radius:8px;background:rgba(4,18,26,.78);backdrop-filter:blur(8px);pointer-events:auto;touch-action:pan-x}
+.population-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
+.population-heading output{color:var(--mint);font-size:11px;font-variant-numeric:tabular-nums}
+#population{display:block;width:100%;height:14px;margin:0;accent-color:var(--mint);cursor:pointer;touch-action:pan-x}
+.population-scale{display:flex;justify-content:space-between;margin-top:2px;font-size:8px;letter-spacing:.08em;color:rgba(190,220,215,.4)}
 header{top:20px}footer{bottom:18px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
 .brand{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.2em;color:rgba(221,241,233,.78)}
 .mark{width:24px;height:24px;border:1px solid rgba(155,231,200,.5);border-radius:50%;display:grid;place-items:center;color:var(--mint)}
 .status{font-size:9px;letter-spacing:.13em;color:rgba(155,231,200,.8);text-align:right}
 a{pointer-events:auto;color:var(--mint);text-decoration:none}
 a:hover{text-decoration:underline}
-@media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}}
+@media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}.population-control{bottom:43px;width:min(320px,calc(100vw - 32px));padding:8px 11px}.population-heading{font-size:8px}}
 </style>
 </head>
 <body>
 <canvas id="school" aria-label="One thousand individual fish swimming as a locally interacting school"></canvas>
 <header><div class="brand"><span class="mark">M</span><span>MOCEAN / SCHOOLING EXPERIMENT</span></div><div class="status" id="status">1000 AGENTS · LOCAL INTERACTIONS</div></header>
+<section class="population-control" aria-label="School population control"><div class="population-heading"><label for="population">SCHOOL POPULATION</label><output id="population-value" for="population">1,000</output></div><input id="population" type="range" min="100" max="5000" step="100" value="1000" aria-label="Number of fish"><div class="population-scale"><span>100 FISH</span><span>5,000 FISH</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE } from './src/schooling.js';
@@ -32,7 +38,15 @@ import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics');
-const school=createSchool(1000);
+const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
+let school=createSchool(1000);
+function setPopulation(value){
+ const count=Math.max(100,Math.min(5000,Math.round(Number(value)/100)*100));
+ school=createSchool(count);
+ populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
+ status.textContent=count.toLocaleString('en-US')+' AGENTS · LOCAL INTERACTIONS';
+}
+populationSlider.addEventListener('input',event=>setPopulation(event.target.value));
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1;
 function applyZoom(){camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
@@ -149,7 +163,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){status.textContent=school.fish.length+' QUARTER-SCALE FISH · SPATIAL HASH · COLLISIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · ARTICULATED GAIT';}
+ if(frame++%30===0){status.textContent=school.fish.length.toLocaleString('en-US')+' QUARTER-SCALE FISH · SPATIAL HASH · COLLISIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · ARTICULATED GAIT';}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
