@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
 
-test('schooling experiment creates 100 independent fish by default', () => {
+test('schooling experiment creates 1000 independent fish by default', () => {
   const school = createSchool();
   assert.equal(school.fish.length, SCHOOLING_DEFAULT_COUNT);
-  assert.equal(school.fish.length, 100);
+  assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f => f.p !== f.v && Number.isFinite(f.phase)));
   assert.equal('target' in school, false, 'the school must not have a shared target');
 });
@@ -102,4 +102,25 @@ test('fish body heading turns at a bounded angular rate instead of snapping to v
   const after = school.fish[0].forward;
   const cosine = Math.max(-1, Math.min(1, before.x*after.x + before.y*after.y + before.z*after.z));
   assert.ok(Math.acos(cosine) <= 1.35/60 + 1e-6);
+});
+
+
+test('1000-fish experiment uses a five-times-larger habitat on every axis', () => {
+  assert.deepEqual(SCHOOLING_LIMITS, { x: 41, y: 15.5, z: 31 });
+  const school = createSchool();
+  assert.equal(school.fish.length, 1000);
+  assert.ok(school.fish.every(f =>
+    Math.abs(f.p.x) <= 23.5 && Math.abs(f.p.y) <= 8 && Math.abs(f.p.z) <= 18
+  ));
+});
+
+test('1000-fish school remains finite with spatially bounded neighbour work', () => {
+  const school = createSchool(1000, 1001);
+  let metrics;
+  for (let i = 0; i < 120; i++) metrics = stepSchool(school, 1 / 60);
+  assert.ok(school.fish.every(f =>
+    [f.p.x, f.p.y, f.p.z, f.v.x, f.v.y, f.v.z, f.forward.x, f.forward.y, f.forward.z].every(Number.isFinite)
+  ));
+  assert.ok(metrics.candidateChecks < 1000 * 1000, 'spatial hash should avoid all-pairs neighbour checks');
+  assert.ok(metrics.averageSpeed > 0.5);
 });

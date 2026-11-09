@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#06141b">
-<title>Mocean · 100-fish schooling experiment</title>
+<title>Mocean · 1000-fish schooling experiment</title>
 <style>
 :root{color-scheme:dark;--mint:#9be7c8;--muted:rgba(190,220,215,.58)}
 *{box-sizing:border-box}
@@ -22,8 +22,8 @@ a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<canvas id="school" aria-label="One hundred individual fish swimming as a locally interacting school"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / SCHOOLING EXPERIMENT</span></div><div class="status" id="status">100 AGENTS · LOCAL INTERACTIONS</div></header>
+<canvas id="school" aria-label="One thousand individual fish swimming as a locally interacting school"></canvas>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / SCHOOLING EXPERIMENT</span></div><div class="status" id="status">1000 AGENTS · LOCAL INTERACTIONS</div></header>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE } from './src/schooling.js';
@@ -32,8 +32,8 @@ import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics');
-const school=createSchool(100);
-const worldUp=vec3(0,1,0),camera={p:vec3(0,4.2,15.5),target:vec3()};
+const school=createSchool(1000);
+const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const sub=(a,b)=>add3(a,scale3(b,-1));
 const cameraForward=normalize3(sub(camera.target,camera.p));
 const cameraRight=normalize3(cross3(cameraForward,worldUp));
@@ -106,7 +106,7 @@ function render(){
  const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
  gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
  ctx.globalAlpha=.13;ctx.strokeStyle='#8bd8c1';ctx.lineWidth=1;ctx.beginPath();
- for(let i=0;i<=72;i++){const a=i/72*TAU,p=project(vec3(8.2*Math.cos(a),-1.9,6.2*Math.sin(a)));i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
+ for(let i=0;i<=72;i++){const a=i/72*TAU,p=project(vec3(41*Math.cos(a),-9.5,31*Math.sin(a)));i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
  ctx.stroke();ctx.globalAlpha=1;
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);

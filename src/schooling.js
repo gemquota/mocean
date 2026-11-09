@@ -12,8 +12,8 @@ const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 const subtract = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
 
-export const SCHOOLING_DEFAULT_COUNT = 100;
-export const SCHOOLING_LIMITS = Object.freeze({ x: 8.2, y: 3.1, z: 6.2 });
+export const SCHOOLING_DEFAULT_COUNT = 1000;
+export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
 const NEIGHBOUR_RADIUS = 2.7;
@@ -130,7 +130,7 @@ function resolveCollisions(fish, grid) {
 /** Create deterministic agents with independent momentum and gait phase. */
 export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
   const random = makeRandom(seed);
-  const size = Math.max(1, Math.min(250, Math.floor(count)));
+  const size = Math.max(1, Math.min(2000, Math.floor(count)));
   const fish = Array.from({ length: size }, (_, id) => {
     const direction = normalize({
       x: random() * 2 - 1,
@@ -140,7 +140,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     return {
       id,
-      p: { x: (random() - 0.5) * 9.4, y: (random() - 0.5) * 3.2, z: (random() - 0.5) * 7.2 },
+      p: { x: (random() - 0.5) * 47, y: (random() - 0.5) * 16, z: (random() - 0.5) * 36 },
       v: { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: { ...direction },
       phase: random() * Math.PI * 2,
