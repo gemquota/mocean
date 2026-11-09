@@ -730,3 +730,10 @@ test('pursuit speed demand grows with distance and braking responds to overspeed
   assert.ok(fast.brake > 0);
   assert.equal(far.desiredSpeed, 2.65);
 });
+
+test('near-target pursuit fades to a low-effort physical hold instead of accelerating through the dot', () => {
+  const holding = createPursuitGuidance(vec3(), vec3(0.1, 0, 0), 0, 0, vec3(0.3, 0, 0));
+  assert.equal(holding.hovering, true);
+  assert.ok(holding.thrustScale <= 0.12);
+  assert.ok(holding.brake > 0);
+});
