@@ -83,7 +83,7 @@ const labels={CRUISE:'CRUISING',EXPLORE:'EXPLORING',TURN:'TURNING',DART:'DARTING
 function chooseBehaviour(){
  const habitatRadius=Math.hypot(sim.p.x/6.4,sim.p.y/3.5,sim.p.z/5.2);
  const choice=selectBehaviour({
-  energy:sim.gait.energy,speed:mag(sim.vel),previousMode:sim.mode,time:sim.time,
+  energy:sim.gait.energy,speed:mag(sim.vel),previousMode:sim.time>0?sim.mode:null,time:sim.time,
   lastBurstAt:sim.lastDartAt,boundaryPressure:clamp((habitatRadius-.72)/.4,0,1)
  },random);
  sim.mode=choice.mode;
