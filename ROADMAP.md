@@ -131,7 +131,9 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 ## Post-Phase 5 experiment · 100-fish schooling
 
-**Authorised by the user, but gated behind single-fish Phase 5 visual review. Not a new production phase and not part of the live single-fish build.**
+**Authorised by the user · isolated prototype implemented on `experiment/schooling-100-fish`. Not a new production phase and not part of the live single-fish entry point.**
+
+**Prototype:** [schooling.html](schooling.html) · [SCHOOLING_100.md](SCHOOLING_100.md).
 
 The experiment should use local interactions, not a shared waypoint:
 - separation to avoid crowding/collisions;
