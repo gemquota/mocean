@@ -53,11 +53,15 @@ function makeMesh(){
  }
  for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
   const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+(j+1)%sides,d=(i+1)*sides+j;
-  const radial=Math.cos(j/sides*TAU)*.82+Math.sin(j/sides*TAU)*.48;\n  const shade=Math.max(.08,Math.min(1,.48+radial*.5));\n  const fill=palette[shade>.78?4:shade>.57?3:shade>.34?2:shade>.18?1:0];\n  faces.push({indices:[a,b,c],fill},{indices:[a,c,d],fill});
+  const radial=Math.cos(j/sides*TAU)*.82+Math.sin(j/sides*TAU)*.48;
+  const shade=Math.max(.08,Math.min(1,.48+radial*.5));
+  const fill=palette[shade>.78?4:shade>.57?3:shade>.34?2:shade>.18?1:0];
+  faces.push({indices:[a,b,c],fill},{indices:[a,c,d],fill});
  }
  return{vertices,faces};
 }
-const palette=['#174b5b','#286f79','#469d98','#78c7ad','#c0ead0'];\nconst mesh=makeMesh();
+const palette=['#174b5b','#286f79','#469d98','#78c7ad','#c0ead0'];
+const mesh=makeMesh();
 function worldPoint(fish,q,local){return add3(fish.p,quatRotate(q,scale3(deformPoint(local,fish.gait),SCHOOLING_FISH_SCALE)));}
 function polygon(fish,q,points,fill,alpha=1,stroke=null){
  const p=points.map(v=>project(worldPoint(fish,q,v)));
