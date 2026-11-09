@@ -149,10 +149,12 @@ function simulate(dt){
  const guidedYaw=intentYaw+angleDelta(intentYaw,returnGuidance.yaw)*returnGuidance.weight;
  const guidedPitch=intentPitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
  const command=sim.directedSwimming?null:sequenceSample?.command;
- const sequenceYaw=command?sim.sequence.startYaw+command.yawOffset:guidedYaw;
- const targetYaw=sequenceYaw+angleDelta(sequenceYaw,returnGuidance.yaw)*returnGuidance.weight;
- const sequencePitch=command?command.pitch:guidedPitch;
- const targetPitch=sequencePitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight;
+ const targetYaw=command
+  ? (sim.sequence.startYaw+command.yawOffset)+angleDelta(sim.sequence.startYaw+command.yawOffset,returnGuidance.yaw)*returnGuidance.weight
+  : guidedYaw;
+ const targetPitch=command
+  ? command.pitch*(1-returnGuidance.weight)+returnGuidance.pitch*returnGuidance.weight
+  : guidedPitch;
  const yawError=angleDelta(sim.yaw,targetYaw);
  const turn=clamp(yawError*(pursuit?2.15:1.7),-1,1);
  const pitch=clamp((targetPitch-sim.pitch)*(pursuit?2.25:2.2),pursuit?-.9:-.85,pursuit?.9:.85);
