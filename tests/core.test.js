@@ -742,7 +742,7 @@ test('near-target pursuit fades to a low-effort physical hold instead of acceler
 test('depth drag changes only world Z and tap intersections stay on the selected XY plane', () => {
   assert.equal(targetDepthFromDrag(1.25, 0), 1.25);
   assert.equal(targetDepthFromDrag(1.25, -50), 2.15);
-  assert.equal(targetDepthFromDrag(1.25, 50), 0.35);
+  assert.ok(Math.abs(targetDepthFromDrag(1.25, 50)-0.35)<1e-12);
   const camera={p:vec3(0,0,10),forward:vec3(0,0,-1),right:vec3(1,0,0),up:vec3(0,1,0)};
   const hit=intersectXYPlane(camera,vec3(0.2,0.3,-1),2);
   assert.ok(hit);
