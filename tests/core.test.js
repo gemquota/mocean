@@ -697,7 +697,8 @@ test('behaviour transitions do not immediately repeat the previous state', () =>
   }
 });
 
-import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from '../src/core/approach.js';
+import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress, advanceDepthApproachProgress } from '../src/core/approach.js';
+import { intersectXYPlane, targetDepthFromDrag } from '../src/core/navigation.js';
 import { createPursuitGuidance } from '../src/core/pursuit.js';
 
 test('directed approach changes depth smoothly and reaches target depth by halfway progress', () => {
@@ -728,7 +729,7 @@ test('pursuit speed demand grows with distance and braking responds to overspeed
   assert.ok(far.desiredSpeed > near.desiredSpeed);
   assert.ok(far.thrustScale > near.thrustScale);
   assert.ok(fast.brake > 0);
-  assert.equal(far.desiredSpeed, 2.65);
+  assert.equal(far.desiredSpeed, 3.6);
 });
 
 test('near-target pursuit fades to a low-effort physical hold instead of accelerating through the dot', () => {
@@ -736,4 +737,26 @@ test('near-target pursuit fades to a low-effort physical hold instead of acceler
   assert.equal(holding.hovering, true);
   assert.ok(holding.thrustScale <= 0.12);
   assert.ok(holding.brake > 0);
+});
+
+test('depth drag changes only world Z and tap intersections stay on the selected XY plane', () => {
+  assert.equal(targetDepthFromDrag(1.25, 0), 1.25);
+  assert.equal(targetDepthFromDrag(1.25, -50), 2.15);
+  assert.ok(Math.abs(targetDepthFromDrag(1.25, 50)-0.35)<1e-12);
+  const camera={p:vec3(0,0,10),forward:vec3(0,0,-1),right:vec3(1,0,0),up:vec3(0,1,0)};
+  const hit=intersectXYPlane(camera,vec3(0.2,0.3,-1),2);
+  assert.ok(hit);
+  assert.equal(hit.z,2);
+  assert.ok(Math.abs(hit.x-1.6)<1e-12);
+  assert.ok(Math.abs(hit.y-2.4)<1e-12);
+});
+
+test('depth approach progress advances smoothly at a speed- and path-scaled rate', () => {
+  const path=createDepthApproach(vec3(),vec3(8,2,5));
+  const farAlong=advanceDepthApproachProgress(path,vec3(7,2,5),0,2,1/120);
+  assert.ok(farAlong>0);
+  assert.ok(farAlong<=0.8/120+1e-12);
+  const noRegression=advanceDepthApproachProgress(path,vec3(0,0,0),farAlong,2,1/120);
+  assert.ok(noRegression>=farAlong);
+  assert.ok(noRegression-farAlong<=0.8/120+1e-12);
 });

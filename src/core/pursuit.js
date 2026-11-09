@@ -22,7 +22,7 @@ export function createPursuitGuidance(position, velocity, yaw, pitch, target, ai
 
   // A square-root speed envelope gives distant targets a clear speed advantage
   // without demanding an unbounded sprint as distance grows.
-  const desiredSpeed = Math.min(2.65, Math.sqrt(distance) * 0.85);
+  const desiredSpeed = Math.min(3.6, Math.sqrt(distance) * 1.05);
   const distanceGate = clamp(distance / 0.38, 0, 1);
   const approachThrust = clamp(0.55 + (desiredSpeed - speed) * 1.25, 0, 3.2) * distanceGate;
   const hovering = distance < 0.42 && speed < 0.2;

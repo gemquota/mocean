@@ -6,8 +6,8 @@ import { sampleHorizontalHeading, alternateVerticalDirection } from './core/inte
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
-import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, dominantPointerDelta, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
-import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, dominantPointerDelta, targetDepthFromDrag, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
+import { createDepthApproach, sampleDepthApproach, advanceDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
 import { selectBehaviour } from './core/behaviour.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour'),directionToggle=document.getElementById('directionToggle');
@@ -18,17 +18,17 @@ const camera=createFixedCamera();
 // Tap selects a mid-water destination; the floor projection is the two-finger depth handle.
 const activePointers=new Map();
 let depthGesture=null;
+let selectedTargetDepth=TARGET_PLANE_Z;
+
 function pointerPosition(event){
   const rect=canvas.getBoundingClientRect();
   return {x:event.clientX-rect.left,y:event.clientY-rect.top,width:rect.width,height:rect.height};
 }
-function updateFloorDepth(gesture,deltaY,width,height){
-  const desiredScreenY=gesture.startScreenY+deltaY;
-  const z=worldZAtScreenY(camera,gesture.startFloorPoint,desiredScreenY,width,height);
-  if(z===null)return;
-  const deltaZ=z-gesture.startFloorPoint.z;
-  sim.userFloorPoint=V(gesture.startFloorPoint.x,WORLD_FLOOR_Y,z);
-  sim.userTarget=V(gesture.startTarget.x,gesture.startTarget.y,gesture.startTarget.z+deltaZ);
+function updateFloorDepth(gesture,deltaY){
+  // Depth is an explicit two-finger control. Screen height never changes target Y.
+  selectedTargetDepth=targetDepthFromDrag(gesture.startZ,deltaY);
+  sim.userTarget=V(gesture.startTarget.x,gesture.startTarget.y,selectedTargetDepth);
+  sim.userFloorPoint=projectToWorldFloor(sim.userTarget,WORLD_FLOOR_Y);
   sim.userApproach=createDepthApproach(sim.p,sim.userTarget);
   sim.userApproachProgress=0;
 }
@@ -46,7 +46,7 @@ canvas.addEventListener('pointerdown',event=>{
   canvas.setPointerCapture?.(event.pointerId);
   if(activePointers.size===1){
     const ray=screenRay(camera,point.x,point.y,point.width,point.height);
-    const target=intersectXYPlane(camera,ray,TARGET_PLANE_Z);
+    const target=intersectXYPlane(camera,ray,selectedTargetDepth);
     if(!target)return;
     sim.userTarget=target;
     sim.userFloorPoint=projectToWorldFloor(target,WORLD_FLOOR_Y);
@@ -54,11 +54,10 @@ canvas.addEventListener('pointerdown',event=>{
     sim.userApproachProgress=0;
     depthGesture={kind:'tap'};
   }else if(activePointers.size===2&&sim.userTarget&&sim.userFloorPoint){
-    const floorScreenY=projectedScreenY(camera,sim.userFloorPoint,point.height,point.width);
     depthGesture={kind:'multi',
       pointerStartY:new Map([...activePointers].map(([id,p])=>[id,p.y])),
       startTarget:V(sim.userTarget.x,sim.userTarget.y,sim.userTarget.z),
-      startFloorPoint:V(sim.userFloorPoint.x,sim.userFloorPoint.y,sim.userFloorPoint.z),startScreenY:floorScreenY};
+      startZ:selectedTargetDepth};
   }
 });
 canvas.addEventListener('pointermove',event=>{
@@ -67,7 +66,7 @@ canvas.addEventListener('pointermove',event=>{
   activePointers.set(event.pointerId,point);
   if(activePointers.size>=2&&depthGesture?.kind==='multi'){
     const dragDelta=dominantPointerDelta(activePointers,depthGesture.pointerStartY);
-    updateFloorDepth(depthGesture,dragDelta,point.width,point.height);
+    updateFloorDepth(depthGesture,dragDelta);
   }
 });
 function finishPointer(event){
@@ -135,8 +134,8 @@ function simulate(dt){
  const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
  let pursuit=null;
  if(sim.directedSwimming&&sim.userTarget&&sim.userApproach){
-  sim.userApproachProgress=Math.max(sim.userApproachProgress,
-   nearestDepthApproachProgress(sim.userApproach,sim.p,sim.userApproachProgress));
+  sim.userApproachProgress=advanceDepthApproachProgress(
+   sim.userApproach,sim.p,sim.userApproachProgress,mag(sim.vel),dt);
   const aim=sampleDepthApproach(sim.userApproach,Math.min(1,sim.userApproachProgress+.035));
   pursuit=createPursuitGuidance(sim.p,sim.vel,sim.yaw,sim.pitch,sim.userTarget,aim.position);
  }
