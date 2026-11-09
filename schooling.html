@@ -57,7 +57,7 @@ function makeMesh(){
  }
  return{vertices,faces};
 }
-const mesh=makeMesh(),palette=['#174b5b','#286f79','#469d98','#78c7ad','#c0ead0'];
+const palette=['#174b5b','#286f79','#469d98','#78c7ad','#c0ead0'];\nconst mesh=makeMesh();
 function worldPoint(fish,q,local){return add3(fish.p,quatRotate(q,scale3(deformPoint(local,fish.gait),SCHOOLING_FISH_SCALE)));}
 function polygon(fish,q,points,fill,alpha=1,stroke=null){
  const p=points.map(v=>project(worldPoint(fish,q,v)));
