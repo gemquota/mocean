@@ -26,7 +26,7 @@ a:hover{text-decoration:underline}
 <header><div class="brand"><span class="mark">M</span><span>MOCEAN / SCHOOLING EXPERIMENT</span></div><div class="status" id="status">100 AGENTS · LOCAL INTERACTIONS</div></header>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
-import { createSchool, stepSchool } from './src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_FISH_SCALE } from './src/schooling.js';
 import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/core/body.js';
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
 
@@ -45,7 +45,7 @@ function project(point){
  return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};
 }
 function makeMesh(){
- const vertices=[],faces=[],rings=24,sides=16;
+ const vertices=[],faces=[],rings=12,sides=10;
  for(let i=0;i<=rings;i++){
   const t=i/rings,x=.98-2.65*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68);
   const ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
@@ -53,17 +53,12 @@ function makeMesh(){
  }
  for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
   const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+(j+1)%sides,d=(i+1)*sides+j;
-  faces.push([a,b,c],[a,c,d]);
+  const radial=Math.cos(j/sides*TAU)*.82+Math.sin(j/sides*TAU)*.48;\n  const shade=Math.max(.08,Math.min(1,.48+radial*.5));\n  const fill=palette[shade>.78?4:shade>.57?3:shade>.34?2:shade>.18?1:0];\n  faces.push({indices:[a,b,c],fill},{indices:[a,c,d],fill});
  }
  return{vertices,faces};
 }
 const mesh=makeMesh(),palette=['#174b5b','#286f79','#469d98','#78c7ad','#c0ead0'];
-function worldPoint(fish,q,local){return add3(fish.p,quatRotate(q,deformPoint(local,fish.gait)));}
-function colour(points){
- const n=normalize3(cross3(sub(points[1],points[0]),sub(points[2],points[0])));
- const light=Math.max(.08,Math.min(1,.48+dot3(n,normalize3(vec3(-.35,.82,.48)))*.5));
- return palette[light>.78?4:light>.57?3:light>.34?2:light>.18?1:0];
-}
+function worldPoint(fish,q,local){return add3(fish.p,quatRotate(q,scale3(deformPoint(local,fish.gait),SCHOOLING_FISH_SCALE)));}
 function polygon(fish,q,points,fill,alpha=1,stroke=null){
  const p=points.map(v=>project(worldPoint(fish,q,v)));
  if(p.some(v=>v.depth<2.5))return;
@@ -84,14 +79,14 @@ function drawFish(fish){
  polygon(fish,q,[vec3(-1.48,.02,0),vec3(-2.12,.5+load*.08,0),vec3(-1.82,.04,0),vec3(-2.12,-.48-load*.08,0)],'#388d8e',alpha,'#174e5c');
  polygon(fish,q,[vec3(-.55,.3,0),vec3(-.82,.58+load*.04,0),vec3(-.12,.32,0)],'#4ca99c',alpha);
  polygon(fish,q,[vec3(-.58,-.29,0),vec3(-.82,-.48,0),vec3(-.12,-.29,0)],'#347e85',alpha);
- const deformed=mesh.vertices.map(v=>deformPoint(v,fish.gait));
+ const deformed=mesh.vertices.map(v=>scale3(deformPoint(v,fish.gait),SCHOOLING_FISH_SCALE));
  const projected=deformed.map(v=>project(add3(fish.p,quatRotate(q,v))));
- const faces=mesh.faces.map(face=>({face,depth:(projected[face[0]].depth+projected[face[1]].depth+projected[face[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
+ const faces=mesh.faces.map(face=>({face,depth:(projected[face.indices[0]].depth+projected[face.indices[1]].depth+projected[face.indices[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
  for(const item of faces){
-  const points=item.face.map(i=>deformed[i]),p=item.face.map(i=>projected[i]);
+  const points=item.face.indices.map(i=>deformed[i]),p=item.face.indices.map(i=>projected[i]);
   if(p.some(v=>v.depth<2.5))continue;
   ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();
-  ctx.fillStyle=colour(points);ctx.fill();
+  ctx.fillStyle=item.face.fill;ctx.fill();
  }
  const ridge=[vec3(.58,.27,0),vec3(.3,.34,0),vec3(-.12,.32,0),vec3(-.62,.24,0),vec3(-1.12,.12,0),vec3(-1.42,.055,0)].map(v=>project(worldPoint(fish,q,v)));
  if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.strokeStyle='rgba(177,235,207,.82)';ctx.lineWidth=Math.max(.7,centre.size*.009);ctx.lineCap='round';ctx.stroke();}
@@ -112,7 +107,7 @@ function render(){
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);
 }
-let previous=performance.now(),accumulator=0,frame=0;
+let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0;
 function animate(now){
  const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;
  const dt=1/60;
