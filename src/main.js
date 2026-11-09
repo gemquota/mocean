@@ -6,7 +6,7 @@ import { sampleHorizontalHeading, alternateVerticalDirection } from './core/inte
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
-import { screenRay, intersectXYPlane, projectToWorldFloor, dominantPointerDelta, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, dominantPointerDelta, targetDepthFromDrag, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
 import { createDepthApproach, sampleDepthApproach, advanceDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
 import { selectBehaviour } from './core/behaviour.js';
@@ -19,14 +19,14 @@ const camera=createFixedCamera();
 const activePointers=new Map();
 let depthGesture=null;
 let selectedTargetDepth=TARGET_PLANE_Z;
-const DEPTH_DRAG_SCALE=0.018;
+
 function pointerPosition(event){
   const rect=canvas.getBoundingClientRect();
   return {x:event.clientX-rect.left,y:event.clientY-rect.top,width:rect.width,height:rect.height};
 }
 function updateFloorDepth(gesture,deltaY){
   // Depth is an explicit two-finger control. Screen height never changes target Y.
-  selectedTargetDepth=gesture.startZ-deltaY*DEPTH_DRAG_SCALE;
+  selectedTargetDepth=targetDepthFromDrag(gesture.startZ,deltaY);
   sim.userTarget=V(gesture.startTarget.x,gesture.startTarget.y,selectedTargetDepth);
   sim.userFloorPoint=projectToWorldFloor(sim.userTarget,WORLD_FLOOR_Y);
   sim.userApproach=createDepthApproach(sim.p,sim.userTarget);
