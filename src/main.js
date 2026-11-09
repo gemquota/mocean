@@ -7,7 +7,7 @@ import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
 import { screenRay, intersectXYPlane, projectToWorldFloor, dominantPointerDelta, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
-import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
+import { createDepthApproach, sampleDepthApproach, advanceDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
 import { selectBehaviour } from './core/behaviour.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour'),directionToggle=document.getElementById('directionToggle');
@@ -134,8 +134,8 @@ function simulate(dt){
  const sampled=sim.maneuver?sampleManeuver(sim.maneuver,sim.time-sim.maneuverStartedAt):null;
  let pursuit=null;
  if(sim.directedSwimming&&sim.userTarget&&sim.userApproach){
-  sim.userApproachProgress=Math.max(sim.userApproachProgress,
-   nearestDepthApproachProgress(sim.userApproach,sim.p,sim.userApproachProgress));
+  sim.userApproachProgress=advanceDepthApproachProgress(
+   sim.userApproach,sim.p,sim.userApproachProgress,mag(sim.vel),dt);
   const aim=sampleDepthApproach(sim.userApproach,Math.min(1,sim.userApproachProgress+.035));
   pursuit=createPursuitGuidance(sim.p,sim.vel,sim.yaw,sim.pitch,sim.userTarget,aim.position);
  }
