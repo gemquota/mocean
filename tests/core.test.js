@@ -696,3 +696,37 @@ test('behaviour transitions do not immediately repeat the previous state', () =>
     assert.ok(next.verticalProbability >= 0 && next.verticalProbability <= 1);
   }
 });
+
+import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from '../src/core/approach.js';
+import { createPursuitGuidance } from '../src/core/pursuit.js';
+
+test('directed approach changes depth smoothly and reaches target depth by halfway progress', () => {
+  const path = createDepthApproach(vec3(0, 0, 0), vec3(8, 4, 6));
+  const quarter = sampleDepthApproach(path, 0.25);
+  const halfway = sampleDepthApproach(path, 0.5);
+  const threeQuarter = sampleDepthApproach(path, 0.75);
+  assert.ok(Math.abs(quarter.position.x - 2) < 1e-9);
+  assert.ok(Math.abs(quarter.position.y - 1) < 1e-9);
+  assert.ok(Math.abs(quarter.position.z - 3) < 1e-6);
+  assert.ok(Math.abs(halfway.position.z - 6) < 1e-9);
+  assert.ok(Math.abs(threeQuarter.position.z - 6) < 1e-9);
+  assert.ok(Math.abs(halfway.tangent.z) < 1e-9, 'path should be level after the midpoint');
+});
+
+test('directed path progress is geometric and cannot regress behind its minimum', () => {
+  const path = createDepthApproach(vec3(), vec3(8, 2, 5));
+  const later = nearestDepthApproachProgress(path, vec3(5, 1, 5), 0.45);
+  const constrained = nearestDepthApproachProgress(path, vec3(2, 0.5, 1), later);
+  assert.ok(later >= 0.45);
+  assert.ok(constrained >= later);
+});
+
+test('pursuit speed demand grows with distance and braking responds to overspeed', () => {
+  const near = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(1, 0, 0));
+  const far = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(16, 0, 0));
+  const fast = createPursuitGuidance(vec3(), vec3(3, 0, 0), 0, 0, vec3(1, 0, 0));
+  assert.ok(far.desiredSpeed > near.desiredSpeed);
+  assert.ok(far.thrustScale > near.thrustScale);
+  assert.ok(fast.brake > 0);
+  assert.equal(far.desiredSpeed, 2.65);
+});
