@@ -86,7 +86,7 @@ function closestSegmentPoints(p1, q1, p2, q2) {
   return [add(p1, { x: d1.x * s, y: d1.y * s, z: d1.z * s }), add(p2, { x: d2.x * t, y: d2.y * t, z: d2.z * t })];
 }
 function collisionSegment(agent) {
-  const direction = normalize(agent.v);
+  const direction = agent.forward ?? normalize(agent.v);
   const half = SCHOOLING_COLLISION.halfLength;
   const offset = { x: direction.x * half, y: direction.y * half, z: direction.z * half };
   return [subtract(agent.p, offset), add(agent.p, offset)];
@@ -142,6 +142,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       id,
       p: { x: (random() - 0.5) * 9.4, y: (random() - 0.5) * 3.2, z: (random() - 0.5) * 7.2 },
       v: { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
+      forward: { ...direction },
       phase: random() * Math.PI * 2,
       neighbourCount: 0,
       collisionCount: 0
@@ -218,12 +219,13 @@ export function stepSchool(school, dt) {
     const agent = fish[i], acceleration = accelerations[i];
     // Gently regulate cruising speed through acceleration, preserving inertia.
     const currentSpeed = length(agent.v), desiredSpeed = 1.12 + 0.12 * Math.sin(school.time * 0.08 + agent.phase);
-    const direction = normalize(agent.v);
-    const speedCorrection = clamp((desiredSpeed - currentSpeed) * 0.55, -0.28, 0.28);
+    const direction = currentSpeed > 0.12 ? normalize(agent.v) : agent.forward;
+    const speedCorrection = clamp((desiredSpeed - currentSpeed) * 1.05, -0.35, 0.48);
     agent.v.x += (acceleration.x + direction.x * speedCorrection) * step;
     agent.v.y += (acceleration.y + direction.y * speedCorrection) * step;
     agent.v.z += (acceleration.z + direction.z * speedCorrection) * step;
     agent.v = limit(agent.v, MAX_SPEED);
+    agent.forward = turnDirection(agent.forward, normalize(agent.v), MAX_HEADING_RATE * step);
     agent.p.x += agent.v.x * step;
     agent.p.y += agent.v.y * step;
     agent.p.z += agent.v.z * step;
