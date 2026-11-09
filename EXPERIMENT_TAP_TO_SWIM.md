@@ -3,7 +3,7 @@
 **Branch:** `experiment/faster-pursuit-swimming`  
 **Scope:** isolated pursuit-speed tuning; the merged tap-to-swim interaction remains the baseline.
 
-## Interaction geometry
+## Interaction geometry and gesture mapping
 
 - A tap casts a camera ray and selects a destination on the world **XY plane at Z = 0**. Screen height therefore changes world Y while target Z remains fixed.
 - A second dot is projected directly below that destination onto the habitat floor plane **Y = -3.1**, preserving its world **X/Z** coordinates.

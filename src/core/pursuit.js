@@ -1,5 +1,8 @@
 import { clamp, add3, scale3, length3, angleDelta } from './math.js';
 
+export const MAX_PURSUIT_SPEED = 4.8;
+const PURSUIT_THRUST_CAP = 1.55;
+
 /**
  * Distance-shaped speed control for target pursuit. Far targets invite a faster
  * approach; desired speed falls with remaining distance so braking starts before

@@ -6,7 +6,7 @@ import { sampleHorizontalHeading, shouldMakeVerticalExcursion, alternateVertical
 import { createManeuver, sampleManeuver } from './core/maneuver.js';
 import { createMotionSequence, sampleMotionSequence } from './core/sequences.js';
 import { createFixedCamera } from './core/camera.js';
-import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
+import { screenRay, intersectXYPlane, projectToWorldFloor, projectedScreenY, worldZAtScreenY, dominantPointerDelta, TARGET_PLANE_Z, WORLD_FLOOR_Y } from './core/navigation.js';
 import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from './core/approach.js';
 import { createPursuitGuidance } from './core/pursuit.js';
 const canvas=document.getElementById('creature'),ctx=canvas.getContext('2d',{alpha:false}),label=document.getElementById('behaviour');
@@ -20,10 +20,6 @@ let depthGesture=null;
 function pointerPosition(event){
   const rect=canvas.getBoundingClientRect();
   return {x:event.clientX-rect.left,y:event.clientY-rect.top,width:rect.width,height:rect.height};
-}
-function averagePointerY(){
-  const values=[...activePointers.values()];
-  return values.reduce((sum,p)=>sum+p.y,0)/Math.max(1,values.length);
 }
 function updateFloorDepth(gesture,deltaY,width,height){
   const desiredScreenY=gesture.startScreenY+deltaY;
@@ -50,7 +46,9 @@ canvas.addEventListener('pointerdown',event=>{
     depthGesture={kind:'tap'};
   }else if(activePointers.size===2&&sim.userTarget&&sim.userFloorPoint){
     const floorScreenY=projectedScreenY(camera,sim.userFloorPoint,point.height,point.width);
-    depthGesture={kind:'multi',startY:averagePointerY(),startTarget:V(sim.userTarget.x,sim.userTarget.y,sim.userTarget.z),
+    depthGesture={kind:'multi',
+      pointerStartY:new Map([...activePointers].map(([id,p])=>[id,p.y])),
+      startTarget:V(sim.userTarget.x,sim.userTarget.y,sim.userTarget.z),
       startFloorPoint:V(sim.userFloorPoint.x,sim.userFloorPoint.y,sim.userFloorPoint.z),startScreenY:floorScreenY};
   }
 });
@@ -59,7 +57,8 @@ canvas.addEventListener('pointermove',event=>{
   const point=pointerPosition(event);
   activePointers.set(event.pointerId,point);
   if(activePointers.size>=2&&depthGesture?.kind==='multi'){
-    updateFloorDepth(depthGesture,averagePointerY()-depthGesture.startY,point.width,point.height);
+    const dragDelta=dominantPointerDelta(activePointers,depthGesture.pointerStartY);
+    updateFloorDepth(depthGesture,dragDelta,point.width,point.height);
   }
 });
 function finishPointer(event){
