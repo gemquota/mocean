@@ -67,7 +67,7 @@ function polygon(fish,q,points,fill,alpha=1,stroke=null){
 }
 function drawFish(fish){
  const speed=Math.hypot(fish.v.x,fish.v.y,fish.v.z);
- const yaw=Math.atan2(-fish.v.z,fish.v.x),pitch=Math.atan2(fish.v.y,Math.hypot(fish.v.x,fish.v.z));
+ const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p);
  const alpha=Math.max(.56,Math.min(.98,1.18-centre.depth*.018));
  ctx.save();ctx.globalAlpha=alpha;
@@ -114,7 +114,7 @@ function animate(now){
  while(accumulator>=dt){
   stepSchool(school,dt);
   for(const fish of school.fish){
-   const nextYaw=Math.atan2(-fish.v.z,fish.v.x),nextPitch=Math.atan2(fish.v.y,Math.hypot(fish.v.x,fish.v.z));
+   const nextYaw=Math.atan2(-fish.forward.z,fish.forward.x),nextPitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
    const turn=Math.max(-1,Math.min(1,angleDelta(fish.heading,nextYaw)*1.7));
    stepGait(fish.gait,'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
    fish.heading=nextYaw;fish.pitch=nextPitch;
@@ -122,7 +122,7 @@ function animate(now){
   accumulator-=dt;
  }
  render();
- if(frame++%15===0){status.textContent=school.fish.length+' FULL-RESOLUTION FISH · LOCAL INTERACTIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · ARTICULATED BODY WAVE';}
+ if(frame++%15===0){status.textContent=school.fish.length+' QUARTER-SCALE FISH · LOCAL INTERACTIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · ARTICULATED BODY WAVE';}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
