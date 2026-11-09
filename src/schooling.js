@@ -130,7 +130,7 @@ function resolveCollisions(fish, grid) {
 /** Create deterministic agents with independent momentum and gait phase. */
 export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
   const random = makeRandom(seed);
-  const size = Math.max(1, Math.min(2000, Math.floor(count)));
+  const size = Math.max(1, Math.min(5000, Math.floor(count)));
   const fish = Array.from({ length: size }, (_, id) => {
     const direction = normalize({
       x: random() * 2 - 1,
