@@ -10,6 +10,11 @@ test('schooling experiment creates 1000 independent fish by default', () => {
   assert.equal('target' in school, false, 'the school must not have a shared target');
 });
 
+test('school population supports the full 5000-fish slider range', () => {
+  assert.equal(createSchool(5000, 7).fish.length, 5000);
+  assert.equal(createSchool(6000, 7).fish.length, 5000, 'engine population cap should match the slider maximum');
+});
+
 test('school initialisation is reproducible for a fixed seed', () => {
   assert.deepEqual(createSchool(100, 1234), createSchool(100, 1234));
   assert.notDeepEqual(createSchool(100, 1234), createSchool(100, 4321));
