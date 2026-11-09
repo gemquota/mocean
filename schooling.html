@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#06141b">
 <title>Mocean · 1000-fish schooling experiment</title>
 <style>
 :root{color-scheme:dark;--mint:#9be7c8;--muted:rgba(190,220,215,.58)}
 *{box-sizing:border-box}
-html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06141b}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06141b;overscroll-behavior:none;touch-action:none}
 body{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9eee5}
-canvas{display:block;width:100%;height:100%}
+canvas{display:block;width:100%;height:100%;touch-action:none}
 header,footer{position:fixed;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;gap:14px;pointer-events:none}
 header{top:20px}footer{bottom:18px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
 .brand{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.2em;color:rgba(221,241,233,.78)}
@@ -33,7 +33,7 @@ import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics');
 const school=createSchool(1000);
-const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
+const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};\nconst baseCameraPosition={...camera.p};let zoom=1;\nfunction applyZoom(){camera.p.x=baseCameraPosition.x*zoom;camera.p.y=baseCameraPosition.y*zoom;camera.p.z=baseCameraPosition.z*zoom;}\nconst activePointers=new Map();let pinchDistance=0;\nfunction pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}\ncanvas.addEventListener("pointerdown",event=>{activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});canvas.setPointerCapture?.(event.pointerId);if(activePointers.size===2)pinchDistance=pointerDistance();});\ncanvas.addEventListener("pointermove",event=>{if(!activePointers.has(event.pointerId))return;activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(.55,Math.min(3.2,zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}});\nfunction releasePointer(event){activePointers.delete(event.pointerId);pinchDistance=activePointers.size===2?pointerDistance():0;}\ncanvas.addEventListener("pointerup",releasePointer);canvas.addEventListener("pointercancel",releasePointer);canvas.addEventListener("lostpointercapture",releasePointer);\nfor(const name of ["gesturestart","gesturechange","gestureend"])document.addEventListener(name,event=>event.preventDefault(),{passive:false});\nwindow.addEventListener("wheel",event=>{if(event.ctrlKey)event.preventDefault();},{passive:false});
 const sub=(a,b)=>add3(a,scale3(b,-1));
 const cameraForward=normalize3(sub(camera.target,camera.p));
 const cameraRight=normalize3(cross3(cameraForward,worldUp));
@@ -45,7 +45,7 @@ function project(point){
  return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};
 }
 function makeMesh(){
- const vertices=[],faces=[],rings=6,sides=6;
+ const vertices=[],faces=[],rings=12,sides=10;
  for(let i=0;i<=rings;i++){
   const t=i/rings,x=.98-2.65*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68);
   const ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
@@ -86,7 +86,7 @@ function drawFish(fish){
  // Distant quarter-scale fish occupy only a few screen pixels. A single
  // deformed silhouette is both more legible and dramatically cheaper than
  // depth-sorting dozens of triangles that cannot be resolved at this scale.
- if(centre.size<17){
+ if(centre.size<13){
   polygon(fish,q,[
    vec3(.98,0,0),vec3(.72,.29,0),vec3(.18,.34,0),
    vec3(-.48,.25,0),vec3(-1.12,.13,0),vec3(-1.58,.035,0),
