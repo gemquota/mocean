@@ -87,7 +87,7 @@ function drawFish(fish){
  const projected=deformed.map(v=>project(add3(fish.p,quatRotate(q,v))));
  const faces=mesh.faces.map(face=>({face,depth:(projected[face.indices[0]].depth+projected[face.indices[1]].depth+projected[face.indices[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
  for(const item of faces){
-  const points=item.face.indices.map(i=>deformed[i]),p=item.face.indices.map(i=>projected[i]);
+  const p=item.face.indices.map(i=>projected[i]);
   if(p.some(v=>v.depth<2.5))continue;
   ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();
   ctx.fillStyle=item.face.fill;ctx.fill();
