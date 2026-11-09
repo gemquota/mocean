@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06141b">
+<title>Mocean · 100-fish schooling experiment</title>
+<style>
+:root{color-scheme:dark;--mint:#9be7c8;--muted:rgba(190,220,215,.58)}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06141b}
+body{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9eee5}
+canvas{display:block;width:100%;height:100%}
+header,footer{position:fixed;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;gap:14px;pointer-events:none}
+header{top:20px}footer{bottom:18px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
+.brand{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.2em;color:rgba(221,241,233,.78)}
+.mark{width:24px;height:24px;border:1px solid rgba(155,231,200,.5);border-radius:50%;display:grid;place-items:center;color:var(--mint)}
+.status{font-size:9px;letter-spacing:.13em;color:rgba(155,231,200,.8);text-align:right}
+a{pointer-events:auto;color:var(--mint);text-decoration:none}
+a:hover{text-decoration:underline}
+@media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}}
+</style>
+</head>
+<body>
+<canvas id="school" aria-label="One hundred individual fish swimming as a locally interacting school"></canvas>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / SCHOOLING EXPERIMENT</span></div><div class="status" id="status">100 AGENTS · LOCAL INTERACTIONS</div></header>
+<footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
+<script type="module">
+import { createSchool, stepSchool } from './src/schooling.js';
+
+const canvas=document.getElementById('school');
+const ctx=canvas.getContext('2d',{alpha:false});
+const status=document.getElementById('status');
+const metrics=document.getElementById('metrics');
+const school=createSchool(100);
+const worldUp={x:0,y:1,z:0};
+const camera={p:{x:0,y:4.2,z:15.5},target:{x:0,y:0,z:0}};
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y,z:a.z-b.z});
+const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
+const cross=(a,b)=>({x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x});
+const norm=v=>{const n=Math.hypot(v.x,v.y,v.z)||1;return{x:v.x/n,y:v.y/n,z:v.z/n}};
+const scale=(v,s)=>({x:v.x*s,y:v.y*s,z:v.z*s});
+const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y,z:a.z+b.z});
+const cameraForward=norm(sub(camera.target,camera.p));
+const cameraRight=norm(cross(cameraForward,worldUp));
+const cameraUp=norm(cross(cameraRight,cameraForward));
+function project(point,w,h){
+ const relative=sub(point,camera.p);
+ const depth=dot(relative,cameraForward);
+ const focal=Math.min(w,h)*.92;
+ const size=focal/Math.max(5,depth);
+ return{x:w*.5+dot(relative,cameraRight)*size,y:h*.52-dot(relative,cameraUp)*size,depth,size};
+}
+function polygon(points,fill,alpha=1,stroke=null){
+ const projected=points.map(p=>project(p,viewWidth,viewHeight));
+ if(projected.some(p=>p.depth<3))return;
+ ctx.globalAlpha=alpha;ctx.beginPath();
+ projected.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+ ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+ if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.65;ctx.stroke();}
+}
+let viewWidth=1,viewHeight=1;
+function drawFish(fish){
+ const forward=norm(fish.v);
+ let lateral=norm(cross(forward,worldUp));
+ if(Math.hypot(lateral.x,lateral.y,lateral.z)<.1)lateral={x:0,y:0,z:1};
+ const dorsal=norm(cross(lateral,forward));
+ const wag=Math.sin(fish.phase)*.16;
+ const centre=fish.p;
+ const point=(f,s,u)=>add(add(centre,scale(forward,f)),add(scale(lateral,s),scale(dorsal,u)));
+ const tailRoot=point(-.36,wag*.25,0);
+ const tailTip=point(-.67,wag*1.2,0);
+ const tailTop=add(tailTip,scale(dorsal,.14));
+ const tailBottom=add(tailTip,scale(dorsal,-.14));
+ const shade=47+(fish.id%5)*2;
+ const hue=166+(fish.id%7)*3;
+ const body='hsl('+hue+',42%,'+shade+'%)';
+ const depth=project(centre,viewWidth,viewHeight).depth;
+ const alpha=Math.max(.35,Math.min(.96,1.15-depth*.025));
+ polygon([tailRoot,tailTop,tailBottom],'hsl('+hue+',48%,34%)',alpha,'rgba(15,55,63,.8)');
+ polygon([
+  point(.38,0,0),point(.16,0,.13),point(-.12,wag*.12,.12),
+  point(-.39,wag*.25,.055),point(-.34,wag*.25,-.085),
+  point(-.1,wag*.12,-.12),point(.16,0,-.12)
+ ],body,alpha,'rgba(11,49,57,.8)');
+ const eye=project(point(.24,.055,.055),viewWidth,viewHeight);
+ if(eye.depth>3){ctx.globalAlpha=alpha;ctx.fillStyle='#e9f3d9';ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.8,eye.size*.009),0,Math.PI*2);ctx.fill();}
+}
+function render(){
+ const rect=canvas.getBoundingClientRect();
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ const width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
+ if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+ ctx.setTransform(dpr,0,0,dpr,0,0);viewWidth=rect.width;viewHeight=rect.height;
+ const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
+ gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');
+ ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
+ // A faint habitat perimeter gives the school spatial context without enclosing it in a cage.
+ ctx.globalAlpha=.13;ctx.strokeStyle='#8bd8c1';ctx.lineWidth=1;ctx.beginPath();
+ for(let i=0;i<=72;i++){const a=i/72*Math.PI*2;const p=project({x:8.2*Math.cos(a),y:-1.9,z:6.2*Math.sin(a)},viewWidth,viewHeight);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
+ ctx.stroke();ctx.globalAlpha=1;
+ const ordered=school.fish.slice().sort((a,b)=>project(b.p,viewWidth,viewHeight).depth-project(a.p,viewWidth,viewHeight).depth);
+ for(const fish of ordered)drawFish(fish);
+}
+let previous=performance.now(),accumulator=0,frame=0;
+function animate(now){
+ const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;
+ const dt=1/60;
+ while(accumulator>=dt){stepSchool(school,dt);accumulator-=dt;}
+ render();
+ if(frame++%15===0){
+  status.textContent=school.fish.length+' AGENTS · '+school.metrics.averageNeighbours.toFixed(1)+' LOCAL NEIGHBOURS / FISH';
+  metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · SEPARATION / ALIGNMENT / COHESION';
+ }
+ requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
