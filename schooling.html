@@ -27,91 +27,106 @@ a:hover{text-decoration:underline}
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
 import { createSchool, stepSchool } from './src/schooling.js';
+import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/core/body.js';
+import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
 
-const canvas=document.getElementById('school');
-const ctx=canvas.getContext('2d',{alpha:false});
-const status=document.getElementById('status');
-const metrics=document.getElementById('metrics');
+const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
+const status=document.getElementById('status'),metrics=document.getElementById('metrics');
 const school=createSchool(100);
-const worldUp={x:0,y:1,z:0};
-const camera={p:{x:0,y:4.2,z:15.5},target:{x:0,y:0,z:0}};
-const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y,z:a.z-b.z});
-const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
-const cross=(a,b)=>({x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x});
-const norm=v=>{const n=Math.hypot(v.x,v.y,v.z)||1;return{x:v.x/n,y:v.y/n,z:v.z/n}};
-const scale=(v,s)=>({x:v.x*s,y:v.y*s,z:v.z*s});
-const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y,z:a.z+b.z});
-const cameraForward=norm(sub(camera.target,camera.p));
-const cameraRight=norm(cross(cameraForward,worldUp));
-const cameraUp=norm(cross(cameraRight,cameraForward));
-function project(point,w,h){
- const relative=sub(point,camera.p);
- const depth=dot(relative,cameraForward);
- const focal=Math.min(w,h)*.92;
- const size=focal/Math.max(5,depth);
- return{x:w*.5+dot(relative,cameraRight)*size,y:h*.52-dot(relative,cameraUp)*size,depth,size};
-}
-function polygon(points,fill,alpha=1,stroke=null){
- const projected=points.map(p=>project(p,viewWidth,viewHeight));
- if(projected.some(p=>p.depth<3))return;
- ctx.globalAlpha=alpha;ctx.beginPath();
- projected.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
- ctx.closePath();ctx.fillStyle=fill;ctx.fill();
- if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.65;ctx.stroke();}
-}
+const worldUp=vec3(0,1,0),camera={p:vec3(0,4.2,15.5),target:vec3()};
+const sub=(a,b)=>add3(a,scale3(b,-1));
+const cameraForward=normalize3(sub(camera.target,camera.p));
+const cameraRight=normalize3(cross3(cameraForward,worldUp));
+const cameraUp=normalize3(cross3(cameraRight,cameraForward));
 let viewWidth=1,viewHeight=1;
+for(const fish of school.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;}
+function project(point){
+ const relative=sub(point,camera.p),depth=dot3(relative,cameraForward),focal=Math.min(viewWidth,viewHeight)*1.08,size=focal/Math.max(4,depth);
+ return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};
+}
+function makeMesh(){
+ const vertices=[],faces=[],rings=24,sides=16;
+ for(let i=0;i<=rings;i++){
+  const t=i/rings,x=.98-2.65*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68);
+  const ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
+  for(let j=0;j<sides;j++){const a=j/sides*TAU;vertices.push(vec3(x,Math.cos(a)*ry,Math.sin(a)*rz));}
+ }
+ for(let i=0;i<rings;i++)for(let j=0;j<sides;j++){
+  const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+(j+1)%sides,d=(i+1)*sides+j;
+  faces.push([a,b,c],[a,c,d]);
+ }
+ return{vertices,faces};
+}
+const mesh=makeMesh(),palette=['#174b5b','#286f79','#469d98','#78c7ad','#c0ead0'];
+function worldPoint(fish,q,local){return add3(fish.p,quatRotate(q,deformPoint(local,fish.gait)));}
+function colour(points){
+ const n=normalize3(cross3(sub(points[1],points[0]),sub(points[2],points[0])));
+ const light=Math.max(.08,Math.min(1,.48+dot3(n,normalize3(vec3(-.35,.82,.48)))*.5));
+ return palette[light>.78?4:light>.57?3:light>.34?2:light>.18?1:0];
+}
+function polygon(fish,q,points,fill,alpha=1,stroke=null){
+ const p=points.map(v=>project(worldPoint(fish,q,v)));
+ if(p.some(v=>v.depth<2.5))return;
+ ctx.globalAlpha=alpha;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));
+ ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.7;ctx.stroke();}
+}
 function drawFish(fish){
- const forward=norm(fish.v);
- let lateral=norm(cross(forward,worldUp));
- if(Math.hypot(lateral.x,lateral.y,lateral.z)<.1)lateral={x:0,y:0,z:1};
- const dorsal=norm(cross(lateral,forward));
- const wag=Math.sin(fish.phase)*.16;
- const centre=fish.p;
- const point=(f,s,u)=>add(add(centre,scale(forward,f)),add(scale(lateral,s),scale(dorsal,u)));
- const tailRoot=point(-.36,wag*.25,0);
- const tailTip=point(-.67,wag*1.2,0);
- const tailTop=add(tailTip,scale(dorsal,.14));
- const tailBottom=add(tailTip,scale(dorsal,-.14));
- const shade=47+(fish.id%5)*2;
- const hue=166+(fish.id%7)*3;
- const body='hsl('+hue+',42%,'+shade+'%)';
- const depth=project(centre,viewWidth,viewHeight).depth;
- const alpha=Math.max(.35,Math.min(.96,1.15-depth*.025));
- polygon([tailRoot,tailTop,tailBottom],'hsl('+hue+',48%,34%)',alpha,'rgba(15,55,63,.8)');
- polygon([
-  point(.38,0,0),point(.16,0,.13),point(-.12,wag*.12,.12),
-  point(-.39,wag*.25,.055),point(-.34,wag*.25,-.085),
-  point(-.1,wag*.12,-.12),point(.16,0,-.12)
- ],body,alpha,'rgba(11,49,57,.8)');
- const eye=project(point(.24,.055,.055),viewWidth,viewHeight);
- if(eye.depth>3){ctx.globalAlpha=alpha;ctx.fillStyle='#e9f3d9';ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.8,eye.size*.009),0,Math.PI*2);ctx.fill();}
+ const speed=Math.hypot(fish.v.x,fish.v.y,fish.v.z);
+ const yaw=Math.atan2(-fish.v.z,fish.v.x),pitch=Math.atan2(fish.v.y,Math.hypot(fish.v.x,fish.v.z));
+ const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p);
+ const alpha=Math.max(.56,Math.min(.98,1.18-centre.depth*.018));
+ ctx.save();ctx.globalAlpha=alpha;
+ const spreadL=fish.gait.leftFin,spreadR=fish.gait.rightFin,load=fish.gait.tailLoad;
+ const leftRoot=vec3(-.22,-.16,.27),rightRoot=vec3(-.22,-.16,-.27);
+ const left=[leftRoot,vec3(-.62,-.46,.62+spreadL*.42),vec3(.02,-.3,.48),vec3(.18,-.12,.29)].map(v=>articulateFinPoint(v,leftRoot,fish.gait.leftFinAngle));
+ const right=[rightRoot,vec3(-.62,-.46,-.62-spreadR*.42),vec3(.02,-.3,-.48),vec3(.18,-.12,-.29)].map(v=>articulateFinPoint(v,rightRoot,fish.gait.rightFinAngle));
+ polygon(fish,q,left,'#286e7b',alpha*.92,'#174e5c');polygon(fish,q,right,'#367f83',alpha*.92,'#174e5c');
+ polygon(fish,q,[vec3(-1.48,.02,0),vec3(-2.12,.5+load*.08,0),vec3(-1.82,.04,0),vec3(-2.12,-.48-load*.08,0)],'#388d8e',alpha,'#174e5c');
+ polygon(fish,q,[vec3(-.55,.3,0),vec3(-.82,.58+load*.04,0),vec3(-.12,.32,0)],'#4ca99c',alpha);
+ polygon(fish,q,[vec3(-.58,-.29,0),vec3(-.82,-.48,0),vec3(-.12,-.29,0)],'#347e85',alpha);
+ const deformed=mesh.vertices.map(v=>deformPoint(v,fish.gait));
+ const faces=mesh.faces.map(face=>({face,depth:face.reduce((sum,i)=>sum+project(add3(fish.p,quatRotate(q,deformed[i]))).depth,0)/3})).sort((a,b)=>b.depth-a.depth);
+ for(const item of faces){
+  const points=item.face.map(i=>deformed[i]),p=points.map(v=>project(add3(fish.p,quatRotate(q,v))));
+  if(p.some(v=>v.depth<2.5))continue;
+  ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();
+  ctx.fillStyle=colour(points);ctx.fill();
+ }
+ const ridge=[vec3(.58,.27,0),vec3(.3,.34,0),vec3(-.12,.32,0),vec3(-.62,.24,0),vec3(-1.12,.12,0),vec3(-1.42,.055,0)].map(v=>project(worldPoint(fish,q,v)));
+ if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.strokeStyle='rgba(177,235,207,.82)';ctx.lineWidth=Math.max(.7,centre.size*.009);ctx.lineCap='round';ctx.stroke();}
+ const eye=project(worldPoint(fish,q,vec3(.72,.13,.2)));
+ if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.2,eye.size*.028),0,TAU);ctx.fillStyle='#f3f0d8';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.008,eye.y,Math.max(.7,eye.size*.012),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
+ ctx.restore();
 }
 function render(){
- const rect=canvas.getBoundingClientRect();
- const dpr=Math.min(window.devicePixelRatio||1,2);
+ const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
  const width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
  ctx.setTransform(dpr,0,0,dpr,0,0);viewWidth=rect.width;viewHeight=rect.height;
  const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
- gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');
- ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
- // A faint habitat perimeter gives the school spatial context without enclosing it in a cage.
+ gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
  ctx.globalAlpha=.13;ctx.strokeStyle='#8bd8c1';ctx.lineWidth=1;ctx.beginPath();
- for(let i=0;i<=72;i++){const a=i/72*Math.PI*2;const p=project({x:8.2*Math.cos(a),y:-1.9,z:6.2*Math.sin(a)},viewWidth,viewHeight);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
+ for(let i=0;i<=72;i++){const a=i/72*TAU,p=project(vec3(8.2*Math.cos(a),-1.9,6.2*Math.sin(a)));i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
  ctx.stroke();ctx.globalAlpha=1;
- const ordered=school.fish.slice().sort((a,b)=>project(b.p,viewWidth,viewHeight).depth-project(a.p,viewWidth,viewHeight).depth);
+ const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);
 }
 let previous=performance.now(),accumulator=0,frame=0;
 function animate(now){
  const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;
  const dt=1/60;
- while(accumulator>=dt){stepSchool(school,dt);accumulator-=dt;}
- render();
- if(frame++%15===0){
-  status.textContent=school.fish.length+' AGENTS · '+school.metrics.averageNeighbours.toFixed(1)+' LOCAL NEIGHBOURS / FISH';
-  metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · SEPARATION / ALIGNMENT / COHESION';
+ while(accumulator>=dt){
+  stepSchool(school,dt);
+  for(const fish of school.fish){
+   const nextYaw=Math.atan2(-fish.v.z,fish.v.x),nextPitch=Math.atan2(fish.v.y,Math.hypot(fish.v.x,fish.v.z));
+   const turn=Math.max(-1,Math.min(1,angleDelta(fish.heading,nextYaw)*1.7));
+   stepGait(fish.gait,'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
+   fish.heading=nextYaw;fish.pitch=nextPitch;
+  }
+  accumulator-=dt;
  }
+ render();
+ if(frame++%15===0){status.textContent=school.fish.length+' FULL-RESOLUTION FISH · LOCAL INTERACTIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · ARTICULATED BODY WAVE';}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
