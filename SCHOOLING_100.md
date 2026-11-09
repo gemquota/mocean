@@ -4,28 +4,35 @@
 
 ## Model
 
-Each fish has its own 3D position, velocity and oscillation phase. Neighbour interactions are local and use a finite interaction radius:
+Each fish has independent 3D position, velocity, body-forward direction and gait phase. A 3D spatial hash limits local-neighbour and collision candidate searches.
 
-- **Separation:** repel nearby fish to reduce crowding.
-- **Alignment:** steer velocity toward the local neighbours' average velocity.
-- **Cohesion:** steer toward the local neighbours' centroid.
-- **Habitat pressure:** smoothly steer fish away from the soft ellipsoidal boundary.
-- **Individual variation:** small phase-offset wander prevents a rigid flock from behaving like one object.
+- **Separation:** local repulsion increases as fish approach, with an anticipatory term for closing velocity.
+- **Alignment:** velocity matching is deliberately damped so the school does not snap into one shared heading.
+- **Cohesion:** weak centroid attraction preserves a loose school without collapsing it into a ball.
+- **Inertia:** bounded acceleration and a gently regulated cruising speed replace per-frame speed snapping.
+- **Attitude:** the body-forward direction has a finite turn rate and lags velocity changes.
+- **Collisions:** fish are approximated as short oriented capsules. Soft positional correction and a low-restitution velocity impulse prevent body-centreline intersections without hard, explosive bounces.
+- **Habitat pressure:** a smooth ellipsoidal force steers fish away from the soft boundary.
+- **Individual variation:** slow phase-offset drift prevents a rigid rotating formation.
 
-There is no shared destination, leader or global waypoint. The prototype uses a bounded acceleration and speed model with simple tail oscillation in the renderer. It is a group-behaviour experiment, not 100 copies of the production biomechanical fish.
+The rendered body is 25% of the previous schooling prototype's dimensions. Its gait and articulated geometry are shared with the single-fish body implementation. The schooling scene uses a lower polygon mesh and renders at 30 Hz while simulation continues at a 60 Hz fixed step.
 
-## Performance
+## Performance strategy
 
-The current prototype uses pairwise neighbour checks. At 100 agents this is 10,000 pair checks per simulation step, which is deliberately simple and should be profiled before scaling further. If the school grows materially, replace the pairwise scan with a 3D spatial hash or uniform grid.
+The previous all-pairs neighbour scan was replaced by a uniform 3D spatial hash. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. Rendering uses a lower-resolution mesh and precomputed face shading rather than recomputing per-triangle lighting normals.
+
+This reduces work substantially for a spatially distributed school, but actual frame-time still depends on browser, screen resolution and device. The prototype has not yet been profiled on a range of ordinary hardware.
 
 ## Acceptance checks
 
-- Reproducible initialisation from a fixed seed.
-- Separation increases spacing for overlapping neighbours.
-- Alignment reduces local velocity disagreement.
-- All agents remain finite and speed-bounded during sustained simulation.
-- Inspect visible cohesion, separation, heading changes, boundary behaviour and frame rate in a browser.
+- Deterministic initialisation.
+- Spatial-hash candidate work remains below all-pairs scanning for the 100-agent test distribution.
+- Close fish increase separation and overlapping capsules produce contact response.
+- Heading change is bounded by a finite angular rate.
+- State remains finite and speed bounded during sustained simulation.
+- Visual inspection must confirm fish do not visibly interpenetrate, jitter, or move as one rigid blob.
+- Browser frame-time must be measured on representative hardware before calling performance acceptable.
 
 ## Known limits
 
-The school model is phenomenological and intentionally simpler than the single-fish gait/dynamics model. It does not simulate fluid-mediated wake interactions, hydrodynamic schooling, collision geometry or validated animal schooling data. The production simulation remains a single fish.
+This remains a phenomenological group model, not a validated biological schooling model. Collision geometry is a capsule approximation of the body, not a continuously deforming collision mesh. It does not simulate fluid-mediated wakes, hydrodynamic schooling, or full independent rigid-body attitude dynamics for every fish. The production simulation remains a single fish.
