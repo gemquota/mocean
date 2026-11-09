@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#06141b">
-<title>Mocean · 1000-fish schooling experiment</title>
+<title>Mocean · Mixed-species habitat</title>
 <style>
 :root{color-scheme:dark;--mint:#9be7c8;--muted:rgba(190,220,215,.58)}
 *{box-sizing:border-box}
@@ -27,9 +27,9 @@ a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<canvas id="school" aria-label="One thousand individual fish swimming as a locally interacting school"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / SCHOOLING EXPERIMENT</span></div><div class="status" id="status">1000 AGENTS · LOCAL INTERACTIONS</div></header>
-<section class="population-control" aria-label="School population control"><div class="population-heading"><label for="population">SCHOOL POPULATION</label><output id="population-value" for="population">1,000</output></div><input id="population" type="range" min="100" max="5000" step="100" value="1000" aria-label="Number of fish"><div class="population-scale"><span>100 FISH</span><span>5,000 FISH</span></div></section>
+<canvas id="school" aria-label="A mixed habitat of schooling fish and independently swimming eels"></canvas>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · FISH + EELS</div></header>
+<section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><span>50 CREATURES</span><span>200 CREATURES</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE } from './src/schooling.js';
@@ -39,23 +39,23 @@ import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
-let school=createSchool(1000);
+let school=createSchool(150);
 function initialiseFishVisualState(nextSchool){
  for(const fish of nextSchool.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;}
 }
 function setPopulation(value){
- const count=Math.max(100,Math.min(5000,Math.round(Number(value)/100)*100));
+ const count=Math.max(50,Math.min(200,Math.round(Number(value)/10)*10));
  if(count===school.fish.length)return;
  const nextSchool=createSchool(count);
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' AGENTS · LOCAL INTERACTIONS';
+ status.textContent=count.toLocaleString('en-US')+' CREATURES · FISH + EELS';
 }
 populationSlider.addEventListener('input',event=>{
- const count=Math.max(100,Math.min(5000,Math.round(Number(event.target.value)/100)*100));
+ const count=Math.max(50,Math.min(200,Math.round(Number(event.target.value)/10)*10));
  populationValue.textContent=count.toLocaleString('en-US');
- status.textContent='RELEASE TO APPLY · '+count.toLocaleString('en-US')+' FISH';
+ status.textContent='RELEASE TO APPLY · '+count.toLocaleString('en-US')+' CREATURES';
 });
 populationSlider.addEventListener('change',event=>setPopulation(event.target.value));
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
@@ -104,7 +104,35 @@ function polygon(fish,q,points,fill,alpha=1,stroke=null){
  ctx.globalAlpha=alpha;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));
  ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.7;ctx.stroke();}
 }
+function eelWorldPoint(fish,q,local){
+ const lengthScale=2.65/3.95;
+ const compressed={x:local.x*lengthScale,y:local.y,z:local.z};
+ const deformed=deformPoint(compressed,fish.gait);
+ deformed.x/=lengthScale;
+ return add3(fish.p,quatRotate(q,scale3(deformed,SCHOOLING_FISH_SCALE)));
+}
+function drawEel(fish){
+ const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
+ const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p),alpha=Math.max(.56,Math.min(.98,1.18-centre.depth*.018));
+ const upper=[],lower=[];
+ for(let i=0;i<=28;i++){
+  const u=i/28,x=.98-u*3.95,width=.17*Math.pow(1-u,.72)+.018;
+  upper.push({x,y:width,z:0});lower.unshift({x,y:-width,z:0});
+ }
+ const points=[...upper,...lower].map(v=>project(eelWorldPoint(fish,q,vec3(v.x,v.y,v.z))));
+ if(points.every(v=>v.depth>2.5)){
+  ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
+  ctx.fillStyle='#477f72';ctx.fill();ctx.strokeStyle='#173f3d';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();
+  const ridge=[];
+  for(let i=0;i<=20;i++){const u=i/20,x=.78-u*3.55,width=.17*Math.pow(1-u,.72)+.018;ridge.push(project(eelWorldPoint(fish,q,vec3(x,width*.83,0))));}
+  if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(164,207,154,.8)';ctx.lineWidth=Math.max(.6,centre.size*.009);ctx.stroke();}
+  const eye=project(eelWorldPoint(fish,q,vec3(.77,.09,.08)));
+  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,eye.size*.026),0,TAU);ctx.fillStyle='#eee9ce';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.006,eye.y,Math.max(.6,eye.size*.011),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
+  ctx.restore();
+ }
+}
 function drawFish(fish){
+ if(fish.species==='eel'){drawEel(fish);return;}
  const speed=Math.hypot(fish.v.x,fish.v.y,fish.v.z);
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p);
@@ -167,14 +195,14 @@ function animate(now){
   for(const fish of school.fish){
    const nextYaw=Math.atan2(-fish.forward.z,fish.forward.x),nextPitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
    const turn=Math.max(-1,Math.min(1,angleDelta(fish.heading,nextYaw)*1.7));
-   stepGait(fish.gait,'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
+   stepGait(fish.gait,fish.species==='eel'?'EXPLORE':'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
    fish.heading=nextYaw;fish.pitch=nextPitch;
   }
   accumulator-=dt;
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){status.textContent=school.fish.length.toLocaleString('en-US')+' QUARTER-SCALE FISH · SPATIAL HASH · COLLISIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · ARTICULATED GAIT';}
+ if(frame++%30===0){status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · FISH + EELS · SPATIAL HASH';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · ARTICULATED GAIT';}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
