@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION } from '../src/schooling.js';
 
 test('schooling experiment creates 100 independent fish by default', () => {
   const school = createSchool();
@@ -57,4 +57,39 @@ test('100-fish school remains finite and speed-bounded over sustained simulation
   assert.ok(school.fish.every(f => Math.hypot(f.v.x, f.v.y, f.v.z) >= 0.8 - 1e-9));
   assert.ok(school.fish.every(f => Math.hypot(f.v.x, f.v.y, f.v.z) <= 2.3 + 1e-9));
   assert.ok(metrics.averageNeighbours > 0);
+});
+
+test('schooling uses quarter-scale visual fish and a matching collision envelope', () => {
+  assert.equal(SCHOOLING_FISH_SCALE, 0.25);
+  assert.ok(SCHOOLING_COLLISION.halfLength > 0.18 && SCHOOLING_COLLISION.halfLength < 0.23);
+  assert.ok(SCHOOLING_COLLISION.radius > 0.06 && SCHOOLING_COLLISION.radius < 0.09);
+});
+
+test('spatial hashing reduces neighbour candidate work below all-pairs scanning', () => {
+  const school = createSchool(100, 91);
+  const metrics = stepSchool(school, 1 / 60);
+  assert.ok(metrics.candidateChecks < 100 * 100, 'local grid should avoid testing every possible pair');
+  assert.ok(metrics.candidateChecks >= 100, 'each fish should at least see its own grid bucket');
+});
+
+test('overlapping fish capsules produce contact response instead of passing through', () => {
+  const school = createSchool(2, 17);
+  school.fish[0].p = { x: -0.16, y: 0, z: 0 };
+  school.fish[1].p = { x: 0.16, y: 0, z: 0 };
+  school.fish[0].v = { x: 1.1, y: 0, z: 0 };
+  school.fish[1].v = { x: 1.1, y: 0, z: 0 };
+  const metrics = stepSchool(school, 1 / 60);
+  assert.ok(metrics.collisions > 0, 'overlapping oriented body capsules should register contact');
+  assert.ok(school.fish.every(f => f.collisionCount > 0));
+  assert.ok(school.fish.every(f => [f.p.x, f.p.y, f.p.z, f.v.x, f.v.y, f.v.z].every(Number.isFinite)));
+  assert.ok(school.fish[1].p.x - school.fish[0].p.x > 0.32, 'contact correction should open the overlap');
+});
+
+test('schooling preserves smooth inertial speed changes without abrupt speed snapping', () => {
+  const school = createSchool(1, 33);
+  const before = { ...school.fish[0].v };
+  stepSchool(school, 1 / 120);
+  const after = school.fish[0].v;
+  const delta = Math.hypot(after.x-before.x, after.y-before.y, after.z-before.z);
+  assert.ok(delta < 0.03, 'a small fixed step should produce a small velocity change');
 });
