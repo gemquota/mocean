@@ -125,8 +125,9 @@ function animate(now){
   }
   accumulator-=dt;
  }
- render();
- if(frame++%15===0){status.textContent=school.fish.length+' QUARTER-SCALE FISH · LOCAL INTERACTIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · ARTICULATED BODY WAVE';}
+ renderAccumulator+=elapsed;
+ if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
+ if(frame++%30===0){status.textContent=school.fish.length+' QUARTER-SCALE FISH · SPATIAL HASH · COLLISIONS';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · ARTICULATED GAIT';}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
