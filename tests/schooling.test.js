@@ -93,3 +93,13 @@ test('schooling preserves smooth inertial speed changes without abrupt speed sna
   const delta = Math.hypot(after.x-before.x, after.y-before.y, after.z-before.z);
   assert.ok(delta < 0.03, 'a small fixed step should produce a small velocity change');
 });
+
+test('fish body heading turns at a bounded angular rate instead of snapping to velocity', () => {
+  const school = createSchool(1, 45);
+  const before = { ...school.fish[0].forward };
+  school.fish[0].v = { x: -before.x, y: before.y, z: -before.z };
+  stepSchool(school, 1 / 60);
+  const after = school.fish[0].forward;
+  const cosine = Math.max(-1, Math.min(1, before.x*after.x + before.y*after.y + before.z*after.z));
+  assert.ok(Math.acos(cosine) <= 1.35/60 + 1e-6);
+});
