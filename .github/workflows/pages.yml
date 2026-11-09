@@ -1,7 +1,7 @@
 name: Deploy Mocean to GitHub Pages
 on:
   push:
-    branches: [main]
+    branches: [main, experiment/dots-and-faster-pursuit]
   workflow_dispatch:
 permissions:
   contents: read
