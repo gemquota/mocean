@@ -4,9 +4,10 @@ export const MAX_PURSUIT_SPEED = 4.8;
 const PURSUIT_THRUST_CAP = 1.55;
 
 /**
- * Distance-shaped speed controller. Desired speed rises with range, while a
- * feed-forward estimate offsets quadratic drag and proportional speed error
- * raises acceleration demand. The fish still accelerates through tail thrust.
+ * Distance-shaped speed control for target pursuit. Far targets invite a faster
+ * approach; desired speed falls with remaining distance so braking starts before
+ * the fish reaches the target. Propulsion and drag still act through the normal
+ * gait and rigid-body pathways.
  */
 export function createPursuitGuidance(position, velocity, yaw, pitch, target, aimPoint = target) {
   const toAim = add3(aimPoint, scale3(position, -1));
@@ -18,19 +19,21 @@ export function createPursuitGuidance(position, velocity, yaw, pitch, target, ai
   const targetPitch = Math.atan2(direction.y, Math.hypot(direction.x, direction.z));
   const distance = length3(fallback);
   const speed = length3(velocity);
-  const desiredSpeed = Math.min(MAX_PURSUIT_SPEED, Math.sqrt(distance) * 1.55);
-  const dragAtDesiredSpeed = (0.11 + desiredSpeed * 0.19) * desiredSpeed;
-  const feedForward = dragAtDesiredSpeed / PURSUIT_THRUST_CAP;
-  const speedError = desiredSpeed - speed;
-  const distanceGate = clamp(distance / 0.5, 0, 1);
-  const thrustScale = clamp(feedForward + speedError * 0.9, 0, 5.5) * distanceGate;
-  const brake = clamp((speed - desiredSpeed - 0.12) / 0.7, 0, 1);
+
+  // A square-root speed envelope gives distant targets a clear speed advantage
+  // without demanding an unbounded sprint as distance grows.
+  const desiredSpeed = Math.min(2.65, Math.sqrt(distance) * 0.85);
+  const distanceGate = clamp(distance / 0.38, 0, 1);
+  const thrustScale = clamp(0.55 + (desiredSpeed - speed) * 1.25, 0, 3.2) * distanceGate;
+
+  // Brake when actual speed exceeds the distance-appropriate approach speed.
+  // This makes stopping distance respond to momentum rather than a fixed radius.
+  const brake = clamp((speed - desiredSpeed - 0.15) / 0.85, 0, 1);
   const hovering = distance < 0.42 && speed < 0.2;
   return {
     distance,
     speed,
     desiredSpeed,
-    maxSpeed: MAX_PURSUIT_SPEED,
     targetYaw,
     targetPitch,
     turn: clamp(angleDelta(yaw, targetYaw) * 2.15, -1, 1),
