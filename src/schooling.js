@@ -12,10 +12,11 @@ const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 const subtract = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
 
-export const SCHOOLING_DEFAULT_COUNT = 1000;
+export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
+export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
 const NEIGHBOUR_RADIUS = 2.7;
 const SEPARATION_RADIUS = 0.78;
 const MAX_SPEED = 2.0;
@@ -87,13 +88,12 @@ function closestSegmentPoints(p1, q1, p2, q2) {
 }
 function collisionSegment(agent) {
   const direction = agent.forward ?? normalize(agent.v);
-  const half = SCHOOLING_COLLISION.halfLength;
+  const half = agent.species === 'eel' ? SCHOOLING_EEL_COLLISION.halfLength : SCHOOLING_COLLISION.halfLength;
   const offset = { x: direction.x * half, y: direction.y * half, z: direction.z * half };
   return [subtract(agent.p, offset), add(agent.p, offset)];
 }
 function resolveCollisions(fish, grid) {
   let collisions = 0;
-  const diameter = SCHOOLING_COLLISION.radius * 2;
   for (let i = 0; i < fish.length; i++) {
     const a = fish[i], cell = cellOf(a.p), candidates = nearbyIndices(grid, cell);
     const [a0, a1] = collisionSegment(a);
@@ -103,12 +103,14 @@ function resolveCollisions(fish, grid) {
       const [b0, b1] = collisionSegment(b);
       const [pa, pb] = closestSegmentPoints(a0, a1, b0, b1);
       let delta = subtract(pb, pa), distance = length(delta);
-      if (distance >= diameter) continue;
+      const contactDistance = (a.species === 'eel' ? SCHOOLING_EEL_COLLISION.radius : SCHOOLING_COLLISION.radius)
+        + (b.species === 'eel' ? SCHOOLING_EEL_COLLISION.radius : SCHOOLING_COLLISION.radius);
+      if (distance >= contactDistance) continue;
       if (distance < 1e-8) {
         delta = normalize({ x: (j - i) % 3 === 0 ? 1 : 0.37, y: (j - i) % 3 === 1 ? 1 : 0.23, z: (j - i) % 3 === 2 ? 1 : 0.41 });
         distance = 0;
       } else delta = { x: delta.x / distance, y: delta.y / distance, z: delta.z / distance };
-      const penetration = diameter - distance;
+      const penetration = contactDistance - distance;
       // Soft positional correction prevents bodies passing through each other
       // without producing a visually violent hard-sphere bounce.
       const correction = penetration * 0.42;
@@ -138,12 +140,15 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       z: random() * 2 - 1
     });
     const speed = 1.0 + random() * 0.35;
+    const phase = random() * Math.PI * 2;
+    const species = random() < 0.2 ? 'eel' : 'fish';
     return {
       id,
+      species,
       p: { x: (random() - 0.5) * 47, y: (random() - 0.5) * 16, z: (random() - 0.5) * 36 },
       v: { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: { ...direction },
-      phase: random() * Math.PI * 2,
+      phase,
       neighbourCount: 0,
       collisionCount: 0
     };
@@ -174,9 +179,11 @@ export function stepSchool(school, dt) {
       const other = fish[j], dx = other.p.x - self.p.x, dy = other.p.y - self.p.y, dz = other.p.z - self.p.z;
       const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= NEIGHBOUR_RADIUS * NEIGHBOUR_RADIUS) continue;
-      neighbours++;
-      posX += other.p.x; posY += other.p.y; posZ += other.p.z;
-      velX += other.v.x; velY += other.v.y; velZ += other.v.z;
+      if (self.species === 'fish' && other.species === 'fish') {
+        neighbours++;
+        posX += other.p.x; posY += other.p.y; posZ += other.p.z;
+        velX += other.v.x; velY += other.v.y; velZ += other.v.z;
+      }
       const d = Math.sqrt(d2);
       if (d < SEPARATION_RADIUS) {
         // Anticipate convergence using relative velocity along the line of approach.
@@ -207,9 +214,10 @@ export function stepSchool(school, dt) {
       az -= self.p.z / (SCHOOLING_LIMITS.z ** 2) * pressure * 5.2;
     }
     // Slow, individual heading drift replaces high-frequency random steering.
-    ax += Math.sin(school.time * 0.13 + self.phase) * 0.035;
-    ay += Math.sin(school.time * 0.09 + self.phase * 1.7) * 0.018;
-    az += Math.cos(school.time * 0.11 + self.phase * 0.83) * 0.035;
+    const wanderGain = self.species === 'eel' ? 0.052 : 0.035;
+    ax += Math.sin(school.time * 0.13 + self.phase) * wanderGain;
+    ay += Math.sin(school.time * 0.09 + self.phase * 1.7) * wanderGain * 0.52;
+    az += Math.cos(school.time * 0.11 + self.phase * 0.83) * wanderGain;
     accelerations[i] = limit({ x: ax, y: ay, z: az }, MAX_ACCELERATION);
     self.collisionCount = 0;
   }
@@ -218,14 +226,14 @@ export function stepSchool(school, dt) {
   for (let i = 0; i < fish.length; i++) {
     const agent = fish[i], acceleration = accelerations[i];
     // Gently regulate cruising speed through acceleration, preserving inertia.
-    const currentSpeed = length(agent.v), desiredSpeed = 1.12 + 0.12 * Math.sin(school.time * 0.08 + agent.phase);
+    const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'eel' ? 0.92 : 1.12) + 0.12 * Math.sin(school.time * 0.08 + agent.phase);
     const direction = currentSpeed > 0.12 ? normalize(agent.v) : agent.forward;
     const speedCorrection = clamp((desiredSpeed - currentSpeed) * 1.05, -0.35, 0.48);
     agent.v.x += (acceleration.x + direction.x * speedCorrection) * step;
     agent.v.y += (acceleration.y + direction.y * speedCorrection) * step;
     agent.v.z += (acceleration.z + direction.z * speedCorrection) * step;
-    agent.v = limit(agent.v, MAX_SPEED);
-    agent.forward = turnDirection(agent.forward, normalize(agent.v), MAX_HEADING_RATE * step);
+    agent.v = limit(agent.v, agent.species === 'eel' ? 1.65 : MAX_SPEED);
+    agent.forward = turnDirection(agent.forward, normalize(agent.v), (agent.species === 'eel' ? 0.92 : MAX_HEADING_RATE) * step);
     agent.p.x += agent.v.x * step;
     agent.p.y += agent.v.y * step;
     agent.p.z += agent.v.z * step;
