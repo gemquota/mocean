@@ -35,11 +35,11 @@ const status=document.getElementById('status'),metrics=document.getElementById('
 const school=createSchool(1000);
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1;
-function applyZoom(){camera.p.x=baseCameraPosition.x*zoom;camera.p.y=baseCameraPosition.y*zoom;camera.p.z=baseCameraPosition.z*zoom;}
+function applyZoom(){camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
 const activePointers=new Map();let pinchDistance=0;
 function pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
 canvas.addEventListener("pointerdown",event=>{activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});canvas.setPointerCapture?.(event.pointerId);if(activePointers.size===2)pinchDistance=pointerDistance();});
-canvas.addEventListener("pointermove",event=>{if(!activePointers.has(event.pointerId))return;activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(.55,Math.min(3.2,zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}});
+canvas.addEventListener("pointermove",event=>{if(!activePointers.has(event.pointerId))return;activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(0.22,Math.min(4.5,zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}});
 function releasePointer(event){activePointers.delete(event.pointerId);pinchDistance=activePointers.size===2?pointerDistance():0;}
 canvas.addEventListener("pointerup",releasePointer);canvas.addEventListener("pointercancel",releasePointer);canvas.addEventListener("lostpointercapture",releasePointer);
 for(const name of ["gesturestart","gesturechange","gestureend"])document.addEventListener(name,event=>event.preventDefault(),{passive:false});
