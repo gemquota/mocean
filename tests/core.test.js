@@ -654,3 +654,86 @@ test('dive-brake-reorient sequence converts downward motion, sheds speed, then c
   assert.ok(length3(afterBrake.vel) < length3(duringDive.vel), 'deployed fins should dissipate speed');
   assert.ok(recovered.yaw > 1.0, 'the fish should reorient after braking');
 });
+
+import { selectBehaviour } from '../src/core/behaviour.js';
+
+function seededRandom(seed) {
+  return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+}
+
+test('low energy shifts autonomous state selection toward recovery and glide', () => {
+  const lowRandom = seededRandom(19283), highRandom = seededRandom(19283);
+  const low = { RECOVER: 0, GLIDE: 0 }, high = { RECOVER: 0, GLIDE: 0 };
+  for (let i = 0; i < 3000; i++) {
+    const a = selectBehaviour({ energy: 0.18, time: i * 20 }, lowRandom);
+    const b = selectBehaviour({ energy: 0.95, time: i * 20 }, highRandom);
+    if (a.mode in low) low[a.mode]++;
+    if (b.mode in high) high[b.mode]++;
+  }
+  assert.ok(low.RECOVER + low.GLIDE > high.RECOVER + high.GLIDE);
+});
+
+test('dart behaviour requires adequate reserve and a completed burst cooldown', () => {
+  const random = seededRandom(7331);
+  for (let i = 0; i < 1000; i++) {
+    assert.notEqual(selectBehaviour({ energy: 0.2, time: i * 30 }, random).mode, 'DART');
+    assert.notEqual(selectBehaviour({ energy: 0.95, time: i * 2, lastBurstAt: i * 2 - 4 }, random).mode, 'DART');
+  }
+  let bursts = 0;
+  const ready = seededRandom(7331);
+  for (let i = 0; i < 3000; i++) {
+    if (selectBehaviour({ energy: 0.95, time: i * 30 }, ready).mode === 'DART') bursts++;
+  }
+  assert.ok(bursts > 0);
+});
+
+test('behaviour transitions do not immediately repeat the previous state', () => {
+  const random = seededRandom(381);
+  for (const previousMode of ['CRUISE', 'EXPLORE', 'TURN', 'DART', 'GLIDE', 'RECOVER']) {
+    const next = selectBehaviour({ energy: 0.9, previousMode, time: 60 }, random);
+    assert.notEqual(next.mode, previousMode);
+    assert.ok(next.duration >= 1.3 && next.duration <= 9);
+    assert.ok(next.verticalProbability >= 0 && next.verticalProbability <= 1);
+  }
+});
+
+import { createDepthApproach, sampleDepthApproach, nearestDepthApproachProgress } from '../src/core/approach.js';
+import { createPursuitGuidance } from '../src/core/pursuit.js';
+
+test('directed approach changes depth smoothly and reaches target depth by halfway progress', () => {
+  const path = createDepthApproach(vec3(0, 0, 0), vec3(8, 4, 6));
+  const quarter = sampleDepthApproach(path, 0.25);
+  const halfway = sampleDepthApproach(path, 0.5);
+  const threeQuarter = sampleDepthApproach(path, 0.75);
+  assert.ok(Math.abs(quarter.position.x - 2) < 1e-9);
+  assert.ok(Math.abs(quarter.position.y - 1) < 1e-9);
+  assert.ok(Math.abs(quarter.position.z - 3) < 1e-6);
+  assert.ok(Math.abs(halfway.position.z - 6) < 1e-9);
+  assert.ok(Math.abs(threeQuarter.position.z - 6) < 1e-9);
+  assert.ok(Math.abs(halfway.tangent.z) < 1e-9, 'path should be level after the midpoint');
+});
+
+test('directed path progress is geometric and cannot regress behind its minimum', () => {
+  const path = createDepthApproach(vec3(), vec3(8, 2, 5));
+  const later = nearestDepthApproachProgress(path, vec3(5, 1, 5), 0.45);
+  const constrained = nearestDepthApproachProgress(path, vec3(2, 0.5, 1), later);
+  assert.ok(later >= 0.45);
+  assert.ok(constrained >= later);
+});
+
+test('pursuit speed demand grows with distance and braking responds to overspeed', () => {
+  const near = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(1, 0, 0));
+  const far = createPursuitGuidance(vec3(), vec3(), 0, 0, vec3(16, 0, 0));
+  const fast = createPursuitGuidance(vec3(), vec3(3, 0, 0), 0, 0, vec3(1, 0, 0));
+  assert.ok(far.desiredSpeed > near.desiredSpeed);
+  assert.ok(far.thrustScale > near.thrustScale);
+  assert.ok(fast.brake > 0);
+  assert.equal(far.desiredSpeed, 2.65);
+});
+
+test('near-target pursuit fades to a low-effort physical hold instead of accelerating through the dot', () => {
+  const holding = createPursuitGuidance(vec3(), vec3(0.1, 0, 0), 0, 0, vec3(0.3, 0, 0));
+  assert.equal(holding.hovering, true);
+  assert.ok(holding.thrustScale <= 0.12);
+  assert.ok(holding.brake > 0);
+});
