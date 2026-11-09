@@ -40,13 +40,24 @@ const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha
 const status=document.getElementById('status'),metrics=document.getElementById('metrics');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
 let school=createSchool(1000);
+function initialiseFishVisualState(nextSchool){
+ for(const fish of nextSchool.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;}
+}
 function setPopulation(value){
  const count=Math.max(100,Math.min(5000,Math.round(Number(value)/100)*100));
- school=createSchool(count);
+ if(count===school.fish.length)return;
+ const nextSchool=createSchool(count);
+ initialiseFishVisualState(nextSchool);
+ school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
  status.textContent=count.toLocaleString('en-US')+' AGENTS · LOCAL INTERACTIONS';
 }
-populationSlider.addEventListener('input',event=>setPopulation(event.target.value));
+populationSlider.addEventListener('input',event=>{
+ const count=Math.max(100,Math.min(5000,Math.round(Number(event.target.value)/100)*100));
+ populationValue.textContent=count.toLocaleString('en-US');
+ status.textContent='RELEASE TO APPLY · '+count.toLocaleString('en-US')+' FISH';
+});
+populationSlider.addEventListener('change',event=>setPopulation(event.target.value));
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1;
 function applyZoom(){camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
@@ -63,7 +74,7 @@ const cameraForward=normalize3(sub(camera.target,camera.p));
 const cameraRight=normalize3(cross3(cameraForward,worldUp));
 const cameraUp=normalize3(cross3(cameraRight,cameraForward));
 let viewWidth=1,viewHeight=1;
-for(const fish of school.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;}
+initialiseFishVisualState(school);
 function project(point){
  const relative=sub(point,camera.p),depth=dot3(relative,cameraForward),focal=Math.min(viewWidth,viewHeight)*1.08,size=focal/Math.max(4,depth);
  return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};

@@ -15,6 +15,12 @@ test('school population supports the full 5000-fish slider range', () => {
   assert.equal(createSchool(6000, 7).fish.length, 5000, 'engine population cap should match the slider maximum');
 });
 
+test('population creation returns the exact requested count up to 5000', () => {
+  for (const count of [100, 1000, 2500, 5000]) {
+    assert.equal(createSchool(count, 19).fish.length, count);
+  }
+});
+
 test('school initialisation is reproducible for a fixed seed', () => {
   assert.deepEqual(createSchool(100, 1234), createSchool(100, 1234));
   assert.notDeepEqual(createSchool(100, 1234), createSchool(100, 4321));
