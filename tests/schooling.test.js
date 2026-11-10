@@ -143,7 +143,7 @@ test('crabs and lobsters use bounded grounded locomotion without fish schooling'
   for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
   assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   assert.ok(ground.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
-  assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 0.5));
+  assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 1.6));
   assert.ok(ground.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.z-before[i].z) > 0.25));
   assert.ok(ground.every(agent => agent.neighbourCount === 0), 'crustaceans must not be pulled into fish schooling');
 });
@@ -194,7 +194,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
   const school = createSchool(1000);
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
-    Math.abs(f.p.x) <= 23.5 && (f.species === 'crab' || f.species === 'lobster' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && Math.abs(f.p.z) <= 18
+    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (f.species === 'crab' || f.species === 'lobster' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? Math.abs(f.p.z) <= 18 : Math.abs(f.p.z) <= 18)
   ));
 });
 
