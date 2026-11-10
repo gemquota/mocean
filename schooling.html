@@ -20,15 +20,15 @@ header,footer{position:fixed;left:24px;right:24px;display:flex;align-items:cente
 header{top:20px}footer{bottom:18px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
 .brand{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.2em;color:rgba(221,241,233,.78)}
 .mark{width:24px;height:24px;border:1px solid rgba(155,231,200,.5);border-radius:50%;display:grid;place-items:center;color:var(--mint)}
-.status{font-size:9px;letter-spacing:.13em;color:rgba(155,231,200,.8);text-align:right}
+.status{font-size:9px;letter-spacing:.13em;color:rgba(155,231,200,.8);text-align:right}.species-counts{position:fixed;top:51px;right:24px;z-index:2;font-size:9px;line-height:1.8;letter-spacing:.1em;text-align:right;color:rgba(190,220,215,.72);pointer-events:none;text-shadow:0 1px 5px #04121a}.species-counts b{color:#b8e8d1;font-weight:600}
 a{pointer-events:auto;color:var(--mint);text-decoration:none}
 a:hover{text-decoration:underline}
-@media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}.population-control{bottom:43px;width:min(320px,calc(100vw - 32px));padding:8px 11px}.population-heading{font-size:8px}}
+@media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.species-counts{top:42px;right:14px;font-size:8px;line-height:1.65}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}.population-control{bottom:43px;width:min(320px,calc(100vw - 32px));padding:8px 11px}.population-heading{font-size:8px}}
 </style>
 </head>
 <body>
 <canvas id="school" aria-label="A mixed habitat of schooling fish, eels, crabs and lobsters"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 4 SPECIES</div></header>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 4 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 98<br>EELS 25<br>CRABS 7<br>LOBSTERS 20</div>
 <section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><span>50 CREATURES</span><span>200 CREATURES</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
@@ -37,7 +37,7 @@ import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/cor
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
-const status=document.getElementById('status'),metrics=document.getElementById('metrics');
+const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
 let school=createSchool(150);
 function initialiseFishVisualState(nextSchool){
@@ -109,14 +109,14 @@ function eelWorldPoint(fish,q,local){
  const compressed={x:local.x*lengthScale,y:local.y,z:local.z};
  const deformed=deformPoint(compressed,fish.gait);
  deformed.x/=lengthScale;
- return add3(fish.p,quatRotate(q,scale3(deformed,SCHOOLING_FISH_SCALE)));
+ return add3(fish.p,quatRotate(q,scale3(deformed,SCHOOLING_FISH_SCALE*(fish.bodyScale??1))));
 }
 function drawEel(fish){
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p),alpha=Math.max(.56,Math.min(.98,1.18-centre.depth*.018));
  const upper=[],lower=[];
  for(let i=0;i<=28;i++){
-  const u=i/28,x=.98-u*3.95,width=.17*Math.pow(1-u,.72)+.018;
+  const u=i/28,x=1.02-u*4.05,width=.205*Math.pow(1-u,.68)+.02;
   upper.push({x,y:width,z:0});lower.unshift({x,y:-width,z:0});
  }
  const points=[...upper,...lower].map(v=>project(eelWorldPoint(fish,q,vec3(v.x,v.y,v.z))));
@@ -124,9 +124,9 @@ function drawEel(fish){
   ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
   ctx.fillStyle='#477f72';ctx.fill();ctx.strokeStyle='#173f3d';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();
   const ridge=[];
-  for(let i=0;i<=20;i++){const u=i/20,x=.78-u*3.55,width=.17*Math.pow(1-u,.72)+.018;ridge.push(project(eelWorldPoint(fish,q,vec3(x,width*.83,0))));}
+  for(let i=0;i<=20;i++){const u=i/20,x=.82-u*3.62,width=.17*Math.pow(1-u,.72)+.018;ridge.push(project(eelWorldPoint(fish,q,vec3(x,width*.83,0))));}
   if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(164,207,154,.8)';ctx.lineWidth=Math.max(.6,centre.size*.009);ctx.stroke();}
-  const eye=project(eelWorldPoint(fish,q,vec3(.77,.09,.08)));
+  const eye=project(eelWorldPoint(fish,q,vec3(.82,.105,.105)));
   if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,eye.size*.026),0,TAU);ctx.fillStyle='#eee9ce';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.006,eye.y,Math.max(.6,eye.size*.011),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
   ctx.restore();
  }
@@ -238,7 +238,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 4 SPECIES · '+(school.metrics.eaten??0)+' EATEN';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
+ if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 4 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
