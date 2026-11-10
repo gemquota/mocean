@@ -27,8 +27,8 @@ a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<canvas id="school" aria-label="A mixed habitat of schooling fish, moray eels, crabs, lobsters, mantis shrimp, manta rays, stingrays and drifting plankton"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 7 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 111<br>EELS 22<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 2<br>MANTA RAYS 3<br>STINGRAYS 2</div>
+<canvas id="school" aria-label="A mixed habitat of schooling fish, moray eels, crabs, lobsters, mantis shrimp, manta rays, stingrays, reef sharks, whale sharks and drifting plankton"></canvas>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 9 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 104<br>EELS 22<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 3<br>MANTA RAYS 3<br>STINGRAYS 3<br>SHARKS 3<br>WHALE SHARKS 2</div>
 <section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><span>50 CREATURES</span><span>200 CREATURES</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
@@ -50,7 +50,7 @@ function setPopulation(value){
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' CREATURES · 7 SPECIES';
+ status.textContent=count.toLocaleString('en-US')+' CREATURES · 9 SPECIES';
 }
 populationSlider.addEventListener('input',event=>{
  const count=Math.max(50,Math.min(200,Math.round(Number(event.target.value)/10)*10));
@@ -357,6 +357,8 @@ function drawFish(fish){
  if(fish.species==='mantis'){drawMantisShrimp(fish);return;}
  if(fish.species==='manta'){drawMantaRay(fish);return;}
  if(fish.species==='stingray'){drawStingray(fish);return;}
+  if(fish.species==='shark'){drawShark(fish,false);return;}
+  if(fish.species==='whaleShark'){drawShark(fish,true);return;}
  const speed=Math.hypot(fish.v.x,fish.v.y,fish.v.z);
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p);
@@ -397,7 +399,50 @@ function drawFish(fish){
  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.2,eye.size*.028),0,TAU);ctx.fillStyle='#f3f0d8';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.008,eye.y,Math.max(.7,eye.size*.012),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
  ctx.restore();
 }
-function drawStingray(fish){
+function drawShark(fish,whale){
+  const scale=fish.bodyScale??(whale?2.7:1.8),yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z)),q=quatFromEuler(yaw,pitch,0);
+  const centre=project(fish.p),alpha=Math.max(.62,Math.min(.98,1.2-centre.depth*.018));
+  const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
+  const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
+  ctx.save();ctx.globalAlpha=alpha;ctx.lineJoin='round';
+  const dorsal=whale?'#526f83':'#526d78',belly=whale?'#a9bac1':'#c3c7b8',outline=whale?'#253f50':'#263e49';
+  // Torpedo-shaped shark body versus the broad, blunt filter-feeding whale shark.
+  if(whale){
+    poly([[1.12,.02,0],[.98,.27,.28],[.55,.34,.38],[-.35,.29,.32],[-1.02,.16,.2],[-1.24,.02,0],[-1.02,.16,-.2],[-.35,.29,-.32],[.55,.34,-.38],[.98,.27,-.28]],dorsal,outline);
+    poly([[.98,-.02,0],[.7,-.22,.28],[-.55,-.2,.25],[-1.12,-.08,0],[-.55,-.2,-.25],[.7,-.22,-.28]],belly);
+    // Broad terminal mouth and paired filter-feeding gill slits.
+    const mouthL=point(1.12,-.015,-.23),mouthR=point(1.12,-.015,.23);
+    if(mouthL.depth>2.5&&mouthR.depth>2.5){ctx.beginPath();ctx.moveTo(mouthL.x,mouthL.y);ctx.lineTo(mouthR.x,mouthR.y);ctx.strokeStyle='#172e3b';ctx.lineWidth=Math.max(1.2,centre.size*.04);ctx.stroke();}
+    for(let k=0;k<5;k++){
+      const pulse=1+0.12*Math.sin((fish.filterFeedPhase??0)+k*.42);
+      const a=point(.45-k*.13,.02,.315),b=point(.42-k*.13,-.12*pulse,.32);
+      if(a.depth>2.5&&b.depth>2.5){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(22,45,57,.82)';ctx.lineWidth=Math.max(.8,centre.size*.014);ctx.stroke();}
+    }
+    // Pale spots and short dashes across the back, characteristic of a whale shark.
+    for(let row=0;row<3;row++)for(let col=0;col<9;col++){
+      const x=.72-col*.19,y=.16+Math.sin(col*.35)*.045,z=(row-1)*.17;
+      const p=point(x,y,z);if(p.depth<2.5)continue;
+      ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.7,centre.size*.012),0,TAU);ctx.fillStyle='rgba(218,232,224,.88)';ctx.fill();
+    }
+    poly([[.35,.22,0],[.05,.66,0],[-.28,.22,0]],'#3d5e70',outline);
+    poly([[-.48,.2,0],[-.82,.5,0],[-.78,.13,0]],'#3d5e70',outline);
+    poly([[-1.12,.02,0],[-1.68,.34,0],[-1.54,.015,0],[-1.68,-.25,0],[-1.12,-.04,0]],'#3d5e70',outline);
+    for(const side of [-1,1])poly([[.42,.02,side*.22],[-.02,-.02,side*.55],[-.92,-.1,side*.82],[-.48,-.16,side*.25]],dorsal,outline);
+  }else{
+    poly([[1.16,.015,0],[.92,.23,.2],[.38,.27,.23],[-.48,.18,.18],[-1.08,.08,.1],[-1.22,.015,0],[-1.08,.08,-.1],[-.48,.18,-.18],[.38,.27,-.23],[.92,.23,-.2]],dorsal,outline);
+    poly([[.78,-.02,0],[.38,-.18,.18],[-.68,-.13,.13],[-1.12,-.035,0],[-.68,-.13,-.13],[.38,-.18,-.18]],belly);
+    // Tall first dorsal, smaller second dorsal, paired pectorals and heterocercal tail.
+    poly([[.25,.22,0],[.03,.78,0],[-.34,.2,0]],'#405d68',outline);
+    poly([[-.67,.13,0],[-.86,.37,0],[-1.02,.08,0]],'#405d68',outline);
+    for(const side of [-1,1])poly([[.42,.02,side*.15],[.05,-.04,side*.28],[-.72,-.28,side*.62],[-.4,-.12,side*.18]],'#425f6a',outline);
+    poly([[-1.04,.06,0],[-1.55,.55,0],[-1.43,.03,0],[-1.62,-.34,0],[-1.26,-.09,0]],'#425f6a',outline);
+    // Five visible gill slits and a small eye.
+    for(let k=0;k<5;k++){const a=point(.35-k*.105,.13,.205),b=point(.31-k*.105,-.04,.21);if(a.depth>2.5&&b.depth>2.5){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(20,42,50,.82)';ctx.lineWidth=Math.max(.8,centre.size*.014);ctx.stroke();}}
+    const eye=point(.79,.12,.19);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.022),0,TAU);ctx.fillStyle='#e1d8b6';ctx.fill();ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.65,centre.size*.012),0,TAU);ctx.fillStyle='#152832';ctx.fill();}
+  }
+  ctx.restore();
+ }
+ function drawStingray(fish){
  const scale=fish.bodyScale??1.1,yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
  const centre=project(fish.p),alpha=Math.max(.62,Math.min(.98,1.2-centre.depth*.018));
  const flap=Math.sin(fish.wingPhase??0),lift=flap*.2;
@@ -451,7 +496,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 7 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
+ if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 9 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray+'<br><b>SHARKS</b> '+counts.shark+'<br><b>WHALE SHARKS</b> '+counts.whaleShark;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
