@@ -286,7 +286,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
     Number.isFinite(f.p.x) && Number.isFinite(f.p.y) && Number.isFinite(f.p.z) &&
-    Math.abs(f.p.x) <= 38 && Math.abs(f.p.y) <= 9.6 && Math.abs(f.p.z) <= 24
+    Math.abs(f.p.x) <= SCHOOLING_LIMITS.x && Math.abs(f.p.y) <= SCHOOLING_LIMITS.y && Math.abs(f.p.z) <= SCHOOLING_LIMITS.z
   ));
 });
 
