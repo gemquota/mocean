@@ -44,9 +44,9 @@ test('orca, sperm whale and seal have dedicated volumetric renderers and habitat
     assert.ok(html.includes(species+':'),species+' config label missing');
     assert.ok(script.includes('function '+renderer+'(fish)'),renderer+' missing');
   }
-  assert.match(script,/counts\.orca/);
-  assert.match(script,/counts\.spermWhale/);
-  assert.match(script,/counts\.seal/);
+  assert.match(html,/counts\.orca/);
+  assert.match(html,/counts\.spermWhale/);
+  assert.match(html,/counts\.seal/);
 });
 
 
@@ -76,14 +76,14 @@ test('pelagic and benthic additions are represented in controls and renderers', 
   for (const species of ['wobbegong','marlin','tuna']) assert.match(html, new RegExp(species+':'));
   assert.match(html, /function drawWobbegong\(fish\)/);
   assert.match(html, /drawWobbegong\(fish\)/);
-  assert.match(src, /wobbegong: 4\\.8/);
-  assert.match(src, /marlin: 5\\.2/);
-  assert.match(src, /tuna: 3\\.8/);
+  assert.match(src, /wobbegong: 4\.8/);
+  assert.match(src, /marlin: 5\.2/);
+  assert.match(src, /tuna: 3\.8/);
 });
 
 test('coral renderer reads from its precomputed colony collection', () => {
-  assert.match(script, /function drawCoral\\(\\)[\\s\\S]*?const \\[x,z,type\\]=coralColonies\\[index\\]/);
-  assert.doesNotMatch(script, /const \\[x,z,type\\]=colonies\\[index\\]/);
+  assert.match(script, /function drawCoral\(\)[\s\S]*?const \[x,z,type\]=coralColonies\[index\]/);
+  assert.doesNotMatch(script, /const \[x,z,type\]=colonies\[index\]/);
 });
 
 test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
