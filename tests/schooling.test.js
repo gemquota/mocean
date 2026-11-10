@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGait, stepGait } from '../src/core/body.js';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_SHOAL_COLLISION, SCHOOLING_STARFISH_COLLISION, SCHOOLING_DOLPHIN_COLLISION, SCHOOLING_LIMITS, SCHOOLING_SPECIES_PERCENTAGES, SCHOOLING_SPECIES_VOLUME, seabedHeight } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_SHOAL_COLLISION, SCHOOLING_STARFISH_COLLISION, SCHOOLING_DOLPHIN_COLLISION, SCHOOLING_LIMITS, SCHOOLING_SPECIES_PERCENTAGES, SCHOOLING_SPECIES_VOLUME, SCHOOLING_SPECIES_ADULT_MASS_KG, SCHOOLING_SPECIES_ECOLOGY, SCHOOLING_SPECIES_BALANCE, seabedHeight } from '../src/schooling.js';
 
 test('mixed-species habitat creates 150 independent agents by default', () => {
   const school = createSchool();
@@ -432,9 +432,23 @@ test('default species prevalence balances estimated occupied model volume', () =
 });
 
 test('default allocation retains at least one individual of every enabled species', () => {
-  const school = createSchool(5000, 73421);
+  const school = createSchool(150, 73421);
   const counts = new Map();
   for (const agent of school.fish) counts.set(agent.species, (counts.get(agent.species) ?? 0) + 1);
   for (const species of Object.keys(SCHOOLING_SPECIES_VOLUME)) assert.ok(counts.get(species) >= 1, species + ' should remain represented');
-  assert.equal(school.fish.length, 5000);
+  assert.equal(school.fish.length, 150);
+});
+
+test('species prevalence blends model volume, adult mass and ecological prevalence equally', () => {
+  const species = Object.keys(SCHOOLING_SPECIES_VOLUME);
+  assert.equal(species.length, 19);
+  for (const key of species) {
+    assert.ok(SCHOOLING_SPECIES_ADULT_MASS_KG[key] > 0);
+    assert.ok(SCHOOLING_SPECIES_ECOLOGY[key] > 0);
+    assert.ok(SCHOOLING_SPECIES_BALANCE[key] > 0);
+  }
+  const expected = species.map(key => 1 / SCHOOLING_SPECIES_BALANCE[key]);
+  const total = expected.reduce((sum, value) => sum + value, 0);
+  for (const key of species) assert.ok(Math.abs(SCHOOLING_SPECIES_PERCENTAGES[key] - expected[species.indexOf(key)] / total * 100) < 1e-10);
+  assert.ok(Math.abs(Object.values(SCHOOLING_SPECIES_PERCENTAGES).reduce((sum, value) => sum + value, 0) - 100) < 1e-9);
 });
