@@ -19,6 +19,8 @@ export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
 export const SCHOOLING_CRAB_COLLISION = Object.freeze({ halfLength: 0.25, radius: 0.13 });
 export const SCHOOLING_LOBSTER_COLLISION = Object.freeze({ halfLength: 0.34, radius: 0.105 });
+export const SCHOOLING_MANTIS_COLLISION = Object.freeze({ halfLength: 0.27, radius: 0.085 });
+export const SCHOOLING_MANTA_COLLISION = Object.freeze({ halfLength: 0.82, radius: 0.2 });
 export const CRAB_SHELTERS = Object.freeze([
   Object.freeze({ x: -25, z: -8 }), Object.freeze({ x: -4, z: -3 }),
   Object.freeze({ x: 19, z: -10 }), Object.freeze({ x: 32, z: 2 }),
@@ -98,6 +100,8 @@ function collisionSegment(agent) {
   const half = agent.species === 'eel' ? SCHOOLING_EEL_COLLISION.halfLength
     : agent.species === 'crab' ? SCHOOLING_CRAB_COLLISION.halfLength
     : agent.species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.halfLength
+    : agent.species === 'mantis' ? SCHOOLING_MANTIS_COLLISION.halfLength
+    : agent.species === 'manta' ? SCHOOLING_MANTA_COLLISION.halfLength
     : SCHOOLING_COLLISION.halfLength;
   const scale = agent.bodyScale ?? 1;
   const scaledHalf = half * scale * (agent.species === 'eel' ? (agent.eelLengthScale ?? 1) : 1);
@@ -118,6 +122,8 @@ function resolveCollisions(fish, grid) {
       const radiusFor = species => species === 'eel' ? SCHOOLING_EEL_COLLISION.radius
         : species === 'crab' ? SCHOOLING_CRAB_COLLISION.radius
         : species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.radius
+        : species === 'mantis' ? SCHOOLING_MANTIS_COLLISION.radius
+        : species === 'manta' ? SCHOOLING_MANTA_COLLISION.radius
         : SCHOOLING_COLLISION.radius;
       const radiusScale = agent => agent.bodyScale ?? 1;
       const contactDistance = radiusFor(a.species) * radiusScale(a) + radiusFor(b.species) * radiusScale(b);
@@ -158,17 +164,19 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.68 ? 'fish' : speciesRoll < 0.83 ? 'eel' : speciesRoll < 0.83275 ? 'crab' : 'lobster';
+    const species = speciesRoll < 0.75 ? 'fish' : speciesRoll < 0.90 ? 'eel' : speciesRoll < 0.93 ? 'crab' : speciesRoll < 0.96 ? 'lobster' : speciesRoll < 0.98 ? 'mantis' : 'manta';
     if (species === 'eel') direction.y *= 0.28;
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
+      : species === 'mantis' ? 0.72 + random() * 0.18
+      : species === 'manta' ? 1.55 + random() * 0.35
       : 0.78 + random() * 0.34;
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : 0;
-    const grounded = species === 'crab' || species === 'lobster';
+    const grounded = species === 'crab' || species === 'lobster' || species === 'mantis';
     if (grounded) direction.y = 0;
     const heading = normalize(direction);
-    const groundSpeed = species === 'crab' ? 0.28 : 0.34;
+    const groundSpeed = species === 'crab' ? 0.28 : species === 'mantis' ? 0.22 : 0.34;
     const groundVelocity = species === 'crab'
       ? { x: -heading.z * groundSpeed, y: 0, z: heading.x * groundSpeed }
       : { x: heading.x * groundSpeed, y: 0, z: heading.z * groundSpeed };
@@ -179,7 +187,8 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       eelLengthScale,
       schoolAffinity,
       feedingCooldown: 0,
-      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'eel' ? -7.25 + random() * 1.65 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
+      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
+      wingPhase: random() * Math.PI * 2,
       v: grounded ? groundVelocity : { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: heading,
       phase,
@@ -273,11 +282,13 @@ export function stepSchool(school, dt) {
       az -= self.p.z / (SCHOOLING_LIMITS.z ** 2) * pressure * 5.2;
     }
     // Slow, individual heading drift replaces high-frequency random steering.
-    if (self.species !== 'crab' && self.species !== 'lobster') {
-      const wanderGain = self.species === 'eel' ? 0.052 : 0.035;
+    if (self.species !== 'crab' && self.species !== 'lobster' && self.species !== 'mantis') {
+      const wanderGain = self.species === 'eel' ? 0.052 : self.species === 'manta' ? 0.018 : 0.035;
       if (self.species === 'eel') {
         const bottomTarget = -6.75;
         ay += clamp((bottomTarget - self.p.y) * 0.3 - self.v.y * 1.15, -0.82, 0.82);
+      } else if (self.species === 'manta') {
+        ay += Math.sin(school.time * 0.22 + self.phase) * 0.075 - self.v.y * 0.12;
       }
       ax += Math.sin(school.time * 0.13 + self.phase) * wanderGain;
       ay += Math.sin(school.time * 0.09 + self.phase * 1.7) * wanderGain * 0.52;
@@ -290,10 +301,10 @@ export function stepSchool(school, dt) {
   let speedTotal = 0;
   for (let i = 0; i < fish.length; i++) {
     const agent = fish[i], acceleration = accelerations[i];
-    if (agent.species === 'crab' || agent.species === 'lobster') {
+    if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis') {
       // Benthic locomotion keeps the shell grounded and uses a species-specific
       // walking direction: crabs sidestep, lobsters progress more longitudinally.
-      const turn = Math.sin(school.time * 0.17 + agent.groundPhase) * 0.22;
+      const turn = Math.sin(school.time * (agent.species === 'mantis' ? 0.34 : 0.17) + agent.groundPhase) * (agent.species === 'mantis' ? 0.34 : 0.22);
       const targetForward = normalize({
         x: agent.forward.x * Math.cos(turn) - agent.forward.z * Math.sin(turn),
         y: 0,
@@ -321,6 +332,11 @@ export function stepSchool(school, dt) {
           agent.forward = turnDirection(agent.forward, normalize({ x: tz, y: 0, z: -tx }), 2.8 * step);
           desiredSpeed = 1.05 + 0.18 * Math.sin(agent.groundPhase * 1.7);
         }
+      } else if (agent.species === 'mantis') {
+        // Mantis shrimp stay benthic but move in short, abrupt bursts between pauses.
+        const pulse = Math.pow(Math.max(0, Math.sin(school.time * 0.72 + agent.groundPhase)), 12);
+        desiredSpeed = 0.12 + pulse * 0.82;
+        agent.forward = turnDirection(agent.forward, targetForward, 1.35 * step);
       } else {
         const baseSpeed = 0.34;
         desiredSpeed = baseSpeed * (0.78 + 0.22 * Math.sin(school.time * 0.31 + agent.groundPhase));
@@ -329,29 +345,30 @@ export function stepSchool(school, dt) {
         ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: -agent.forward.z, y: 0, z: agent.forward.x })
         : { x: agent.forward.x, y: 0, z: agent.forward.z };
       const desired = { x: moveDirection.x * desiredSpeed, y: 0, z: moveDirection.z * desiredSpeed };
-      const response = agent.species === 'crab' ? (agent.sheltering ? 3.5 : 4.2) : 1.05;
-      const accelerationLimit = agent.species === 'crab' ? 3.8 : 0.55;
+      const response = agent.species === 'crab' ? (agent.sheltering ? 3.5 : 4.2) : agent.species === 'mantis' ? 4.8 : 1.05;
+      const accelerationLimit = agent.species === 'crab' ? 3.8 : agent.species === 'mantis' ? 4.2 : 0.55;
       agent.v.x += clamp((desired.x - agent.v.x) * response, -accelerationLimit, accelerationLimit) * step;
       agent.v.z += clamp((desired.z - agent.v.z) * response, -accelerationLimit, accelerationLimit) * step;
-      if (agent.species === 'crab') { agent.v.x = clamp(agent.v.x, -1.5, 1.5); agent.v.z = clamp(agent.v.z, -1.5, 1.5); }
+      if (agent.species === 'crab' || agent.species === 'mantis') { agent.v.x = clamp(agent.v.x, -1.5, 1.5); agent.v.z = clamp(agent.v.z, -1.5, 1.5); }
       agent.v.y = 0;
       agent.p.x += agent.v.x * step;
       agent.p.z += agent.v.z * step;
       agent.p.y = -8.55;
-      agent.groundPhase += step * (agent.species === 'crab' ? (agent.sheltering ? 0.35 : 11.5) : 4.1);
+      agent.groundPhase += step * (agent.species === 'crab' ? (agent.sheltering ? 0.35 : 11.5) : agent.species === 'mantis' ? 8.2 : 4.1);
       agent.phase += step * 1.2;
       speedTotal += length(agent.v);
       continue;
     }
     // Gently regulate cruising speed through acceleration, preserving inertia.
-    const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'eel' ? 0.92 : 1.12) + 0.12 * Math.sin(school.time * 0.08 + agent.phase);
+    const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.82 : 1.12) + (agent.species === 'manta' ? 0.055 : 0.12) * Math.sin(school.time * 0.08 + agent.phase);
     const direction = currentSpeed > 0.12 ? normalize(agent.v) : agent.forward;
     const speedCorrection = clamp((desiredSpeed - currentSpeed) * 1.05, -0.35, 0.48);
     agent.v.x += (acceleration.x + direction.x * speedCorrection) * step;
     agent.v.y += (acceleration.y + direction.y * speedCorrection) * step;
     agent.v.z += (acceleration.z + direction.z * speedCorrection) * step;
-    agent.v = limit(agent.v, agent.species === 'eel' ? 1.65 : MAX_SPEED);
-    agent.forward = turnDirection(agent.forward, normalize(agent.v), (agent.species === 'eel' ? 0.92 : MAX_HEADING_RATE) * step);
+    agent.v = limit(agent.v, agent.species === 'eel' ? 1.65 : agent.species === 'manta' ? 1.25 : MAX_SPEED);
+    agent.forward = turnDirection(agent.forward, normalize(agent.v), (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.62 : MAX_HEADING_RATE) * step);
+    if (agent.species === 'manta') agent.wingPhase += step * 2.15;
     agent.p.x += agent.v.x * step;
     agent.p.y += agent.v.y * step;
     agent.p.z += agent.v.z * step;
@@ -381,7 +398,7 @@ export function stepSchool(school, dt) {
   const survivors = school.fish;
   const collisionGrid = buildGrid(survivors);
   const collisions = resolveCollisions(survivors, collisionGrid);
-  for (const agent of survivors) if (agent.species === 'crab' || agent.species === 'lobster') {
+  for (const agent of survivors) if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis') {
     agent.p.y = -8.55;
     agent.v.y = 0;
   }
