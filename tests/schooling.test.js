@@ -47,7 +47,7 @@ test('school initialisation is reproducible for a fixed seed', () => {
 
 test('local separation pushes close neighbours apart', () => {
   const school = createSchool(2, 1);
-  school.fish.forEach(agent => { agent.species = 'fish'; });
+  school.fish.forEach(agent => { agent.species = 'fish'; agent.bodyScale = 0.9; agent.schoolAffinity = 0; agent.feedingCooldown = 10; });
   school.fish[0].p = { x: -0.25, y: 0, z: 0 };
   school.fish[1].p = { x: 0.25, y: 0, z: 0 };
   school.fish[0].v = { x: 1, y: 0, z: 0 };
