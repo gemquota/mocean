@@ -230,7 +230,7 @@ test('spatial hashing reduces neighbour candidate work below all-pairs scanning'
 
 test('overlapping fish capsules produce contact response instead of passing through', () => {
   const school = createSchool(2, 17);
-  school.fish.forEach(agent => { agent.species = 'fish'; agent.forward = { x: 1, y: 0, z: 0 }; });
+  school.fish.forEach(agent => { agent.species = 'fish'; agent.bodyScale = 0.9; agent.forward = { x: 1, y: 0, z: 0 }; });
   school.fish[0].p = { x: -0.16, y: 0, z: 0 };
   school.fish[1].p = { x: 0.16, y: 0, z: 0 };
   school.fish[0].v = { x: 1.1, y: 0, z: 0 };
