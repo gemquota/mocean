@@ -81,6 +81,11 @@ test('pelagic and benthic additions are represented in controls and renderers', 
   assert.match(src, /tuna: 3\\.8/);
 });
 
+test('coral renderer reads from its precomputed colony collection', () => {
+  assert.match(script, /function drawCoral\\(\\)[\\s\\S]*?const \\[x,z,type\\]=coralColonies\\[index\\]/);
+  assert.doesNotMatch(script, /const \\[x,z,type\\]=colonies\\[index\\]/);
+});
+
 test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
   assert.match(script, /const coralColonies=Array\.from\(\{length:320\}/);
   assert.match(script, /for\(let index=0;index<coralColonies\.length;index\+\+\)/);
