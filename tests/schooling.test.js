@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGait, stepGait } from '../src/core/body.js';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_SHOAL_COLLISION, SCHOOLING_STARFISH_COLLISION, SCHOOLING_DOLPHIN_COLLISION, SCHOOLING_LIMITS, SCHOOLING_SPECIES_PERCENTAGES, seabedHeight } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_SHOAL_COLLISION, SCHOOLING_STARFISH_COLLISION, SCHOOLING_DOLPHIN_COLLISION, SCHOOLING_LIMITS, SCHOOLING_SPECIES_PERCENTAGES, SCHOOLING_SPECIES_VOLUME, seabedHeight } from '../src/schooling.js';
 
 test('mixed-species habitat creates 150 independent agents by default', () => {
   const school = createSchool();
@@ -171,7 +171,7 @@ test('sharks pursue and consume small fish while whale sharks remain filter-feed
 
 test('dedicated schooling fish are one quarter scale and form persistent, separate schools', () => {
   const school=createSchool(500,73421), regular=school.fish.filter(f=>f.species==='fish'), shoal=school.fish.filter(f=>f.species==='schoolFish');
-  assert.ok(shoal.length > regular.length * 1.8 && shoal.length < regular.length * 2.2, 'dedicated schooling fish should be about twice as numerous');
+  assert.ok(shoal.length > regular.length * 30, 'quarter-scale shoaling fish should be much more numerous under equal-volume prevalence');
   assert.ok(shoal.every(f=>f.bodyScale>=0.145 && f.bodyScale<=0.375));
   assert.ok(shoal.every(f=>f.schoolAffinity>=2.4));
   assert.ok(new Set(shoal.map(f=>f.socialGroupId)).size>=5);
@@ -419,4 +419,21 @@ test('orca pods, deep-diving sperm whales and surface-foraging seals have distin
     assert.ok([agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite));
     assert.ok(Math.hypot(agent.p.x-start[index].x,agent.p.y-start[index].y,agent.p.z-start[index].z)>.1);
   }
+});
+
+test('default species prevalence balances estimated occupied model volume', () => {
+  const species = Object.keys(SCHOOLING_SPECIES_VOLUME);
+  assert.equal(species.length, 19);
+  const weightedVolumes = species.map(key => SCHOOLING_SPECIES_PERCENTAGES[key] * SCHOOLING_SPECIES_VOLUME[key]);
+  const mean = weightedVolumes.reduce((sum, value) => sum + value, 0) / weightedVolumes.length;
+  for (const value of weightedVolumes) assert.ok(Math.abs(value - mean) / mean < 1e-10);
+  assert.ok(Math.abs(species.reduce((sum, key) => sum + SCHOOLING_SPECIES_PERCENTAGES[key], 0) - 100) < 1e-9);
+});
+
+test('default allocation retains at least one individual of every enabled species', () => {
+  const school = createSchool(150, 73421);
+  const counts = new Map();
+  for (const agent of school.fish) counts.set(agent.species, (counts.get(agent.species) ?? 0) + 1);
+  for (const species of Object.keys(SCHOOLING_SPECIES_VOLUME)) assert.ok(counts.get(species) >= 1, species + ' should remain represented');
+  assert.equal(school.fish.length, 150);
 });
