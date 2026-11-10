@@ -42,7 +42,7 @@ function interpolateSpine(spine, u) {
  */
 export function stepGait(gait, behaviour, speed, turnIntent, dt, brakeIntent = 0) {
   const profiles = {
-    CRUISE: [0.16, 1.12], EXPLORE: [0.205, 1.34],
+    CRUISE: [0.16, 1.12], EXPLORE: [0.205, 1.34], MORAY: [0.285, 1.62],
     TURN: [0.255, 1.48], DART: [0.31, 2.05],
     PURSUIT: [0.30, 2.15],
     GLIDE: [0.018, 0.32], RECOVER: [0.085, 0.72]
