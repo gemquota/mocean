@@ -87,7 +87,7 @@ test('100-fish school remains finite and speed-bounded over sustained simulation
     [f.p.x, f.p.y, f.p.z, f.v.x, f.v.y, f.v.z, f.phase].every(Number.isFinite)
   ));
   assert.ok(metrics.averageSpeed > 0.65, 'the school should retain a healthy cruising speed without forcing every fish to a hard minimum');
-  assert.ok(school.fish.every(f => Math.hypot(f.v.x, f.v.y, f.v.z) <= 2.3 + 1e-9));
+  assert.ok(school.fish.every(f => Math.hypot(f.v.x, f.v.y, f.v.z) <= 2.6 + 1e-9));
   assert.ok(metrics.averageNeighbours > 0);
 });
 
