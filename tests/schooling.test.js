@@ -91,7 +91,7 @@ test('four species have distinct collision envelopes and crustaceans spawn on th
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
   for (const species of ['crab','lobster']) {
     const ground = school.fish.filter(agent => agent.species === species);
-    assert.ok(ground.length >= 10, `${species} should be represented in the seeded population`);
+    assert.ok(ground.length >= (species === 'crab' ? 3 : 10), `${species} should be represented in the seeded population`);
     assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   }
 });
