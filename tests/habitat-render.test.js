@@ -44,7 +44,7 @@ test('orca, sperm whale and seal have dedicated volumetric renderers and habitat
     assert.ok(html.includes(species+':'),species+' config label missing');
     assert.ok(script.includes('function '+renderer+'(fish)'),renderer+' missing');
   }
-  assert.match(script,/speciesCounts\.textContent/);
+  assert.match(script,/speciesCounts\.innerHTML/);
 });
 
 
