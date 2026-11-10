@@ -129,8 +129,8 @@ test('species aggression scales active pursuit steering', () => {
   const passive = createSchool(2, 91), assertive = createSchool(2, 91);
   for (const school of [passive, assertive]) {
     const [predator, prey] = school.fish;
-    predator.species = 'shark'; predator.p = {x:0,y:0,z:0}; predator.v = {x:0.4,y:0,z:0}; predator.forward = {x:1,y:0,z:0}; predator.feedingCooldown = 5;
-    prey.species = 'fish'; prey.p = {x:2,y:0,z:0}; prey.v = {x:0.2,y:0,z:0}; prey.forward = {x:1,y:0,z:0}; prey.feedingCooldown = 5;
+    predator.species = 'shark'; predator.p = {x:0,y:0,z:0}; predator.v = {x:0.4,y:0,z:0}; predator.forward = {x:1,y:0,z:0}; predator.feedingCooldown = 0;
+    prey.species = 'fish'; prey.p = {x:2,y:0,z:0}; prey.v = {x:0.2,y:0,z:0}; prey.forward = {x:1,y:0,z:0}; prey.feedingCooldown = 10;
   }
   passive.fish[0].aggression = 0;
   assertive.fish[0].aggression = 2;
