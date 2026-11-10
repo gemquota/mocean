@@ -239,6 +239,15 @@ function drawSeabed(){
  }
  ctx.restore();
 }
+function drawShelterForeground(){
+ for(const [x,z,rx,ry] of [[-25,-8,2.5,1.15],[-4,-3,3.1,1.35],[19,-10,2.25,1.05],[32,2,1.9,.9]]){
+  const c=project(vec3(x,-8.56,z));
+  ctx.save();ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(4,c.size*rx),Math.max(2,c.size*ry),-.08,Math.PI,TAU);
+  ctx.strokeStyle='#52665a';ctx.lineWidth=Math.max(2,c.size*.14);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(4,c.size*rx*.92),Math.max(2,c.size*ry*.72),-.08,Math.PI,TAU);
+  ctx.strokeStyle='rgba(14,27,25,.95)';ctx.lineWidth=Math.max(1,c.size*.045);ctx.stroke();ctx.restore();
+ }
+}
 function drawFish(fish){
  if(fish.species==='eel'){drawEel(fish);return;}
  if(fish.species==='crab'||fish.species==='lobster'){drawCrustacean(fish);return;}
@@ -293,6 +302,7 @@ function render(){
  drawCoral();
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);
+ drawShelterForeground();
 }
 let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0;
 function animate(now){
