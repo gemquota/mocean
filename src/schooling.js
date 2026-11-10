@@ -185,8 +185,14 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
   const random = makeRandom(seed);
   const mix = options.speciesPercentages ?? SCHOOLING_SPECIES_PERCENTAGES;
   const speciesEntries = Object.entries(mix).filter(([, value]) => Number.isFinite(value) && value > 0);
+  if (!speciesEntries.length) speciesEntries.push(['fish', 1]);
   const speciesTotal = speciesEntries.reduce((sum, [, value]) => sum + value, 0) || 1;
   const size = Math.max(1, Math.min(5000, Math.floor(count)));
+  const speciesOrder = Array.from({ length: size }, (_, id) => id);
+  for (let i = size - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [speciesOrder[i], speciesOrder[j]] = [speciesOrder[j], speciesOrder[i]]; }
+  const speciesById = new Array(size); let speciesCursor = 0;
+  for (let entry = 0; entry < speciesEntries.length; entry++) { const [name, weight] = speciesEntries[entry]; const allocation = entry === speciesEntries.length - 1 ? size - speciesCursor : Math.round(size * weight / speciesTotal); for (let n = 0; n < allocation && speciesCursor < size; n++) speciesById[speciesOrder[speciesCursor++]] = name; }
+  while (speciesCursor < size) speciesById[speciesOrder[speciesCursor++]] = speciesEntries[speciesEntries.length - 1][0];
   const fish = Array.from({ length: size }, (_, id) => {
     const direction = normalize({
       x: random() * 2 - 1,
@@ -195,9 +201,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
     });
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
-    let speciesRoll = ((id + random()) / size) * speciesTotal;
-    let species = speciesEntries[speciesEntries.length - 1]?.[0] ?? 'fish';
-    for (const [candidate, weight] of speciesEntries) { speciesRoll -= weight; if (speciesRoll < 0) { species = candidate; break; } }
+    const species = speciesById[id] ?? 'fish';
     if (species === 'eel') direction.y *= 0.28;
     const standardFishScale = 0.58 + Math.pow(random(), 1.35) * 0.92;
     const bodyScale = species === 'fish' ? standardFishScale
