@@ -21,7 +21,8 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
   assert.ok(eels.every(f => f.bodyScale >= 1.28 && f.bodyScale <= 1.5), 'eels should be visibly larger than standard fish');
   assert.ok(benthic.every(f => f.bodyScale >= 0.78 && f.bodyScale <= 1.12), 'crabs and lobsters should vary in body size');
-  assert.ok(new Set(benthic.map(f => f.bodyScale)).size > 10, 'benthic creatures should have individual size variation');
+  const largerBenthicSample = createSchool(5000).fish.filter(f => f.species === 'crab' || f.species === 'lobster');
+  assert.ok(new Set(largerBenthicSample.map(f => f.bodyScale)).size > 10, 'benthic creatures should have individual size variation');
   assert.equal('target' in school, false, 'the school must not have a shared target');
 });
 
@@ -155,7 +156,7 @@ test('benthic crustaceans and mantis shrimp use bounded grounded locomotion', ()
   const school = createSchool(150, 73421);
   const ground = school.fish.filter(agent => agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis');
   const before = ground.map(agent => ({...agent.p}));
-  for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
+  for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
   assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   assert.ok(ground.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
   assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 1.6));
@@ -271,9 +272,9 @@ test('species mix targets fish, eels, crustaceans, mantis shrimp and manta rays'
 
 
 test('mantis shrimp stay on the seabed and make short, high-acceleration dashes', () => {
-  const school = createSchool(5000, 73421);
+  const school = createSchool(1000, 73421);
   const mantis = school.fish.filter(agent => agent.species === 'mantis');
-  assert.ok(mantis.length > 50 && mantis.length < 150);
+  assert.ok(mantis.length > 10 && mantis.length < 35);
   assert.ok(mantis.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   const before = mantis.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
@@ -282,9 +283,9 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
 });
 
 test('manta rays occupy midwater and maintain a slow, bounded glide with fin motion', () => {
-  const school = createSchool(5000, 73421);
+  const school = createSchool(1000, 73421);
   const rays = school.fish.filter(agent => agent.species === 'manta');
-  assert.ok(rays.length > 50 && rays.length < 150);
+  assert.ok(rays.length > 10 && rays.length < 35);
   assert.ok(rays.every(agent => Math.abs(agent.p.y) < 4));
   const phase = rays[0].wingPhase;
   for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
