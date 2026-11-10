@@ -483,9 +483,16 @@ function drawReefFish(fish){
  if(fish.species==='marlin'){const billA=point(1.02,.02,0),billB=point(2.15,.015,0);ctx.beginPath();ctx.moveTo(billA.x,billA.y);ctx.lineTo(billB.x,billB.y);ctx.strokeStyle='#244d61';ctx.lineWidth=Math.max(1.1,centre.size*.035);ctx.stroke();}
  const eye=point(.73,.09,.08);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.1,centre.size*.026),0,TAU);ctx.fillStyle='#f5e9cf';ctx.fill();ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.6,centre.size*.012),0,TAU);ctx.fillStyle='#172a35';ctx.fill();}ctx.restore();
 }
+function drawWobbegong(fish){
+ const scale=(fish.bodyScale??1)*1.05,yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0),centre=project(fish.p),point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
+ const pts=[[-1.15,0,0],[-.78,.24,.28],[-.2,.31,.42],[.48,.24,.3],[.92,.12,.12],[1.22,.02,0],[.92,.12,-.12],[.48,.24,-.3],[-.2,.31,-.42],[-.78,.24,-.28]].map(v=>point(...v));
+ if(pts.some(p=>p.depth<2.5))return;ctx.save();ctx.globalAlpha=.98;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle='#8b8062';ctx.strokeStyle='#453f32';ctx.lineWidth=Math.max(1,centre.size*.02);ctx.fill();ctx.stroke();
+ for(let n=0;n<13;n++){const x=-.75+n*.13,a=point(x,.18,.25),b=point(x,.18,-.25);if(a.depth>2.5&&b.depth>2.5){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=n%2?'#b4a37b':'#655d48';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();}}
+ const eye=point(.72,.12,.16);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.02),0,TAU);ctx.fillStyle='#171a16';ctx.fill();}ctx.restore();
+}
 function drawFish(fish){
  if(['clownfish','parrotfish','blueTang','angelfish','butterflyfish','marlin','tuna'].includes(fish.species)){drawReefFish(fish);return;}
- if(fish.species==='wobbegong'){drawShark(fish,false);return;}
+ if(fish.species==='wobbegong'){drawWobbegong(fish);return;}
  if(fish.species==='orca'){drawOrca(fish);return;}
  if(fish.species==='spermWhale'){drawSpermWhale(fish);return;}
  if(fish.species==='seal'){drawSeal(fish);return;}
