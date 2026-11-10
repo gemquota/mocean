@@ -24,13 +24,13 @@ header{top:20px}footer{bottom:18px;font-size:9px;letter-spacing:.12em;color:var(
 a{pointer-events:auto;color:var(--mint);text-decoration:none}
 a:hover{text-decoration:underline}
 @media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.species-counts{top:42px;right:14px;font-size:8px;line-height:1.65}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}.population-control{bottom:43px;width:min(320px,calc(100vw - 32px));padding:8px 11px}.population-heading{font-size:8px}}
- .config-toggle{position:fixed;z-index:5;left:24px;top:52px;padding:7px 10px;border:1px solid rgba(155,231,200,.28);border-radius:5px;background:rgba(4,18,26,.88);color:var(--mint);font:9px ui-monospace;letter-spacing:.12em}.config-panel{position:fixed;z-index:6;left:20px;top:16px;bottom:118px;width:min(340px,calc(100vw - 32px));overflow:auto;padding:14px;border:1px solid rgba(155,231,200,.28);border-radius:8px;background:rgba(4,18,26,.96);backdrop-filter:blur(10px);touch-action:pan-y;font-size:10px}.config-head{display:flex;justify-content:space-between;align-items:center;color:var(--mint)}.config-head button{background:none;border:0;color:var(--mint);font-size:20px}.config-panel p{color:var(--muted)}.mix-row{display:grid;grid-template-columns:1fr 62px 12px;gap:7px;align-items:center;margin:5px 0;color:#c5ded5}.mix-row input{width:62px;background:#102a31;border:1px solid #345b5c;color:#e4f1e8;padding:4px}.world-controls{margin-top:14px;border-top:1px solid #315052;padding-top:10px}.world-controls label{display:grid;grid-template-columns:18px 36px 1fr;gap:8px;align-items:center;margin:8px 0}.world-controls input{width:100%;accent-color:var(--mint)}.population-scale button{background:none;border:0;padding:0;color:rgba(190,220,215,.55);font:8px ui-monospace;touch-action:pan-x}@media(max-width:600px){.config-toggle{left:14px;top:42px}.config-panel{left:10px;top:10px;bottom:105px;width:calc(100vw - 20px)}}
+ .config-toggle{position:fixed;z-index:5;left:24px;top:52px;padding:7px 10px;border:1px solid rgba(155,231,200,.28);border-radius:5px;background:rgba(4,18,26,.88);color:var(--mint);font:9px ui-monospace;letter-spacing:.12em}.config-panel{position:fixed;z-index:6;left:20px;top:16px;bottom:118px;width:min(340px,calc(100vw - 32px));overflow:auto;padding:14px;border:1px solid rgba(155,231,200,.28);border-radius:8px;background:rgba(4,18,26,.96);backdrop-filter:blur(10px);touch-action:pan-y;font-size:10px}.config-head{display:flex;justify-content:space-between;align-items:center;color:var(--mint)}.config-head button{background:none;border:0;color:var(--mint);font-size:20px}.config-panel p{color:var(--muted)}.config-tabs{display:flex;gap:4px;flex-wrap:wrap;margin:12px 0;border-bottom:1px solid #315052;padding-bottom:8px}.config-tabs button{background:#102a31;border:1px solid #345b5c;border-radius:4px;color:#c5ded5;padding:7px 9px;font:9px ui-monospace}.config-tabs button.active{background:#24524f;color:#c5ffe0;border-color:#79c7a5}.config-page{display:none}.config-page.active{display:block}.mix-row{display:grid;grid-template-columns:minmax(105px,1fr) minmax(80px,1.2fr) 34px;gap:7px;align-items:center;margin:9px 0;color:#c5ded5}.mix-row input{width:100%;accent-color:var(--mint)}.mix-row output,.setting-row output{color:var(--mint);text-align:right;font:10px ui-monospace}.setting-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:18px 0;color:#c5ded5}.setting-row input{grid-column:1/-1;width:100%;accent-color:var(--mint)}.world-controls{margin-top:14px;border-top:1px solid #315052;padding-top:10px}.world-controls label{display:grid;grid-template-columns:18px 36px 1fr;gap:8px;align-items:center;margin:8px 0}.world-controls input{width:100%;accent-color:var(--mint)}.population-scale button{background:none;border:0;padding:0;color:rgba(190,220,215,.55);font:8px ui-monospace;touch-action:pan-x}@media(max-width:600px){.config-toggle{left:14px;top:42px}.config-panel{left:10px;top:10px;bottom:105px;width:calc(100vw - 20px)}}
 </style>
 </head>
 <body>
 <canvas id="school" aria-label="A mixed habitat of regular and dedicated schooling fish, moray eels, crabs, lobsters, mantis shrimp, manta rays, stingrays, reef sharks, whale sharks, starfish, dolphins, sea turtles, jellyfish, burrowing sand eels, coral reefs and plankton"></canvas>
 <header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 15 SPECIES</div></header><div class="species-counts" id="species-counts">REGULAR FISH · SOCIAL 31<br>SCHOOLING FISH · DEDICATED SHOALS 63<br>EELS 22<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 3<br>MANTA RAYS 3<br>STINGRAYS 3<br>SHARKS 3<br>WHALE SHARKS 3<br>STARFISH 4<br>DOLPHINS 5<br>SEA TURTLES 3<br>JELLYFISH 4<br>SAND EELS 3</div>
-<button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><p>Species proportions · normalised when applied</p><div id="species-mix"></div><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">41</output><input id="world-x" type="range" min="20" max="100" value="41"></label><label>Y <output id="world-y-value">15.5</output><input id="world-y" type="range" min="8" max="40" step="0.5" value="15.5"></label><label>Z <output id="world-z-value">31</output><input id="world-z" type="range" min="15" max="90" value="31"></label></div></aside><section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><button id="population-min">50 CREATURES</button><button id="population-max">200 CREATURES</button></div></section>
+<button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><nav class="config-tabs" role="tablist"><button class="active" data-tab="prevalence">Prevalence</button><button data-tab="speed">Speed</button><button data-tab="size">Size</button><button data-tab="range">Min / max size</button><button data-tab="aggression">Aggression</button><button data-tab="world">World</button></nav><section class="config-page active" data-page="prevalence"><p>Species population share. Setting any species to 100% clears all others.</p><div id="species-mix"></div></section><section class="config-page" data-page="speed"><p>Locomotion speed multiplier</p><label class="setting-row">Overall speed <output id="speed-value">100%</output><input id="setting-speed" type="range" min="25" max="200" value="100"></label></section><section class="config-page" data-page="size"><p>Overall body scale</p><label class="setting-row">Size multiplier <output id="size-value">100%</output><input id="setting-size" type="range" min="50" max="175" value="100"></label></section><section class="config-page" data-page="range"><p>Variation range for regular fish and dedicated shoaling fish.</p><label class="setting-row">Minimum size <output id="min-size-value">58%</output><input id="setting-min-size" type="range" min="30" max="100" value="58"></label><label class="setting-row">Maximum size <output id="max-size-value">150%</output><input id="setting-max-size" type="range" min="60" max="220" value="150"></label></section><section class="config-page" data-page="aggression"><p>Predatory pursuit and territorial response</p><label class="setting-row">Aggression <output id="aggression-value">100%</output><input id="setting-aggression" type="range" min="0" max="200" value="100"></label></section><section class="config-page" data-page="world"><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">41</output><input id="world-x" type="range" min="20" max="100" value="41"></label><label>Y <output id="world-y-value">15.5</output><input id="world-y" type="range" min="8" max="40" step="0.5" value="15.5"></label><label>Z <output id="world-z-value">31</output><input id="world-z" type="range" min="15" max="90" value="31"></label></div></section></aside><section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><button id="population-min">50 CREATURES</button><button id="population-max">200 CREATURES</button></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE, SCHOOLING_SPECIES_PERCENTAGES, seabedHeight } from './src/schooling.js';
@@ -41,13 +41,16 @@ const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
 const speciesMix={...SCHOOLING_SPECIES_PERCENTAGES},worldSize={x:41,y:15.5,z:31};
+const configSettings={speed:1,size:1,minSize:.58,maxSize:1.5,aggression:1};
 const mixRoot=document.getElementById('species-mix'),configPanel=document.getElementById('config-panel'),configToggle=document.getElementById('config-toggle');
 const speciesLabels={fish:'Regular fish',schoolFish:'Dedicated shoaling fish',eel:'Moray eels',crab:'Crabs',lobster:'Lobsters',mantis:'Mantis shrimp',manta:'Manta rays',stingray:'Stingrays',shark:'Reef sharks',whaleShark:'Whale sharks',starfish:'Starfish',dolphin:'Dolphins',turtle:'Sea turtles',jellyfish:'Jellyfish',sandEel:'Burrowing sand eels'};
-function rebuildSchool(){const next=createSchool(Number(populationSlider.value),73421,{speciesPercentages:speciesMix,worldSize});initialiseFishVisualState(next);school=next;}
-for(const [key,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='mix-row';row.innerHTML=`<span>${label}</span><input type="number" min="0" max="100" step="0.5" value="${speciesMix[key]??0}" aria-label="${label} percentage"><output>%</output>`;row.querySelector('input').addEventListener('change',event=>{speciesMix[key]=Math.max(0,Math.min(100,Number(event.target.value)||0));rebuildSchool();});mixRoot.append(row);}
+function rebuildSchool(){const next=createSchool(Number(populationSlider.value),73421,{speciesPercentages:speciesMix,worldSize});initialiseFishVisualState(next);for(const fish of next.fish){if(fish.species==='fish'||fish.species==='schoolFish'){const t=((fish.id*0.61803398875)%1);fish.bodyScale=configSettings.minSize+t*(configSettings.maxSize-configSettings.minSize);if(fish.species==='schoolFish')fish.bodyScale*=.25;}}school=next;}
+function updateMix(changed,value){value=Math.max(0,Math.min(100,Number(value)||0));if(value>=100){for(const key of Object.keys(speciesMix))speciesMix[key]=key===changed?100:0;}else{speciesMix[changed]=value;const others=Object.keys(speciesMix).filter(key=>key!==changed),total=others.reduce((sum,key)=>sum+speciesMix[key],0),remaining=100-value;for(const key of others)speciesMix[key]=total>0?speciesMix[key]/total*remaining:remaining/others.length;}for(const row of mixRoot.querySelectorAll('.mix-row')){const key=row.dataset.species;row.querySelector('input').value=speciesMix[key].toFixed(0);row.querySelector('output').textContent=Math.round(speciesMix[key])+'%';}rebuildSchool();}
+for(const [key,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='mix-row';row.dataset.species=key;row.innerHTML=`<span>${label}</span><input type="range" min="0" max="100" step="1" value="${speciesMix[key]??0}" aria-label="${label} percentage"><output>${Math.round(speciesMix[key]??0)}%</output>`;row.querySelector('input').addEventListener('input',event=>updateMix(key,event.target.value));mixRoot.append(row);}
+for(const tab of configPanel.querySelectorAll('[data-tab]'))tab.addEventListener('click',()=>{for(const el of configPanel.querySelectorAll('[data-tab]'))el.classList.toggle('active',el===tab);for(const page of configPanel.querySelectorAll('[data-page]'))page.classList.toggle('active',page.dataset.page===tab.dataset.tab);});
 configToggle.addEventListener('click',()=>{configPanel.hidden=!configPanel.hidden;configToggle.setAttribute('aria-expanded',String(!configPanel.hidden));});document.getElementById('config-close').addEventListener('click',()=>{configPanel.hidden=true;configToggle.setAttribute('aria-expanded','false');});
 for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+axis),output=document.getElementById('world-'+axis+'-value');slider.addEventListener('input',()=>{worldSize[axis]=Number(slider.value);output.value=slider.value;output.textContent=slider.value;school.worldSize={...worldSize};});}
-for(const [id,edge] of [['population-min','min'],['population-max','max']]){const button=document.getElementById(id);let timer;button.addEventListener('pointerdown',()=>{timer=setTimeout(()=>{const value=prompt(`Set population ${edge}imum`,button.textContent.split(' ')[0]);if(value===null)return;const next=Math.max(10,Math.min(5000,Math.round(Number(value)/10)*10));if(!Number.isFinite(next))return;if(edge==='min')populationSlider.min=String(Math.min(next,Number(populationSlider.max)-10));else populationSlider.max=String(Math.max(next,Number(populationSlider.min)+10));button.textContent=next+' CREATURES';populationSlider.value=String(Math.max(Number(populationSlider.min),Math.min(Number(populationSlider.max),Number(populationSlider.value))));},650);});for(const event of ['pointerup','pointercancel','pointerleave'])button.addEventListener(event,()=>clearTimeout(timer));}
+for(const [key,id] of [['speed','setting-speed'],['size','setting-size'],['minSize','setting-min-size'],['maxSize','setting-max-size'],['aggression','setting-aggression']]){const slider=document.getElementById(id),output=document.getElementById(key.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+'-value');slider.addEventListener('input',()=>{configSettings[key]=Number(slider.value)/100;output.textContent=slider.value+'%';if(key==='speed'||key==='aggression'){for(const fish of school.fish){const desired=key==='speed'?configSettings.speed:((fish.species==='shark'||fish.species==='dolphin'||fish.species==='turtle')?configSettings.aggression:1),field=key==='speed'?'_configSpeed':'_configAggression',prior=fish[field]??1,ratio=desired/prior;fish.v.x*=ratio;fish.v.y*=ratio;fish.v.z*=ratio;fish[field]=desired;}}if(key==='minSize'||key==='maxSize'){configSettings.minSize=Math.min(configSettings.minSize,configSettings.maxSize);configSettings.maxSize=Math.max(configSettings.minSize,configSettings.maxSize);rebuildSchool();}});}
 let school=createSchool(150);
 function initialiseFishVisualState(nextSchool){
  for(const fish of nextSchool.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;}
@@ -134,7 +137,8 @@ function drawEel(fish){
   upper.push({x,y:width,z:0});lower.unshift({x,y:-width*.92,z:0});
  }
  const points=[...upper,...lower].map(v=>project(eelWorldPoint(fish,q,vec3(v.x,v.y,v.z))));
- if(points.every(v=>v.depth>2.5)){
+ 
+  if(points.every(v=>v.depth>2.5)){
   ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
   const skin=ctx.createLinearGradient(centre.x,centre.y-centre.size*.2,centre.x,centre.y+centre.size*.2);
   skin.addColorStop(0,'#91a27a');skin.addColorStop(.42,'#526d53');skin.addColorStop(1,'#263f3b');
@@ -161,7 +165,7 @@ function drawEel(fish){
    for(let tooth=0;tooth<5;tooth++){const t=(tooth+1)/6,x=upperA.x+(upperB.x-upperA.x)*t,y=upperA.y+(upperB.y-upperA.y)*t;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-centre.size*.012,y+centre.size*.035);ctx.strokeStyle='#eee2c7';ctx.lineWidth=Math.max(.65,centre.size*.009);ctx.stroke();}
   }
   for(let g=0;g<3;g++){const a=project(eelWorldPoint(fish,q,vec3(.43-g*.1,-.12,.02))),b=project(eelWorldPoint(fish,q,vec3(.39-g*.1,-.2,.02)));if(a.depth>2.5&&b.depth>2.5){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(24,43,34,.7)';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();}}
-  ctx.restore();
+  for(let segment=0;segment<8;segment++){const u=segment/7,x=.92-u*3.55,w=.12+.18*Math.pow(1-u,.58);drawVolume(fish,q,vec3(x,0,0),vec3(.31,w*.72,.095),segment%2?'#526d53':'#647b5d',.42,8,4);}ctx.restore();
  }
 }
 function drawCrustacean(fish){
@@ -219,7 +223,7 @@ function drawCrustacean(fish){
   for(const side of [-1,1]){const eye=point(bodyLength*.34,.22,side*.2);ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.025*scale),0,TAU);ctx.fillStyle='#f0dfbb';ctx.fill();}
   for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*.78,-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle='#75a99a';ctx.lineWidth=Math.max(1,centre.size*.045*scale);ctx.stroke();}
  }
- ctx.restore();
+ drawVolume(fish,q,vec3(-.04,.08,0),scale3(vec3(bodyLength*.55,.18,bodyWidth*.52),scale),lobster?'#286f70':'#527f70',.4,10,5);ctx.restore();
 }
 function drawMantisShrimp(fish){
  const scale=fish.bodyScale??.8,yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
@@ -255,7 +259,7 @@ function drawMantisShrimp(fish){
   ctx.beginPath();ctx.moveTo(shoulder.x,shoulder.y);ctx.lineTo(elbow.x,elbow.y);ctx.lineTo(club.x,club.y);ctx.strokeStyle='#b4c77b';ctx.lineWidth=Math.max(1.8,centre.size*.065);ctx.stroke();
   ctx.beginPath();ctx.ellipse(club.x,club.y,Math.max(2,centre.size*.065),Math.max(1.3,centre.size*.035),-.2,0,TAU);ctx.fillStyle='#d3c875';ctx.fill();ctx.strokeStyle='#456e5b';ctx.lineWidth=.7;ctx.stroke();
  }
- ctx.restore();
+ drawVolume(fish,q,vec3(-.04,.075,0),scale3(vec3(.49,.17,.29),scale),'#397d67',.4,10,5);ctx.restore();
 }
 function drawMantaRay(fish){
  const scale=fish.bodyScale??1.7,yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z)),q=quatFromEuler(yaw,pitch,0);
@@ -284,7 +288,7 @@ function drawMantaRay(fish){
  }
  const tailA=point(-.9,.015,0),tailB=point(-2.1,-.04,0);
  if(tailA.depth>2.5&&tailB.depth>2.5){ctx.beginPath();ctx.moveTo(tailA.x,tailA.y);ctx.quadraticCurveTo((tailA.x+tailB.x)*.5,tailA.y-centre.size*.025,tailB.x,tailB.y);ctx.strokeStyle='#286f80';ctx.lineWidth=Math.max(.8,centre.size*.025);ctx.stroke();}
- ctx.restore();
+ drawVolume(fish,q,vec3(-.05,.015,0),scale3(vec3(.78,.13,.58),scale),'#245c70',.38,12,5);ctx.restore();
 }
 
 const planktonParticles=Array.from({length:1200},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
@@ -371,14 +375,43 @@ function drawShelterForeground(){
   ctx.strokeStyle='rgba(14,27,25,.95)';ctx.lineWidth=Math.max(1,c.size*.045);ctx.stroke();ctx.restore();
  }
 }
-function drawJellyfish(fish){const c=project(fish.p),r=Math.max(2,c.size*(fish.bodyScale??.7)*.045),phase=fish.tentaclePhase??0;if(c.depth<2.5)return;ctx.save();ctx.globalAlpha=.86;ctx.beginPath();ctx.ellipse(c.x,c.y,r*1.35,r,0,Math.PI,TAU);ctx.fillStyle='#9d9bd0';ctx.fill();ctx.strokeStyle='#e0d1ef';ctx.stroke();for(let i=0;i<6;i++){const x=c.x+(i-2.5)*r*.38;ctx.beginPath();ctx.moveTo(x,c.y);ctx.bezierCurveTo(x+Math.sin(phase+i)*r*.3,c.y+r*.6,x+Math.cos(phase+i)*r*.25,c.y+r,x+Math.sin(phase*.7+i)*r*.2,c.y+r*1.5);ctx.strokeStyle=i%2?'#a6b6d8':'#d6b5d2';ctx.lineWidth=Math.max(.6,r*.07);ctx.stroke();}ctx.restore();}
-function drawSandEel(fish){const c=project(fish.p),r=Math.max(1,c.size*(fish.bodyScale??2.4)*.018),phase=fish.filterFeedPhase??0;if(c.depth<2.5)return;ctx.save();ctx.globalAlpha=fish.buried?.42:.96;ctx.beginPath();ctx.ellipse(c.x,c.y,r,Math.max(2,r*5),0,0,TAU);ctx.fillStyle='#b59b70';ctx.fill();ctx.strokeStyle='#574d3c';ctx.stroke();ctx.beginPath();ctx.arc(c.x,c.y-r*3,Math.max(.8,r*.65),0,TAU);ctx.fillStyle='#e6c98d';ctx.fill();if(!fish.buried){ctx.beginPath();ctx.ellipse(c.x,c.y-r*4.05,Math.max(.7,r*.58),Math.max(.45,r*(.16+.08*Math.sin(phase))),0,0,TAU);ctx.fillStyle='#30241d';ctx.fill();}ctx.restore();}
-function drawTurtle(fish){const scale=fish.bodyScale??1,yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0),c=project(fish.p),pt=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));if(c.depth<2.5)return;ctx.save();ctx.globalAlpha=.94;const shell=[[.58,0,0],[.36,.2,.42],[-.32,.2,.42],[-.62,.04,0],[-.32,.2,-.42],[.36,.2,-.42]].map(v=>pt(...v));ctx.beginPath();shell.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle='#557c62';ctx.strokeStyle='#294a40';ctx.lineWidth=Math.max(1,c.size*.02);ctx.fill();ctx.stroke();for(const side of [-1,1])for(const fore of [-1,1]){const a=pt(fore*.28,-.02,side*.28),b=pt(fore*.7,-.1,side*.72),tip=pt(fore*.9,-.06,side*.95);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(b.x+c.size*.04*Math.sin(fish.phase),b.y,b.x,b.y);ctx.lineTo(tip.x,tip.y);ctx.lineTo(a.x,a.y);ctx.fillStyle='#6e9b78';ctx.fill();}const head=pt(.75,.08,0);ctx.beginPath();ctx.arc(head.x,head.y,Math.max(1,c.size*.075),0,TAU);ctx.fillStyle='#78a47e';ctx.fill();ctx.restore();}
+
+/* Low-poly volumetric primitive shared by the species renderers. Geometry is
+   transformed in creature-local 3D space before perspective projection. */
+function drawVolume(fish,q,centre,radii,colour,alpha=1,segments=9,rings=5){
+ const vertices=[],faces=[];
+ for(let r=0;r<=rings;r++){
+  const v=r/rings,phi=-Math.PI/2+v*Math.PI;
+  for(let j=0;j<segments;j++){
+   const theta=j/segments*TAU,nx=Math.cos(phi)*Math.cos(theta),ny=Math.sin(phi),nz=Math.cos(phi)*Math.sin(theta);
+   const local=vec3(centre.x+nx*radii.x,centre.y+ny*radii.y,centre.z+nz*radii.z);
+   vertices.push(project(add3(fish.p,quatRotate(q,local))));
+  }
+ }
+ for(let r=0;r<rings;r++)for(let j=0;j<segments;j++){
+  const a=r*segments+j,b=r*segments+(j+1)%segments,c=(r+1)*segments+(j+1)%segments,d=(r+1)*segments+j;
+  faces.push([a,b,c],[a,c,d]);
+ }
+ const hex=colour.replace('#',''),base=[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)];
+ const draw=faces.map(ids=>({ids,depth:ids.reduce((sum,id)=>sum+vertices[id].depth,0)/3})).sort((a,b)=>b.depth-a.depth);
+ const centreScreen=project(fish.p);ctx.save();ctx.globalAlpha*=alpha;
+ for(const item of draw){
+  const p=item.ids.map(id=>vertices[id]);if(p.some(v=>v.depth<2.5))continue;
+  const faceY=(p[0].y+p[1].y+p[2].y)/3;const intensity=.7+Math.max(0,Math.min(.28,(centreScreen.y-faceY)*.006));
+  ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();
+  ctx.fillStyle='rgb('+base.map(v=>Math.max(0,Math.min(255,Math.round(v*Math.min(1.12,intensity))))).join(',')+')';ctx.fill();
+ }
+ ctx.restore();
+}
+
+function drawJellyfish(fish){const c=project(fish.p),r=Math.max(2,c.size*(fish.bodyScale??.7)*.045),phase=fish.tentaclePhase??0;if(c.depth<2.5)return;ctx.save();ctx.globalAlpha=.86;ctx.beginPath();ctx.ellipse(c.x,c.y,r*1.35,r,0,Math.PI,TAU);ctx.fillStyle='#9d9bd0';ctx.fill();ctx.strokeStyle='#e0d1ef';ctx.stroke();for(let i=0;i<6;i++){const x=c.x+(i-2.5)*r*.38;ctx.beginPath();ctx.moveTo(x,c.y);ctx.bezierCurveTo(x+Math.sin(phase+i)*r*.3,c.y+r*.6,x+Math.cos(phase+i)*r*.25,c.y+r,x+Math.sin(phase*.7+i)*r*.2,c.y+r*1.5);ctx.strokeStyle=i%2?'#a6b6d8':'#d6b5d2';ctx.lineWidth=Math.max(.6,r*.07);ctx.stroke();}drawVolume(fish,quatFromEuler(0,0,0),vec3(0,0,0),scale3(vec3(.34,.23,.34),fish.bodyScale??.7),'#9d9bd0',.48,10,5);ctx.restore();}
+function drawSandEel(fish){const c=project(fish.p),r=Math.max(1,c.size*(fish.bodyScale??2.4)*.018),phase=fish.filterFeedPhase??0;if(c.depth<2.5)return;ctx.save();ctx.globalAlpha=fish.buried?.42:.96;ctx.beginPath();ctx.ellipse(c.x,c.y,r,Math.max(2,r*5),0,0,TAU);ctx.fillStyle='#b59b70';ctx.fill();ctx.strokeStyle='#574d3c';ctx.stroke();ctx.beginPath();ctx.arc(c.x,c.y-r*3,Math.max(.8,r*.65),0,TAU);ctx.fillStyle='#e6c98d';ctx.fill();if(!fish.buried){ctx.beginPath();ctx.ellipse(c.x,c.y-r*4.05,Math.max(.7,r*.58),Math.max(.45,r*(.16+.08*Math.sin(phase))),0,0,TAU);ctx.fillStyle='#30241d';ctx.fill();}drawVolume(fish,quatFromEuler(0,0,0),vec3(0,0,0),scale3(vec3(.075,.34,.075),fish.bodyScale??2.4),'#b59b70',.42,8,5);ctx.restore();}
+function drawTurtle(fish){const scale=fish.bodyScale??1,yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0),c=project(fish.p),pt=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));if(c.depth<2.5)return;ctx.save();ctx.globalAlpha=.94;const shell=[[.58,0,0],[.36,.2,.42],[-.32,.2,.42],[-.62,.04,0],[-.32,.2,-.42],[.36,.2,-.42]].map(v=>pt(...v));ctx.beginPath();shell.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle='#557c62';ctx.strokeStyle='#294a40';ctx.lineWidth=Math.max(1,c.size*.02);ctx.fill();ctx.stroke();for(const side of [-1,1])for(const fore of [-1,1]){const a=pt(fore*.28,-.02,side*.28),b=pt(fore*.7,-.1,side*.72),tip=pt(fore*.9,-.06,side*.95);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(b.x+c.size*.04*Math.sin(fish.phase),b.y,b.x,b.y);ctx.lineTo(tip.x,tip.y);ctx.lineTo(a.x,a.y);ctx.fillStyle='#6e9b78';ctx.fill();}const head=pt(.75,.08,0);ctx.beginPath();ctx.arc(head.x,head.y,Math.max(1,c.size*.075),0,TAU);ctx.fillStyle='#78a47e';ctx.fill();drawVolume(fish,q,vec3(-.02,.035,0),scale3(vec3(.43,.17,.46),scale),'#557c62',.38,10,6);ctx.restore();}
 function drawFish(fish){
  if(fish.species==='jellyfish'){drawJellyfish(fish);return;}
  if(fish.species==='sandEel'){drawSandEel(fish);return;}
  if(fish.species==='turtle'){drawTurtle(fish);return;}
- if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
+ 
  if(fish.species==='starfish'){drawStarfish(fish);return;}
  if(fish.species==='dolphin'){drawDolphin(fish);return;}
  if(fish.species==='eel'){drawEel(fish);return;}
@@ -401,27 +434,10 @@ function drawFish(fish){
  polygon(fish,q,[vec3(-1.48,.02,0),vec3(-2.12,.5+load*.08,0),vec3(-1.82,.04,0),vec3(-2.12,-.48-load*.08,0)],'#388d8e',alpha,'#174e5c');
  polygon(fish,q,[vec3(-.55,.3,0),vec3(-.82,.58+load*.04,0),vec3(-.12,.32,0)],'#4ca99c',alpha);
  polygon(fish,q,[vec3(-.58,-.29,0),vec3(-.82,-.48,0),vec3(-.12,-.29,0)],'#347e85',alpha);
- // Distant quarter-scale fish occupy only a few screen pixels. A single
- // deformed silhouette is both more legible and dramatically cheaper than
- // depth-sorting dozens of triangles that cannot be resolved at this scale.
- if(centre.size<13){
-  polygon(fish,q,[
-   vec3(.98,0,0),vec3(.72,.29,0),vec3(.18,.34,0),
-   vec3(-.48,.25,0),vec3(-1.12,.13,0),vec3(-1.58,.035,0),
-   vec3(-1.12,-.13,0),vec3(-.48,-.25,0),vec3(.18,-.34,0),
-   vec3(.72,-.29,0)
-  ],'#469d98',alpha,'#174e5c');
- }else{
-  const deformed=mesh.vertices.map(v=>scale3(deformPoint(v,fish.gait),SCHOOLING_FISH_SCALE*(fish.bodyScale??1)));
-  const projected=deformed.map(v=>project(add3(fish.p,quatRotate(q,v))));
-  const faces=mesh.faces.map(face=>({face,depth:(projected[face.indices[0]].depth+projected[face.indices[1]].depth+projected[face.indices[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
-  for(const item of faces){
-   const p=item.face.indices.map(i=>projected[i]);
-   if(p.some(v=>v.depth<2.5))continue;
-   ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();
-   ctx.fillStyle=item.face.fill;ctx.fill();
-  }
- }
+ const deformed=mesh.vertices.map(v=>scale3(deformPoint(v,fish.gait),SCHOOLING_FISH_SCALE*(fish.bodyScale??1)*configSettings.size));
+ const projected=deformed.map(v=>project(add3(fish.p,quatRotate(q,v))));
+ const faces=mesh.faces.map(face=>({face,depth:(projected[face.indices[0]].depth+projected[face.indices[1]].depth+projected[face.indices[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
+ for(const item of faces){const p=item.face.indices.map(i=>projected[i]);if(p.some(v=>v.depth<2.5))continue;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=item.face.fill;ctx.fill();}
  const ridge=[vec3(.58,.27,0),vec3(.3,.34,0),vec3(-.12,.32,0),vec3(-.62,.24,0),vec3(-1.12,.12,0),vec3(-1.42,.055,0)].map(v=>project(worldPoint(fish,q,v)));
  if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.strokeStyle='rgba(177,235,207,.82)';ctx.lineWidth=Math.max(.7,centre.size*.009);ctx.lineCap='round';ctx.stroke();}
  const eye=project(worldPoint(fish,q,vec3(.72,.13,.2)));
@@ -530,7 +546,7 @@ function drawSchoolFish(fish){
  }
  const tailA=point(-.92,.015,0),tailB=point(-2.15,-.025,0);
  if(tailA.depth>2.5&&tailB.depth>2.5){ctx.beginPath();ctx.moveTo(tailA.x,tailA.y);ctx.quadraticCurveTo((tailA.x+tailB.x)*.5,tailA.y-centre.size*.018,tailB.x,tailB.y);ctx.strokeStyle='#71898a';ctx.lineWidth=Math.max(.7,centre.size*.016);ctx.stroke();}
- ctx.restore();
+ drawVolume(fish,quatFromEuler(yaw,0,0),vec3(0,.025,0),scale3(vec3(.24,.075,.24),scale),colours[fish.id%colours.length],.42,9,4);drawVolume(fish,q,vec3(-.02,.035,0),scale3(vec3(.88,.22,.22),scale),'#668f98',.36,12,6);drawVolume(fish,q,vec3(-.04,.025,0),whale?scale3(vec3(1.05,.27,.34),scale):scale3(vec3(1.02,.19,.22),scale),dorsal,.36,12,6);drawVolume(fish,q,vec3(-.08,.005,0),scale3(vec3(.67,.095,.43),scale),'#526e73',.38,12,5);ctx.restore();
 }
 function render(){
  const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
@@ -553,9 +569,10 @@ function animate(now){
  while(accumulator>=dt){
   stepSchool(school,dt);
   for(const fish of school.fish){
+   const desiredAggression=(fish.species==='shark'||fish.species==='dolphin'||fish.species==='turtle')?configSettings.aggression:1, speedFactor=configSettings.speed/(fish._configSpeed??1), aggressionFactor=desiredAggression/(fish._configAggression??1);if(speedFactor!==1||aggressionFactor!==1){const factor=speedFactor*aggressionFactor;fish.v.x*=factor;fish.v.y*=factor;fish.v.z*=factor;fish._configSpeed=configSettings.speed;fish._configAggression=desiredAggression;}
    const nextYaw=Math.atan2(-fish.forward.z,fish.forward.x),nextPitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
    const turn=Math.max(-1,Math.min(1,angleDelta(fish.heading,nextYaw)*1.7));
-   if(fish.species==='fish'||fish.species==='eel')stepGait(fish.gait,fish.species==='eel'?'MORAY':'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
+   if(fish.species==='fish'||fish.species==='schoolFish'||fish.species==='eel')stepGait(fish.gait,fish.species==='eel'?'MORAY':'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
    fish.heading=nextYaw;fish.pitch=nextPitch;
   }
   accumulator-=dt;
