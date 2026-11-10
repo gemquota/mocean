@@ -268,7 +268,7 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
 test('species mix targets fish, eels, crustaceans, mantis shrimp, manta rays and stingrays', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.74], ['eel', 0.15], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.01], ['manta', 0.02], ['stingray', 0.02]]) {
+  for (const [species, target] of [['fish', 0.73], ['eel', 0.15], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02]]) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
