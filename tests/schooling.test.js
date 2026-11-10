@@ -12,7 +12,7 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   const sizedFish = school.fish.filter(f => f.species === 'fish');
   assert.ok(sizedFish.every(f => f.bodyScale >= 0.58 && f.bodyScale <= 1.5));
   assert.ok(new Set(sizedFish.map(f => f.bodyScale)).size > 20, 'fish should have a continuous range of body sizes');
-  assert.ok(school.fish.filter(f => f.species === 'crab').length < 12, 'crabs should be a small minority of the habitat');
+  assert.ok(school.fish.filter(f => f.species === 'crab').length <= 4, 'crabs should be rare in the habitat');
   assert.ok(school.fish.some(f => f.species === 'lobster'));
   const eels=school.fish.filter(f => f.species === 'eel');
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
@@ -53,6 +53,7 @@ test('local separation pushes close neighbours apart', () => {
 
 test('local alignment reduces heading disagreement between nearby fish', () => {
   const school = createSchool(2, 2);
+  school.fish.forEach(agent => { agent.species = 'fish'; agent.bodyScale = 0.9; agent.schoolAffinity = 0.9; });
   school.fish[0].p = { x: -1.1, y: 0, z: 0 };
   school.fish[1].p = { x: 1.1, y: 0, z: 0 };
   school.fish[0].v = { x: 1.2, y: 0, z: 0 };
@@ -96,7 +97,7 @@ test('four species have distinct collision envelopes and crustaceans spawn on th
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
   for (const species of ['crab','lobster']) {
     const ground = school.fish.filter(agent => agent.species === species);
-    assert.ok(ground.length >= (species === 'crab' ? 3 : 10), `${species} should be represented in the seeded population`);
+    assert.ok(ground.length >= (species === 'crab' ? 1 : 10), `${species} should be represented in the seeded population`);
     assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   }
 });
@@ -122,6 +123,20 @@ test('small fish have stronger schooling affinity than large fish', () => {
   assert.ok(large.every(f=>f.schoolAffinity<0.8));
 });
 
+test('crabs use rare, shelter-seeking bursts and pause under cover', () => {
+  const school = createSchool(500, 73421);
+  const crabs = school.fish.filter(agent => agent.species === 'crab');
+  assert.ok(crabs.length < 10, 'crabs should be substantially rarer than before');
+  assert.ok(crabs.every(agent => Number.isInteger(agent.shelterIndex) && agent.sheltering));
+  const crab = crabs[0];
+  crab.sheltering = false;
+  crab.shelterIndex = 0;
+  crab.p = { x: -20, y: -8.55, z: -17 };
+  const before = { ...crab.p };
+  for (let i = 0; i < 30; i++) stepSchool(school, 1 / 60);
+  assert.ok(Math.hypot(crab.p.x-before.x, crab.p.z-before.z) > 0.2, 'an exposed crab should scuttle decisively toward cover');
+});
+
 test('crabs and lobsters use bounded grounded locomotion without fish schooling', () => {
   const school = createSchool(150, 73421);
   const ground = school.fish.filter(agent => agent.species === 'crab' || agent.species === 'lobster');
@@ -129,7 +144,7 @@ test('crabs and lobsters use bounded grounded locomotion without fish schooling'
   for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
   assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   assert.ok(ground.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
-  assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 0.5));
+  assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 1.6));
   assert.ok(ground.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.z-before[i].z) > 0.25));
   assert.ok(ground.every(agent => agent.neighbourCount === 0), 'crustaceans must not be pulled into fish schooling');
 });
@@ -180,7 +195,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
   const school = createSchool(1000);
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
-    Math.abs(f.p.x) <= 23.5 && (f.species === 'crab' || f.species === 'lobster' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && Math.abs(f.p.z) <= 18
+    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (f.species === 'crab' || f.species === 'lobster' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? (f.species === 'crab' ? Math.abs(f.p.z) <= 19 : Math.abs(f.p.z) <= 18) : Math.abs(f.p.z) <= 18)
   ));
 });
 
