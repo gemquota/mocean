@@ -47,3 +47,9 @@ test('orca, sperm whale and seal have dedicated volumetric renderers and habitat
   assert.match(script,/counts\.spermWhale/);
   assert.match(script,/counts\.seal/);
 });
+
+
+test('habitat fish renderer does not depend on an undefined global size setting', () => {
+  assert.doesNotMatch(script, /configSettings/);
+  assert.match(script, /SCHOOLING_FISH_SCALE\*\(fish\.bodyScale\?\?1\)/);
+});

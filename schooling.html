@@ -491,7 +491,7 @@ function drawFish(fish){
  polygon(fish,q,[vec3(-1.48,.02,0),vec3(-2.12,.5+load*.08,0),vec3(-1.82,.04,0),vec3(-2.12,-.48-load*.08,0)],'#388d8e',alpha,'#174e5c');
  polygon(fish,q,[vec3(-.55,.3,0),vec3(-.82,.58+load*.04,0),vec3(-.12,.32,0)],'#4ca99c',alpha);
  polygon(fish,q,[vec3(-.58,-.29,0),vec3(-.82,-.48,0),vec3(-.12,-.29,0)],'#347e85',alpha);
- const deformed=mesh.vertices.map(v=>scale3(deformPoint(v,fish.gait),SCHOOLING_FISH_SCALE*(fish.bodyScale??1)*configSettings.size));
+ const deformed=mesh.vertices.map(v=>scale3(deformPoint(v,fish.gait),SCHOOLING_FISH_SCALE*(fish.bodyScale??1)));
  const projected=deformed.map(v=>project(add3(fish.p,quatRotate(q,v))));
  const faces=mesh.faces.map(face=>({face,depth:(projected[face.indices[0]].depth+projected[face.indices[1]].depth+projected[face.indices[2]].depth)/3})).sort((a,b)=>b.depth-a.depth);
  for(const item of faces){const p=item.face.indices.map(i=>projected[i]);if(p.some(v=>v.depth<2.5))continue;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=item.face.fill;ctx.fill();}
