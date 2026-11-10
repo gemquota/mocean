@@ -218,13 +218,12 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
   const speciesOrder = Array.from({ length: size }, (_, id) => id);
   for (let i = size - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [speciesOrder[i], speciesOrder[j]] = [speciesOrder[j], speciesOrder[i]]; }
   const speciesById = new Array(size);
-  // Reserve one representative of every enabled species when the population allows
-  // it; distribute the remaining population by the requested prevalence weights.
-  const reserve = size >= speciesEntries.length ? 1 : 0;
-  const distributable = size - reserve * speciesEntries.length;
+  // Largest-remainder apportionment preserves the requested volume-balanced ratios.
+  // At small populations some rare, large species may correctly receive zero agents:
+  // forcing one of every species would overwhelm the equal-volume budget.
   const allocations = speciesEntries.map(([name, weight]) => {
-    const exact = distributable * weight / speciesTotal;
-    return { name, count: reserve + Math.floor(exact), remainder: exact - Math.floor(exact) };
+    const exact = size * weight / speciesTotal;
+    return { name, count: Math.floor(exact), remainder: exact - Math.floor(exact) };
   });
   let remaining = size - allocations.reduce((sum, entry) => sum + entry.count, 0);
   for (const entry of [...allocations].sort((a, b) => b.remainder - a.remainder).slice(0, remaining)) entry.count++;
