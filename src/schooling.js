@@ -94,7 +94,9 @@ function collisionSegment(agent) {
     : agent.species === 'crab' ? SCHOOLING_CRAB_COLLISION.halfLength
     : agent.species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.halfLength
     : SCHOOLING_COLLISION.halfLength;
-  const offset = { x: direction.x * half, y: direction.y * half, z: direction.z * half };
+  const scale = agent.species === 'fish' ? (agent.bodyScale ?? 1) : 1;
+  const scaledHalf = half * scale;
+  const offset = { x: direction.x * scaledHalf, y: direction.y * scaledHalf, z: direction.z * scaledHalf };
   return [subtract(agent.p, offset), add(agent.p, offset)];
 }
 function resolveCollisions(fish, grid) {
@@ -112,7 +114,8 @@ function resolveCollisions(fish, grid) {
         : species === 'crab' ? SCHOOLING_CRAB_COLLISION.radius
         : species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.radius
         : SCHOOLING_COLLISION.radius;
-      const contactDistance = radiusFor(a.species) + radiusFor(b.species);
+      const radiusScale = agent => agent.species === 'fish' ? (agent.bodyScale ?? 1) : 1;
+      const contactDistance = radiusFor(a.species) * radiusScale(a) + radiusFor(b.species) * radiusScale(b);
       if (distance >= contactDistance) continue;
       if (distance < 1e-8) {
         delta = normalize({ x: (j - i) % 3 === 0 ? 1 : 0.37, y: (j - i) % 3 === 1 ? 1 : 0.23, z: (j - i) % 3 === 2 ? 1 : 0.41 });
@@ -150,7 +153,9 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.55 ? 'fish' : speciesRoll < 0.72 ? 'eel' : speciesRoll < 0.86 ? 'crab' : 'lobster';
+    const species = speciesRoll < 0.655 ? 'fish' : speciesRoll < 0.825 ? 'eel' : speciesRoll < 0.86 ? 'crab' : 'lobster';
+    const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92 : 1;
+    const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : 0;
     const grounded = species === 'crab' || species === 'lobster';
     if (grounded) direction.y = 0;
     const heading = normalize(direction);
@@ -161,6 +166,9 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     return {
       id,
       species,
+      bodyScale,
+      schoolAffinity,
+      feedingCooldown: 0,
       p: { x: (random() - 0.5) * 47, y: grounded ? -8.55 : (random() - 0.5) * 16, z: (random() - 0.5) * 36 },
       v: grounded ? groundVelocity : { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: heading,
@@ -189,19 +197,31 @@ export function stepSchool(school, dt) {
     const self = fish[i], candidates = nearbyIndices(grid, cellOf(self.p));
     let sepX = 0, sepY = 0, sepZ = 0;
     let posX = 0, posY = 0, posZ = 0;
-    let velX = 0, velY = 0, velZ = 0, neighbours = 0;
+    let velX = 0, velY = 0, velZ = 0, schoolWeight = 0, neighbours = 0;
+    let preyTarget = null, preyDistance = Infinity;
+    let fleeX = 0, fleeY = 0, fleeZ = 0;
     candidateChecks += candidates.length;
     for (const j of candidates) {
       if (i === j) continue;
       const other = fish[j], dx = other.p.x - self.p.x, dy = other.p.y - self.p.y, dz = other.p.z - self.p.z;
       const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= NEIGHBOUR_RADIUS * NEIGHBOUR_RADIUS) continue;
+      const d = Math.sqrt(d2);
       if (self.species === 'fish' && other.species === 'fish') {
         neighbours++;
-        posX += other.p.x; posY += other.p.y; posZ += other.p.z;
-        velX += other.v.x; velY += other.v.y; velZ += other.v.z;
+        const similarity = 1 / (1 + Math.abs((self.bodyScale ?? 1) - (other.bodyScale ?? 1)) * 2.4);
+        const weight = similarity * (other.schoolAffinity ?? 1);
+        schoolWeight += weight;
+        posX += other.p.x * weight; posY += other.p.y * weight; posZ += other.p.z * weight;
+        velX += other.v.x * weight; velY += other.v.y * weight; velZ += other.v.z * weight;
+        const selfSize = self.bodyScale ?? 1, otherSize = other.bodyScale ?? 1;
+        if (d > 0.001 && selfSize > 1.08 && otherSize < selfSize * 0.68 && d < preyDistance) {
+          preyTarget = other; preyDistance = d;
+        } else if (d > 0.001 && otherSize > 1.08 && selfSize < otherSize * 0.68 && d < 2.35) {
+          const flee = (2.35 - d) / 2.35 / Math.max(d, 0.22);
+          fleeX -= dx * flee; fleeY -= dy * flee; fleeZ -= dz * flee;
+        }
       }
-      const d = Math.sqrt(d2);
       if (d < SEPARATION_RADIUS) {
         // Anticipate convergence using relative velocity along the line of approach.
         const rvx = other.v.x - self.v.x, rvy = other.v.y - self.v.y, rvz = other.v.z - self.v.z;
@@ -215,12 +235,21 @@ export function stepSchool(school, dt) {
     neighbourTotal += neighbours;
 
     let ax = sepX * 0.62, ay = sepY * 0.62, az = sepZ * 0.62;
-    if (neighbours > 0) {
-      const inv = 1 / neighbours;
-      // Cohesion is deliberately weak; alignment acts on velocity, not heading.
-      ax += (posX * inv - self.p.x) * 0.075 + (velX * inv - self.v.x) * 0.34;
-      ay += (posY * inv - self.p.y) * 0.075 + (velY * inv - self.v.y) * 0.34;
-      az += (posZ * inv - self.p.z) * 0.075 + (velZ * inv - self.v.z) * 0.34;
+    if (neighbours > 0 && schoolWeight > 0) {
+      const inv = 1 / schoolWeight, affinity = self.schoolAffinity ?? 1;
+      ax += ((posX * inv - self.p.x) * 0.075 + (velX * inv - self.v.x) * 0.34) * affinity;
+      ay += ((posY * inv - self.p.y) * 0.075 + (velY * inv - self.v.y) * 0.34) * affinity;
+      az += ((posZ * inv - self.p.z) * 0.075 + (velZ * inv - self.v.z) * 0.34) * affinity;
+    }
+    if (self.species === 'fish') {
+      ax += fleeX * 0.9; ay += fleeY * 0.9; az += fleeZ * 0.9;
+      if (preyTarget && (self.feedingCooldown ?? 0) <= 0) {
+        const chase = normalize(subtract(preyTarget.p, self.p));
+        const gain = clamp(0.95 - preyDistance * 0.12, 0.28, 0.8);
+        ax += chase.x * gain; ay += chase.y * gain; az += chase.z * gain;
+        self.preyId = preyTarget.id;
+      } else self.preyId = null;
+      self.feedingCooldown = Math.max(0, (self.feedingCooldown ?? 0) - step);
     }
 
     const boundary = Math.hypot(self.p.x / SCHOOLING_LIMITS.x, self.p.y / SCHOOLING_LIMITS.y, self.p.z / SCHOOLING_LIMITS.z);
@@ -288,10 +317,29 @@ export function stepSchool(school, dt) {
     speedTotal += length(agent.v);
   }
 
-  // Rebuild after integration so the contact pass sees the current positions.
-  const collisionGrid = buildGrid(fish);
-  const collisions = resolveCollisions(fish, collisionGrid);
-  for (const agent of fish) if (agent.species === 'crab' || agent.species === 'lobster') {
+  const predationGrid = buildGrid(fish);
+  const eaten = new Set();
+  for (let i = 0; i < fish.length; i++) {
+    const predator = fish[i];
+    if (predator.species !== 'fish' || predator.bodyScale < 1.08 || predator.feedingCooldown > 0) continue;
+    for (const j of nearbyIndices(predationGrid, cellOf(predator.p))) {
+      if (j === i || eaten.has(j)) continue;
+      const prey = fish[j];
+      if (prey.species !== 'fish' || prey.bodyScale >= predator.bodyScale * 0.68) continue;
+      const d = length(subtract(prey.p, predator.p));
+      if (d < 0.36 + prey.bodyScale * 0.045) {
+        eaten.add(j);
+        predator.feedingCooldown = 3.5;
+        predator.bodyScale = Math.min(1.55, predator.bodyScale + 0.035);
+        break;
+      }
+    }
+  }
+  if (eaten.size) school.fish = fish.filter((agent, index) => !eaten.has(index));
+  const survivors = school.fish;
+  const collisionGrid = buildGrid(survivors);
+  const collisions = resolveCollisions(survivors, collisionGrid);
+  for (const agent of survivors) if (agent.species === 'crab' || agent.species === 'lobster') {
     agent.p.y = -8.55;
     agent.v.y = 0;
   }
@@ -300,6 +348,8 @@ export function stepSchool(school, dt) {
     averageSpeed: speedTotal / Math.max(1, fish.length),
     averageNeighbours: neighbourTotal / Math.max(1, fish.length),
     collisions,
+    eaten: (school.metrics.eaten ?? 0) + eaten.size,
+    population: survivors.length,
     candidateChecks
   };
   return school.metrics;
