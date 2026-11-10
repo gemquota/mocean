@@ -15,7 +15,22 @@ export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
-export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze({ fish:17, schoolFish:33, eel:16, crab:3, lobster:3, mantis:2, manta:2, stingray:2, shark:2, whaleShark:2, mola:1, orca:1.5, spermWhale:0.5, seal:2, starfish:3, dolphin:3, turtle:2, jellyfish:3, sandEel:2 });
+// Approximate occupied body-volume ratios at default size settings, relative to one
+// regular fish. These are renderer-derived geometric proxies, not measured animal volumes.
+// They include each renderer's dominant body form and its model-scale multiplier;
+// appendages and articulated pose are excluded where their thickness is undefined.
+export const SCHOOLING_SPECIES_VOLUME = Object.freeze({
+  fish: 1, schoolFish: 0.015625, eel: 1.35, crab: 0.38, lobster: 0.32,
+  mantis: 0.30, manta: 6.5, stingray: 3.2, shark: 5.8, whaleShark: 21,
+  mola: 4.4, orca: 24, spermWhale: 70, seal: 2.2, starfish: 0.08,
+  dolphin: 2.9, turtle: 1.4, jellyfish: 0.55, sandEel: 0.38
+});
+// Equal expected occupied volume per species: prevalence is inversely proportional
+// to the estimated per-individual model volume.
+const inverseVolumeTotal = Object.values(SCHOOLING_SPECIES_VOLUME).reduce((sum, volume) => sum + 1 / volume, 0);
+export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze(Object.fromEntries(
+  Object.entries(SCHOOLING_SPECIES_VOLUME).map(([species, volume]) => [species, (1 / volume) / inverseVolumeTotal * 100])
+));
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
@@ -203,7 +218,14 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
   const speciesOrder = Array.from({ length: size }, (_, id) => id);
   for (let i = size - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [speciesOrder[i], speciesOrder[j]] = [speciesOrder[j], speciesOrder[i]]; }
   const speciesById = new Array(size);
-  const allocations = speciesEntries.map(([name, weight]) => { const exact = size * weight / speciesTotal; return { name, count: Math.floor(exact), remainder: exact - Math.floor(exact) }; });
+  // Reserve one representative of every enabled species when the population allows
+  // it; distribute the remaining population by the requested prevalence weights.
+  const reserve = size >= speciesEntries.length ? 1 : 0;
+  const distributable = size - reserve * speciesEntries.length;
+  const allocations = speciesEntries.map(([name, weight]) => {
+    const exact = distributable * weight / speciesTotal;
+    return { name, count: reserve + Math.floor(exact), remainder: exact - Math.floor(exact) };
+  });
   let remaining = size - allocations.reduce((sum, entry) => sum + entry.count, 0);
   for (const entry of [...allocations].sort((a, b) => b.remainder - a.remainder).slice(0, remaining)) entry.count++;
   let speciesCursor = 0;
