@@ -338,7 +338,7 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
 test('species mix targets regular and dedicated schooling fish, eels, rays, sharks, reef fauna and new turtle species', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.17], ['schoolFish', 0.36], ['eel', 0.17], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['mola', 0.01], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
+  for (const [species, target] of [['fish', 0.17], ['schoolFish', 0.33], ['eel', 0.16], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['mola', 0.01], ['orca', 0.015], ['spermWhale', 0.005], ['seal', 0.02], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
