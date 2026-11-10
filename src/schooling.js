@@ -695,10 +695,19 @@ export function stepSchool(school, dt) {
   const survivors = school.fish;
   const collisionGrid = buildGrid(survivors);
   const collisions = resolveCollisions(survivors, collisionGrid);
-  for (const agent of survivors) if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish') {
-    agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
-    agent.v.y = 0;
-    if (agent.species === 'starfish') agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.08);
+  for (const agent of survivors) {
+    if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish') {
+      agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
+      agent.v.y = 0;
+      if (agent.species === 'starfish') agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.08);
+    } else if (agent.species === 'sandEel') {
+      agent.p.y = Math.max(agent.p.y, seabedHeight(agent.p.x, agent.p.z) + .02);
+      agent.v.y = 0;
+    } else if (agent.species === 'stingray') {
+      agent.p.y = -7.92;
+      agent.v.y = 0;
+      agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.82);
+    }
   }
   school.time += step;
   school.metrics = {
