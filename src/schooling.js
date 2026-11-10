@@ -22,6 +22,8 @@ export const SCHOOLING_LOBSTER_COLLISION = Object.freeze({ halfLength: 0.34, rad
 export const SCHOOLING_MANTIS_COLLISION = Object.freeze({ halfLength: 0.27, radius: 0.085 });
 export const SCHOOLING_MANTA_COLLISION = Object.freeze({ halfLength: 0.82, radius: 0.2 });
 export const SCHOOLING_STINGRAY_COLLISION = Object.freeze({ halfLength: 0.68, radius: 0.22 });
+export const SCHOOLING_SHARK_COLLISION = Object.freeze({ halfLength: 1.02, radius: 0.25 });
+export const SCHOOLING_WHALE_SHARK_COLLISION = Object.freeze({ halfLength: 1.34, radius: 0.38 });
 export const CRAB_SHELTERS = Object.freeze([
   Object.freeze({ x: -25, z: -8 }), Object.freeze({ x: -4, z: -3 }),
   Object.freeze({ x: 19, z: -10 }), Object.freeze({ x: 32, z: 2 }),
@@ -104,6 +106,8 @@ function collisionSegment(agent) {
     : agent.species === 'mantis' ? SCHOOLING_MANTIS_COLLISION.halfLength
     : agent.species === 'manta' ? SCHOOLING_MANTA_COLLISION.halfLength
     : agent.species === 'stingray' ? SCHOOLING_STINGRAY_COLLISION.halfLength
+    : agent.species === 'shark' ? SCHOOLING_SHARK_COLLISION.halfLength
+    : agent.species === 'whaleShark' ? SCHOOLING_WHALE_SHARK_COLLISION.halfLength
     : SCHOOLING_COLLISION.halfLength;
   const scale = agent.bodyScale ?? 1;
   const scaledHalf = half * scale * (agent.species === 'eel' ? (agent.eelLengthScale ?? 1) : 1);
@@ -127,6 +131,8 @@ function resolveCollisions(fish, grid) {
         : species === 'mantis' ? SCHOOLING_MANTIS_COLLISION.radius
         : species === 'manta' ? SCHOOLING_MANTA_COLLISION.radius
         : species === 'stingray' ? SCHOOLING_STINGRAY_COLLISION.radius
+        : species === 'shark' ? SCHOOLING_SHARK_COLLISION.radius
+        : species === 'whaleShark' ? SCHOOLING_WHALE_SHARK_COLLISION.radius
         : SCHOOLING_COLLISION.radius;
       const radiusScale = agent => agent.bodyScale ?? 1;
       const contactDistance = radiusFor(a.species) * radiusScale(a) + radiusFor(b.species) * radiusScale(b);
@@ -167,13 +173,15 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.73 ? 'fish' : speciesRoll < 0.88 ? 'eel' : speciesRoll < 0.91 ? 'crab' : speciesRoll < 0.94 ? 'lobster' : speciesRoll < 0.96 ? 'mantis' : speciesRoll < 0.98 ? 'manta' : 'stingray';
+    const species = speciesRoll < 0.69 ? 'fish' : speciesRoll < 0.84 ? 'eel' : speciesRoll < 0.87 ? 'crab' : speciesRoll < 0.90 ? 'lobster' : speciesRoll < 0.92 ? 'mantis' : speciesRoll < 0.94 ? 'manta' : speciesRoll < 0.96 ? 'stingray' : speciesRoll < 0.98 ? 'shark' : 'whaleShark';
     if (species === 'eel') direction.y *= 0.28;
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
       : species === 'mantis' ? 0.72 + random() * 0.18
       : species === 'manta' ? 1.55 + random() * 0.35
       : species === 'stingray' ? 0.98 + random() * 0.28
+      : species === 'shark' ? 1.62 + random() * 0.3
+      : species === 'whaleShark' ? 2.45 + random() * 0.55
       : 0.78 + random() * 0.34;
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : 0;
@@ -191,7 +199,9 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       eelLengthScale,
       schoolAffinity,
       feedingCooldown: 0,
-      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'stingray' ? -7.92 + random() * 0.12 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
+      filterFeedPhase: random() * Math.PI * 2,
+      planktonFiltered: 0,
+      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'stingray' ? -7.92 + random() * 0.12 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : species === 'whaleShark' ? -1.2 + random() * 2.4 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
       wingPhase: random() * Math.PI * 2,
       v: grounded ? groundVelocity : { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: heading,
@@ -233,6 +243,13 @@ export function stepSchool(school, dt) {
       const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= NEIGHBOUR_RADIUS * NEIGHBOUR_RADIUS) continue;
       const d = Math.sqrt(d2);
+      if (self.species === 'shark' && other.species === 'fish' && d < preyDistance) {
+        preyTarget = other; preyDistance = d;
+      }
+      if (self.species === 'fish' && other.species === 'shark' && d < 3.3) {
+        const flee = (3.3 - d) / 3.3 / Math.max(d, 0.3);
+        fleeX -= dx * flee * 1.6; fleeY -= dy * flee * 1.6; fleeZ -= dz * flee * 1.6;
+      }
       if (self.species === 'fish' && other.species === 'fish') {
         neighbours++;
         const similarity = 1 / (1 + Math.abs((self.bodyScale ?? 1) - (other.bodyScale ?? 1)) * 2.4);
@@ -276,6 +293,14 @@ export function stepSchool(school, dt) {
         self.preyId = preyTarget.id;
       } else self.preyId = null;
       self.feedingCooldown = Math.max(0, (self.feedingCooldown ?? 0) - step);
+    } else if (self.species === 'shark') {
+      if (preyTarget && (self.feedingCooldown ?? 0) <= 0) {
+        const chase = normalize(subtract(preyTarget.p, self.p));
+        const gain = clamp(1.25 - preyDistance * 0.1, 0.38, 1.05);
+        ax += chase.x * gain; ay += chase.y * gain; az += chase.z * gain;
+        self.preyId = preyTarget.id;
+      } else self.preyId = null;
+      self.feedingCooldown = Math.max(0, (self.feedingCooldown ?? 0) - step);
     }
 
     const boundary = Math.hypot(self.p.x / SCHOOLING_LIMITS.x, self.p.y / SCHOOLING_LIMITS.y, self.p.z / SCHOOLING_LIMITS.z);
@@ -305,6 +330,26 @@ export function stepSchool(school, dt) {
   let speedTotal = 0;
   for (let i = 0; i < fish.length; i++) {
     const agent = fish[i], acceleration = accelerations[i];
+    if (agent.species === 'whaleShark') {
+      // Whale sharks cruise slowly through midwater, filtering the plankton-rich flow.
+      const desiredSpeed = 0.72 + 0.045 * Math.sin(school.time * 0.09 + agent.phase);
+      const currentSpeed = length(agent.v);
+      const direction = currentSpeed > 0.08 ? normalize(agent.v) : agent.forward;
+      const speedCorrection = clamp((desiredSpeed - currentSpeed) * 0.82, -0.2, 0.24);
+      agent.v.x += (acceleration.x * 0.42 + direction.x * speedCorrection) * step;
+      agent.v.y += (acceleration.y * 0.3 + direction.y * speedCorrection + clamp((Math.sin(school.time * 0.16 + agent.phase) * 0.8 - agent.p.y) * 0.18, -0.12, 0.12)) * step;
+      agent.v.z += (acceleration.z * 0.42 + direction.z * speedCorrection) * step;
+      agent.v = limit(agent.v, 0.92);
+      agent.forward = turnDirection(agent.forward, normalize(agent.v), 0.38 * step);
+      agent.filterFeedPhase += step * 1.25;
+      agent.planktonFiltered += step * (0.7 + 0.3 * Math.max(0, Math.sin(agent.filterFeedPhase)));
+      agent.p.x += agent.v.x * step;
+      agent.p.y += agent.v.y * step;
+      agent.p.z += agent.v.z * step;
+      agent.phase += step * 0.8;
+      speedTotal += length(agent.v);
+      continue;
+    }
     if (agent.species === 'stingray') {
       // Stingrays cruise just above the substrate with slow, continuous pectoral-fin strokes.
       const desiredSpeed = 0.62 + 0.055 * Math.sin(school.time * 0.12 + agent.phase);
@@ -383,14 +428,14 @@ export function stepSchool(school, dt) {
       continue;
     }
     // Gently regulate cruising speed through acceleration, preserving inertia.
-    const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.82 : 1.12) + (agent.species === 'manta' ? 0.055 : 0.12) * Math.sin(school.time * 0.08 + agent.phase);
+    const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.82 : agent.species === 'shark' ? 1.48 : 1.12) + (agent.species === 'manta' ? 0.055 : 0.12) * Math.sin(school.time * 0.08 + agent.phase);
     const direction = currentSpeed > 0.12 ? normalize(agent.v) : agent.forward;
     const speedCorrection = clamp((desiredSpeed - currentSpeed) * 1.05, -0.35, 0.48);
     agent.v.x += (acceleration.x + direction.x * speedCorrection) * step;
     agent.v.y += (acceleration.y + direction.y * speedCorrection) * step;
     agent.v.z += (acceleration.z + direction.z * speedCorrection) * step;
-    agent.v = limit(agent.v, agent.species === 'eel' ? 1.65 : agent.species === 'manta' ? 1.25 : MAX_SPEED);
-    agent.forward = turnDirection(agent.forward, normalize(agent.v), (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.62 : MAX_HEADING_RATE) * step);
+    agent.v = limit(agent.v, agent.species === 'eel' ? 1.65 : agent.species === 'manta' ? 1.25 : agent.species === 'shark' ? 2.55 : MAX_SPEED);
+    agent.forward = turnDirection(agent.forward, normalize(agent.v), (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.62 : agent.species === 'shark' ? 1.08 : MAX_HEADING_RATE) * step);
     if (agent.species === 'manta') agent.wingPhase += step * 2.15;
     agent.p.x += agent.v.x * step;
     agent.p.y += agent.v.y * step;
@@ -403,16 +448,16 @@ export function stepSchool(school, dt) {
   const eaten = new Set();
   for (let i = 0; i < fish.length; i++) {
     const predator = fish[i];
-    if (predator.species !== 'fish' || predator.bodyScale < 1.08 || predator.feedingCooldown > 0) continue;
+    if (!((predator.species === 'fish' && predator.bodyScale >= 1.08) || predator.species === 'shark') || predator.feedingCooldown > 0) continue;
     for (const j of nearbyIndices(predationGrid, cellOf(predator.p))) {
       if (j === i || eaten.has(j)) continue;
       const prey = fish[j];
-      if (prey.species !== 'fish' || prey.bodyScale >= predator.bodyScale * 0.68) continue;
+      if (prey.species !== 'fish' || (predator.species === 'fish' && prey.bodyScale >= predator.bodyScale * 0.68)) continue;
       const d = length(subtract(prey.p, predator.p));
       if (d < 0.36 + prey.bodyScale * 0.045) {
         eaten.add(j);
         predator.feedingCooldown = 3.5;
-        predator.bodyScale = Math.min(1.55, predator.bodyScale + 0.035);
+        if (predator.species === 'fish') predator.bodyScale = Math.min(1.55, predator.bodyScale + 0.035);
         break;
       }
     }
