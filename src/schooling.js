@@ -158,7 +158,8 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.68 ? 'fish' : speciesRoll < 0.83 ? 'eel' : speciesRoll < 0.841 ? 'crab' : 'lobster';\n    if (species === 'eel') direction.y *= 0.28;
+    const species = speciesRoll < 0.68 ? 'fish' : speciesRoll < 0.83 ? 'eel' : speciesRoll < 0.841 ? 'crab' : 'lobster';
+    if (species === 'eel') direction.y *= 0.28;
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
       : 0.78 + random() * 0.34;
@@ -274,7 +275,11 @@ export function stepSchool(school, dt) {
     // Slow, individual heading drift replaces high-frequency random steering.
     if (self.species !== 'crab' && self.species !== 'lobster') {
       const wanderGain = self.species === 'eel' ? 0.052 : 0.035;
-      if (self.species === 'eel') {\n        const bottomTarget = -6.75;\n        ay += clamp((bottomTarget - self.p.y) * 0.3 - self.v.y * 1.15, -0.82, 0.82);\n      }\n      ax += Math.sin(school.time * 0.13 + self.phase) * wanderGain;
+      if (self.species === 'eel') {
+        const bottomTarget = -6.75;
+        ay += clamp((bottomTarget - self.p.y) * 0.3 - self.v.y * 1.15, -0.82, 0.82);
+      }
+      ax += Math.sin(school.time * 0.13 + self.phase) * wanderGain;
       ay += Math.sin(school.time * 0.09 + self.phase * 1.7) * wanderGain * 0.52;
       az += Math.cos(school.time * 0.11 + self.phase * 0.83) * wanderGain;
     }
