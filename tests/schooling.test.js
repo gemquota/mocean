@@ -302,7 +302,7 @@ test('1000-fish school remains finite with spatially bounded neighbour work', ()
 
 
 test('moray eels settle near the seabed and maintain a near-horizontal swimming path', () => {
-  const school = createSchool(500, 73421);
+  const school = createSchool(500, 73421, { speciesPercentages: { eel: 1 } });
   const eels = school.fish.filter(agent => agent.species === 'eel');
   const initialMeanY = eels.reduce((sum, eel) => sum + eel.p.y, 0) / eels.length;
   for (let i = 0; i < 900; i++) stepSchool(school, 1 / 60);
