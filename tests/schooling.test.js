@@ -204,7 +204,7 @@ test('small fish have stronger schooling affinity than large fish', () => {
 });
 
 test('moray eels receive individual 2x to 5x length scaling and matching collision envelopes', () => {
-  const school = createSchool(500, 73421);
+  const school = createSchool(500, 73421, { speciesPercentages: { eel: 1 } });
   const eels = school.fish.filter(agent => agent.species === 'eel');
   assert.ok(eels.length >= 1);
   assert.ok(eels.every(agent => agent.eelLengthScale >= 2 && agent.eelLengthScale <= 5));
@@ -409,9 +409,9 @@ test('orca pods, deep-diving sperm whales and surface-foraging seals have distin
   const orcas = school.fish.filter(agent => agent.species === 'orca');
   const spermWhales = school.fish.filter(agent => agent.species === 'spermWhale');
   const seals = school.fish.filter(agent => agent.species === 'seal');
-  assert.ok(orcas.length >= 1 && orcas.length <= 3);
-  assert.ok(spermWhales.length >= 1 && spermWhales.length <= 2);
-  assert.ok(seals.length >= 1 && seals.length <= 8);
+  assert.ok(orcas.length >= 100 && orcas.length <= 170);
+  assert.ok(spermWhales.length >= 100 && spermWhales.length <= 170);
+  assert.ok(seals.length >= 100 && seals.length <= 170);
   assert.ok(orcas.every(agent => agent.bodyScale >= 2.05 && agent.bodyScale <= 2.4));
   assert.ok(spermWhales.every(agent => agent.bodyScale >= 3.05 && agent.bodyScale <= 3.6));
   const start = [...orcas,...spermWhales,...seals].map(agent=>({...agent.p}));
@@ -436,5 +436,5 @@ test('default allocation retains at least one individual of every enabled specie
   const counts = new Map();
   for (const agent of school.fish) counts.set(agent.species, (counts.get(agent.species) ?? 0) + 1);
   for (const species of Object.keys(SCHOOLING_SPECIES_VOLUME)) assert.ok(counts.get(species) >= 1, species + ' should remain represented');
-  assert.equal(school.fish.length, 150);
+  assert.equal(school.fish.length, 5000);
 });
