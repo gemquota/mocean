@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createGait, stepGait } from '../src/core/body.js';
 import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
 
 test('mixed-species habitat creates 150 independent agents by default', () => {
@@ -97,7 +98,7 @@ test('four species have distinct collision envelopes and crustaceans spawn on th
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
   for (const species of ['crab','lobster']) {
     const ground = school.fish.filter(agent => agent.species === species);
-    assert.ok(ground.length >= (species === 'crab' ? 1 : 10), `${species} should be represented in the seeded population`);
+    assert.ok(ground.length >= (species === 'crab' ? 0 : 10), `${species} population should remain valid`);
     assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   }
 });
@@ -243,4 +244,23 @@ test('exposed crabs scuttle sideways relative to their shell heading', () => {
   const forwardSpeed = crab.v.x * crab.forward.x + crab.v.z * crab.forward.z;
   const lateralSpeed = crab.v.x * -crab.forward.z + crab.v.z * crab.forward.x;
   assert.ok(Math.abs(forwardSpeed) < Math.abs(lateralSpeed) * 0.45, 'crab velocity should be predominantly sideways');
+});
+
+
+test('moray gait produces a broad, pronounced travelling lateral wave', () => {
+  const gait = createGait();
+  for (let i = 0; i < 900; i++) stepGait(gait, 'MORAY', 0.8, 0, 1 / 60);
+  const offsets = gait.spine.map(node => node.y);
+  const peak = Math.max(...offsets.map(Math.abs));
+  const activeNodes = offsets.filter(value => Math.abs(value) > 0.08).length;
+  assert.ok(gait.amplitude > 0.4, 'moray muscle recruitment should use a larger stroke');
+  assert.ok(peak > 0.2, 'the body should bend visibly away from its travel axis');
+  assert.ok(activeNodes >= 7, 'the lateral bend should involve much of the trunk');
+});
+
+test('crab share is reduced to roughly one quarter of its previous rate', () => {
+  const school = createSchool(5000, 73421);
+  const crabShare = school.fish.filter(agent => agent.species === 'crab').length / school.fish.length;
+  assert.ok(crabShare < 0.006, 'crabs should make up well under one percent of the population');
+  assert.ok(crabShare > 0.001, 'crabs should remain present but uncommon at large populations');
 });
