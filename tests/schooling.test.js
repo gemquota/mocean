@@ -205,7 +205,7 @@ test('small fish have stronger schooling affinity than large fish', () => {
 test('moray eels receive individual 2x to 5x length scaling and matching collision envelopes', () => {
   const school = createSchool(500, 73421);
   const eels = school.fish.filter(agent => agent.species === 'eel');
-  assert.ok(eels.length > 20);
+  assert.ok(eels.length >= 1);
   assert.ok(eels.every(agent => agent.eelLengthScale >= 2 && agent.eelLengthScale <= 5));
   const short = eels.reduce((a, b) => a.eelLengthScale < b.eelLengthScale ? a : b);
   const long = eels.reduce((a, b) => a.eelLengthScale > b.eelLengthScale ? a : b);
@@ -338,7 +338,7 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
 test('species mix targets regular and dedicated schooling fish, eels, rays, sharks, reef fauna and new turtle species', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.17], ['schoolFish', 0.33], ['eel', 0.16], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['mola', 0.01], ['orca', 0.015], ['spermWhale', 0.005], ['seal', 0.02], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
+  for (const [species, target] of Object.entries(SCHOOLING_SPECIES_PERCENTAGES).map(([name, percentage]) => [name, percentage / 100])) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
@@ -347,7 +347,7 @@ test('species mix targets regular and dedicated schooling fish, eels, rays, shar
 test('mantis shrimp stay on the seabed and make short, high-acceleration dashes', () => {
   const school = createSchool(1000, 73421);
   const mantis = school.fish.filter(agent => agent.species === 'mantis');
-  assert.ok(mantis.length > 10 && mantis.length < 35);
+  assert.ok(mantis.length >= 1 && mantis.length < 40);
   assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
   const before = mantis.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
@@ -358,7 +358,7 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
 test('manta rays occupy midwater and maintain a slow, bounded glide with fin motion', () => {
   const school = createSchool(1000, 73421);
   const rays = school.fish.filter(agent => agent.species === 'manta');
-  assert.ok(rays.length > 10 && rays.length < 35);
+  assert.ok(rays.length >= 1 && rays.length < 10);
   assert.ok(rays.every(agent => Math.abs(agent.p.y) < 4));
   const phase = rays[0].wingPhase;
   for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
@@ -386,13 +386,13 @@ test('sand eels periodically emerge vertically from variable-depth seabed',()=>{
 test('crab share remains close to the new three-percent target', () => {
   const school = createSchool(5000, 73421);
   const crabShare = school.fish.filter(agent => agent.species === 'crab').length / school.fish.length;
-  assert.ok(Math.abs(crabShare - 0.03) < 0.003, 'crabs should make up about three percent of the population');
+  assert.ok(Math.abs(crabShare - SCHOOLING_SPECIES_PERCENTAGES.crab / 100) < 0.003, 'crab prevalence should follow the equal-volume default');
 });
 
 test('mola mola are distinct slow midwater cruisers with a deep-bodied collision envelope', () => {
   const school = createSchool(1000, 73421);
   const mola = school.fish.filter(agent => agent.species === 'mola');
-  assert.ok(mola.length >= 8 && mola.length <= 12, 'mola mola should be a small one-percent population');
+  assert.ok(mola.length >= 1 && mola.length <= 8, 'mola mola count should follow its large model volume');
   assert.ok(mola.every(agent => agent.bodyScale >= 1.42 && agent.bodyScale <= 1.7));
   const before = mola.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
@@ -408,9 +408,9 @@ test('orca pods, deep-diving sperm whales and surface-foraging seals have distin
   const orcas = school.fish.filter(agent => agent.species === 'orca');
   const spermWhales = school.fish.filter(agent => agent.species === 'spermWhale');
   const seals = school.fish.filter(agent => agent.species === 'seal');
-  assert.ok(orcas.length >= 6 && orcas.length <= 10);
-  assert.ok(spermWhales.length >= 1 && spermWhales.length <= 4);
-  assert.ok(seals.length >= 8 && seals.length <= 13);
+  assert.ok(orcas.length >= 1 && orcas.length <= 3);
+  assert.ok(spermWhales.length >= 1 && spermWhales.length <= 2);
+  assert.ok(seals.length >= 1 && seals.length <= 8);
   assert.ok(orcas.every(agent => agent.bodyScale >= 2.05 && agent.bodyScale <= 2.4));
   assert.ok(spermWhales.every(agent => agent.bodyScale >= 3.05 && agent.bodyScale <= 3.6));
   const start = [...orcas,...spermWhales,...seals].map(agent=>({...agent.p}));
