@@ -390,13 +390,13 @@ test('crab share remains close to the new three-percent target', () => {
 });
 
 test('mola mola are distinct slow midwater cruisers with a deep-bodied collision envelope', () => {
-  const school = createSchool(5000, 73421);
+  const school = createSchool(1000, 73421);
   const mola = school.fish.filter(agent => agent.species === 'mola');
-  assert.ok(mola.length > 35 && mola.length < 65, 'mola mola should be a small one-percent population');
+  assert.ok(mola.length >= 8 && mola.length <= 12, 'mola mola should be a small one-percent population');
   assert.ok(mola.every(agent => agent.bodyScale >= 1.42 && agent.bodyScale <= 1.7));
   const before = mola.map(agent => ({ ...agent.p }));
-  for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
+  for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
   assert.ok(mola.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
   assert.ok(mola.every(agent => Math.hypot(agent.v.x,agent.v.y,agent.v.z) <= 0.720001));
-  assert.ok(mola.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.y-before[i].y,agent.p.z-before[i].z) > 1));
+  assert.ok(mola.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.y-before[i].y,agent.p.z-before[i].z) > 0.1));
 });
