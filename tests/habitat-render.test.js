@@ -79,6 +79,13 @@ test('pelagic and benthic additions are represented in controls and renderers', 
   assert.match(src, /tuna: 3\.8/);
 });
 
+test('one creature renderer fault cannot stop the habitat frame or hide every later animal', () => {
+  assert.match(script, /for\(const fish of ordered\)\{[\s\S]*?try \{ drawFish\(fish\); \}[\s\S]*?catch\(error\)/);
+  assert.match(script, /const renderFaults=new Map\(\)/);
+  assert.match(script, /RENDER WARN/);
+  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\)\+' CREATURES · 30 SPECIES/);
+});
+
 test('coral renderer reads from its precomputed colony collection', () => {
   assert.match(script, /function drawCoral\(\)[\s\S]*?const \[x,z,type\]=coralColonies\[index\]/);
   assert.doesNotMatch(script, /const \[x,z,type\]=colonies\[index\]/);
