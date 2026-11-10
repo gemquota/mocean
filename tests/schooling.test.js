@@ -1,31 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGait, stepGait } from '../src/core/body.js';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_SHOAL_COLLISION, SCHOOLING_STARFISH_COLLISION, SCHOOLING_DOLPHIN_COLLISION, SCHOOLING_LIMITS, SCHOOLING_SPECIES_PERCENTAGES, seabedHeight } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_SHOAL_COLLISION, SCHOOLING_STARFISH_COLLISION, SCHOOLING_DOLPHIN_COLLISION, SCHOOLING_LIMITS, SCHOOLING_SPECIES_PERCENTAGES, SCHOOLING_SPECIES_VOLUME, SCHOOLING_SPECIES_ADULT_MASS_KG, SCHOOLING_SPECIES_ECOLOGY, SCHOOLING_SPECIES_BALANCE, seabedHeight } from '../src/schooling.js';
 
 test('mixed-species habitat creates 150 independent agents by default', () => {
   const school = createSchool();
+  const sizeSample = createSchool(5000, 73421).fish;
   assert.equal(school.fish.length, SCHOOLING_DEFAULT_COUNT);
   assert.equal(school.fish.length, 150);
   assert.ok(school.fish.every(f => f.p !== f.v && Number.isFinite(f.phase)));
   assert.ok(school.fish.some(f => f.species === 'eel'));
   assert.ok(school.fish.some(f => f.species === 'fish'));
-  const sizedFish = school.fish.filter(f => f.species === 'fish');
+  const sizedFish = sizeSample.filter(f => f.species === 'fish');
   assert.ok(sizedFish.every(f => f.bodyScale >= 0.58 && f.bodyScale <= 1.5));
   assert.ok(new Set(sizedFish.map(f => f.bodyScale)).size > 20, 'fish should have a continuous range of body sizes');
   assert.ok(school.fish.filter(f => f.species === 'crab').length <= 10, 'crabs should remain a small part of the habitat');
-  assert.ok(school.fish.some(f => f.species === 'mantis'), 'mantis shrimp should be present');
-  assert.ok(school.fish.some(f => f.species === 'manta'), 'manta rays should be present');
-  assert.ok(school.fish.some(f => f.species === 'stingray'), 'stingrays should be present');
-  assert.ok(school.fish.some(f => f.species === 'shark'), 'sharks should be present');
-  assert.ok(school.fish.some(f => f.species === 'whaleShark'), 'whale sharks should be present');
-  assert.ok(school.fish.some(f => f.species === 'schoolFish'), 'dedicated schooling fish should be present');
-  assert.ok(school.fish.some(f => f.species === 'starfish'), 'starfish should be present');
-  assert.ok(school.fish.some(f => f.species === 'dolphin'), 'dolphins should be present');
-  assert.ok(school.fish.some(f => f.species === 'turtle'), 'turtles should be present');
-  assert.ok(school.fish.some(f => f.species === 'jellyfish'), 'jellyfish should be present');
-  assert.ok(school.fish.some(f => f.species === 'sandEel'), 'sand eels should be present');
-  assert.ok(school.fish.some(f => f.species === 'lobster'));
+  assert.ok(sizeSample.some(f => f.species === 'mantis'), 'mantis shrimp should be present');
+  assert.ok(sizeSample.some(f => f.species === 'manta'), 'manta rays should be present');
+  assert.ok(sizeSample.some(f => f.species === 'stingray'), 'stingrays should be present');
+  assert.ok(sizeSample.some(f => f.species === 'shark'), 'sharks should be present');
+  assert.ok(sizeSample.some(f => f.species === 'whaleShark'), 'whale sharks should be present');
+  assert.ok(sizeSample.some(f => f.species === 'schoolFish'), 'dedicated schooling fish should be present');
+  assert.ok(sizeSample.some(f => f.species === 'starfish'), 'starfish should be present');
+  assert.ok(sizeSample.some(f => f.species === 'dolphin'), 'dolphins should be present');
+  assert.ok(sizeSample.some(f => f.species === 'turtle'), 'turtles should be present');
+  assert.ok(sizeSample.some(f => f.species === 'jellyfish'), 'jellyfish should be present');
+  assert.ok(sizeSample.some(f => f.species === 'sandEel'), 'sand eels should be present');
+  assert.ok(sizeSample.some(f => f.species === 'lobster'));
   const eels=school.fish.filter(f => f.species === 'eel');
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
   assert.ok(eels.every(f => f.bodyScale >= 1.28 && f.bodyScale <= 1.5), 'eels should be visibly larger than standard fish');
@@ -118,7 +119,7 @@ test('fifteen species have distinct collision envelopes and benthic species spaw
   assert.ok(SCHOOLING_DOLPHIN_COLLISION.halfLength > SCHOOLING_STINGRAY_COLLISION.halfLength);
   const school = createSchool(150, 73421);
   const eels = school.fish.filter(agent => agent.species === 'eel');
-  assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
+  assert.ok(eels.length >= 1 && eels.length <= 5, 'equal-volume prevalence should keep larger eels uncommon but represented');
   for (const species of ['crab','lobster','mantis','starfish','sandEel']) {
     const ground = school.fish.filter(agent => agent.species === species);
     assert.ok(ground.every(agent => Math.abs(agent.p.y - seabedHeight(agent.p.x,agent.p.z) - .06)<1e-8 && agent.v.y === 0));
@@ -171,7 +172,7 @@ test('sharks pursue and consume small fish while whale sharks remain filter-feed
 
 test('dedicated schooling fish are one quarter scale and form persistent, separate schools', () => {
   const school=createSchool(500,73421), regular=school.fish.filter(f=>f.species==='fish'), shoal=school.fish.filter(f=>f.species==='schoolFish');
-  assert.ok(shoal.length > regular.length * 1.8 && shoal.length < regular.length * 2.2, 'dedicated schooling fish should be about twice as numerous');
+  assert.ok(shoal.length > regular.length * 5, 'quarter-scale shoaling fish should be much more numerous under the blended prevalence');
   assert.ok(shoal.every(f=>f.bodyScale>=0.145 && f.bodyScale<=0.375));
   assert.ok(shoal.every(f=>f.schoolAffinity>=2.4));
   assert.ok(new Set(shoal.map(f=>f.socialGroupId)).size>=5);
@@ -187,7 +188,7 @@ test('dedicated schooling fish are one quarter scale and form persistent, separa
 test('starfish remain benthic and dolphins travel in social pods', () => {
   const school=createSchool(1000,73421),stars=school.fish.filter(f=>f.species==='starfish'),dolphins=school.fish.filter(f=>f.species==='dolphin');
   assert.ok(stars.length>20 && stars.every(f=>Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8));
-  assert.ok(dolphins.length>20 && dolphins.every(f=>f.socialGroupId>=0));
+  assert.ok(dolphins.length>=1 && dolphins.every(f=>f.socialGroupId>=0));
   const before=dolphins.map(f=>({...f.p}));for(let i=0;i<240;i++)stepSchool(school,1/60);
   assert.ok(stars.every(f=>Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8 && Math.hypot(f.v.x,f.v.z)<=.080001));
   assert.ok(dolphins.every(f=>Math.hypot(f.v.x,f.v.y,f.v.z)<=2.21));
@@ -195,7 +196,7 @@ test('starfish remain benthic and dolphins travel in social pods', () => {
 });
 
 test('small fish have stronger schooling affinity than large fish', () => {
-  const school=createSchool(150,73421), fish=school.fish.filter(f=>f.species==='fish');
+  const school=createSchool(5000,73421), fish=school.fish.filter(f=>f.species==='fish');
   const small=fish.filter(f=>f.bodyScale<0.8), large=fish.filter(f=>f.bodyScale>1.3);
   assert.ok(small.length>0 && large.length>0);
   assert.ok(small.every(f=>f.schoolAffinity>0.9));
@@ -203,9 +204,9 @@ test('small fish have stronger schooling affinity than large fish', () => {
 });
 
 test('moray eels receive individual 2x to 5x length scaling and matching collision envelopes', () => {
-  const school = createSchool(500, 73421);
+  const school = createSchool(500, 73421, { speciesPercentages: { eel: 1 } });
   const eels = school.fish.filter(agent => agent.species === 'eel');
-  assert.ok(eels.length > 20);
+  assert.ok(eels.length >= 1);
   assert.ok(eels.every(agent => agent.eelLengthScale >= 2 && agent.eelLengthScale <= 5));
   const short = eels.reduce((a, b) => a.eelLengthScale < b.eelLengthScale ? a : b);
   const long = eels.reduce((a, b) => a.eelLengthScale > b.eelLengthScale ? a : b);
@@ -289,7 +290,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
 });
 
 test('1000-fish school remains finite with spatially bounded neighbour work', () => {
-  const school = createSchool(1000, 1001);
+  const school = createSchool(1000, 1001, { speciesPercentages: { fish: 1 } });
   let metrics;
   for (let i = 0; i < 120; i++) metrics = stepSchool(school, 1 / 60);
   assert.ok(school.fish.every(f =>
@@ -301,7 +302,7 @@ test('1000-fish school remains finite with spatially bounded neighbour work', ()
 
 
 test('moray eels settle near the seabed and maintain a near-horizontal swimming path', () => {
-  const school = createSchool(500, 73421);
+  const school = createSchool(500, 73421, { speciesPercentages: { eel: 1 } });
   const eels = school.fish.filter(agent => agent.species === 'eel');
   const initialMeanY = eels.reduce((sum, eel) => sum + eel.p.y, 0) / eels.length;
   for (let i = 0; i < 900; i++) stepSchool(school, 1 / 60);
@@ -338,16 +339,16 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
 test('species mix targets regular and dedicated schooling fish, eels, rays, sharks, reef fauna and new turtle species', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.17], ['schoolFish', 0.33], ['eel', 0.16], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['mola', 0.01], ['orca', 0.015], ['spermWhale', 0.005], ['seal', 0.02], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
+  for (const [species, target] of Object.entries(SCHOOLING_SPECIES_PERCENTAGES).map(([name, percentage]) => [name, percentage / 100])) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
 
 
 test('mantis shrimp stay on the seabed and make short, high-acceleration dashes', () => {
-  const school = createSchool(1000, 73421);
+  const school = createSchool(1000, 73421, { speciesPercentages: { mantis: 100 } });
   const mantis = school.fish.filter(agent => agent.species === 'mantis');
-  assert.ok(mantis.length > 10 && mantis.length < 35);
+  assert.ok(mantis.length >= 1 && mantis.length < 40);
   assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
   const before = mantis.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
@@ -358,7 +359,7 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
 test('manta rays occupy midwater and maintain a slow, bounded glide with fin motion', () => {
   const school = createSchool(1000, 73421);
   const rays = school.fish.filter(agent => agent.species === 'manta');
-  assert.ok(rays.length > 10 && rays.length < 35);
+  assert.ok(rays.length >= 1 && rays.length < 10);
   assert.ok(rays.every(agent => Math.abs(agent.p.y) < 4));
   const phase = rays[0].wingPhase;
   for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
@@ -367,9 +368,9 @@ test('manta rays occupy midwater and maintain a slow, bounded glide with fin mot
 });
 
 test('stingrays glide just above the seabed with slow fin strokes', () => {
-  const school = createSchool(1000, 73421);
+  const school = createSchool(1000, 73421, { speciesPercentages: { stingray: 100 } });
   const rays = school.fish.filter(agent => agent.species === 'stingray');
-  assert.ok(rays.length > 10 && rays.length < 35);
+  assert.ok(rays.length >= 1 && rays.length < 10);
   assert.ok(rays.every(agent => agent.p.y > -8.05 && agent.p.y < -7.75));
   const phase = rays[0].wingPhase;
   const before = { ...rays[0].p };
@@ -379,20 +380,20 @@ test('stingrays glide just above the seabed with slow fin strokes', () => {
   assert.ok(rays.every(agent => agent.p.y === -7.92 && Math.hypot(agent.v.x,agent.v.z) <= 0.83));
 });
 
-test('species proportions and world dimensions can be configured at creation',()=>{const mix={fish:50,eel:50};const habitat=createSchool(200,22,{speciesPercentages:mix,worldSize:{x:62,y:21,z:48}});assert.ok(habitat.fish.every(f=>f.species==='fish'||f.species==='eel'));assert.deepEqual(habitat.worldSize,{x:62,y:21,z:48});assert.deepEqual(habitat.speciesPercentages,mix);assert.equal(Object.values(SCHOOLING_SPECIES_PERCENTAGES).reduce((a,b)=>a+b,0),100);});
+test('species proportions and world dimensions can be configured at creation',()=>{const mix={fish:50,eel:50};const habitat=createSchool(200,22,{speciesPercentages:mix,worldSize:{x:62,y:21,z:48}});assert.ok(habitat.fish.every(f=>f.species==='fish'||f.species==='eel'));assert.deepEqual(habitat.worldSize,{x:62,y:21,z:48});assert.deepEqual(habitat.speciesPercentages,mix);assert.ok(Math.abs(Object.values(SCHOOLING_SPECIES_PERCENTAGES).reduce((a,b)=>a+b,0)-100)<1e-9);});
 test('sea turtles pursue jellyfish as prey while jellyfish drift independently',()=>{const habitat=createSchool(2,19,{speciesPercentages:{turtle:1,jellyfish:1}}),[turtle,jelly]=habitat.fish;turtle.species='turtle';turtle.p={x:0,y:0,z:0};turtle.v={x:.5,y:0,z:0};turtle.forward={x:1,y:0,z:0};turtle.feedingCooldown=0;jelly.species='jellyfish';jelly.p={x:.2,y:0,z:0};jelly.v={x:0,y:0,z:0};stepSchool(habitat,1/60);assert.equal(habitat.fish.length,1);assert.equal(habitat.metrics.eaten,1);});
-test('sand eels periodically emerge vertically from variable-depth seabed',()=>{const habitat=createSchool(1000,73421),eels=habitat.fish.filter(f=>f.species==='sandEel');assert.ok(eels.length>10);const initial=eels.map(f=>f.p.y);for(let i=0;i<900;i++)stepSchool(habitat,1/60);assert.ok(eels.some((f,i)=>f.p.y>initial[i]+.4));assert.ok(eels.every(f=>Number.isFinite(f.p.y)&&f.p.y>=seabedHeight(f.p.x,f.p.z)));assert.ok(eels.some(f=>f.planktonFiltered>0),'emerged sand eels should register filter-feeding activity');});
+test('sand eels periodically emerge vertically from variable-depth seabed',()=>{const habitat=createSchool(1000,73421,{speciesPercentages:{sandEel:100}}),eels=habitat.fish.filter(f=>f.species==='sandEel');assert.ok(eels.length>10);const initial=eels.map(f=>f.p.y);for(let i=0;i<900;i++)stepSchool(habitat,1/60);assert.ok(eels.some((f,i)=>f.p.y>initial[i]+.4));assert.ok(eels.every(f=>Number.isFinite(f.p.y)&&f.p.y>=seabedHeight(f.p.x,f.p.z)));assert.ok(eels.some(f=>f.planktonFiltered>0),'emerged sand eels should register filter-feeding activity');});
 
 test('crab share remains close to the new three-percent target', () => {
   const school = createSchool(5000, 73421);
   const crabShare = school.fish.filter(agent => agent.species === 'crab').length / school.fish.length;
-  assert.ok(Math.abs(crabShare - 0.03) < 0.003, 'crabs should make up about three percent of the population');
+  assert.ok(Math.abs(crabShare - SCHOOLING_SPECIES_PERCENTAGES.crab / 100) < 0.003, 'crab prevalence should follow the equal-volume default');
 });
 
 test('mola mola are distinct slow midwater cruisers with a deep-bodied collision envelope', () => {
   const school = createSchool(1000, 73421);
   const mola = school.fish.filter(agent => agent.species === 'mola');
-  assert.ok(mola.length >= 8 && mola.length <= 12, 'mola mola should be a small one-percent population');
+  assert.ok(mola.length >= 1 && mola.length <= 5, 'mola mola count should follow its large model volume');
   assert.ok(mola.every(agent => agent.bodyScale >= 1.42 && agent.bodyScale <= 1.7));
   const before = mola.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
@@ -404,13 +405,13 @@ test('mola mola are distinct slow midwater cruisers with a deep-bodied collision
 });
 
 test('orca pods, deep-diving sperm whales and surface-foraging seals have distinct stable movement', () => {
-  const school = createSchool(500, 82317);
+  const school = createSchool(500, 82317, { speciesPercentages: { orca: 1, spermWhale: 1, seal: 1 } });
   const orcas = school.fish.filter(agent => agent.species === 'orca');
   const spermWhales = school.fish.filter(agent => agent.species === 'spermWhale');
   const seals = school.fish.filter(agent => agent.species === 'seal');
-  assert.ok(orcas.length >= 6 && orcas.length <= 10);
-  assert.ok(spermWhales.length >= 1 && spermWhales.length <= 4);
-  assert.ok(seals.length >= 8 && seals.length <= 13);
+  assert.ok(orcas.length >= 100 && orcas.length <= 170);
+  assert.ok(spermWhales.length >= 100 && spermWhales.length <= 170);
+  assert.ok(seals.length >= 100 && seals.length <= 170);
   assert.ok(orcas.every(agent => agent.bodyScale >= 2.05 && agent.bodyScale <= 2.4));
   assert.ok(spermWhales.every(agent => agent.bodyScale >= 3.05 && agent.bodyScale <= 3.6));
   const start = [...orcas,...spermWhales,...seals].map(agent=>({...agent.p}));
@@ -419,4 +420,28 @@ test('orca pods, deep-diving sperm whales and surface-foraging seals have distin
     assert.ok([agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite));
     assert.ok(Math.hypot(agent.p.x-start[index].x,agent.p.y-start[index].y,agent.p.z-start[index].z)>.1);
   }
+});
+
+
+
+test('default allocation retains at least one individual of every enabled species', () => {
+  const school = createSchool(150, 73421);
+  const counts = new Map();
+  for (const agent of school.fish) counts.set(agent.species, (counts.get(agent.species) ?? 0) + 1);
+  for (const species of Object.keys(SCHOOLING_SPECIES_VOLUME)) assert.ok(counts.get(species) >= 1, species + ' should remain represented');
+  assert.equal(school.fish.length, 150);
+});
+
+test('species prevalence blends model volume, adult mass and ecological prevalence equally', () => {
+  const species = Object.keys(SCHOOLING_SPECIES_VOLUME);
+  assert.equal(species.length, 19);
+  for (const key of species) {
+    assert.ok(SCHOOLING_SPECIES_ADULT_MASS_KG[key] > 0);
+    assert.ok(SCHOOLING_SPECIES_ECOLOGY[key] > 0);
+    assert.ok(SCHOOLING_SPECIES_BALANCE[key] > 0);
+  }
+  const expected = species.map(key => 1 / SCHOOLING_SPECIES_BALANCE[key]);
+  const total = expected.reduce((sum, value) => sum + value, 0);
+  for (const key of species) assert.ok(Math.abs(SCHOOLING_SPECIES_PERCENTAGES[key] - expected[species.indexOf(key)] / total * 100) < 1e-10);
+  assert.ok(Math.abs(Object.values(SCHOOLING_SPECIES_PERCENTAGES).reduce((sum, value) => sum + value, 0) - 100) < 1e-9);
 });
