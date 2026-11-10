@@ -167,7 +167,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.74 ? 'fish' : speciesRoll < 0.89 ? 'eel' : speciesRoll < 0.92 ? 'crab' : speciesRoll < 0.95 ? 'lobster' : speciesRoll < 0.96 ? 'mantis' : speciesRoll < 0.98 ? 'manta' : 'stingray';
+    const species = speciesRoll < 0.73 ? 'fish' : speciesRoll < 0.88 ? 'eel' : speciesRoll < 0.91 ? 'crab' : speciesRoll < 0.94 ? 'lobster' : speciesRoll < 0.96 ? 'mantis' : speciesRoll < 0.98 ? 'manta' : 'stingray';
     if (species === 'eel') direction.y *= 0.28;
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
