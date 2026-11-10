@@ -311,13 +311,23 @@ function drawCoral(){
   if(type===0){
    for(let branch=0;branch<5;branch++){
     const spread=(branch-2)*.16,height=.42+((branch*7+index)%4)*.13;
-    const p0=project(vec3(x,-8.5,z)),p1=project(vec3(x+spread*.5,-8.5+height*.55,z)),p2=project(vec3(x+spread,-8.5+height,z));
+    const p0=project(vec3(x,seabedHeight(x,z)+.08,z)),p1=project(vec3(x+spread*.5,seabedHeight(x,z)+height*.55,z)),p2=project(vec3(x+spread,seabedHeight(x,z)+height,z));
     ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle=['#d58a72','#d5a66d','#b879a0'][index%3];ctx.lineWidth=Math.max(1,base.size*.07);ctx.stroke();
    }
   }else if(type===1){
-   for(let lobe=0;lobe<5;lobe++){const a=lobe/5*TAU,c=project(vec3(x+Math.cos(a)*.22,-8.48+.1*Math.sin(a),z+Math.sin(a)*.22));ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(1,base.size*.14),Math.max(1,base.size*.22),a,0,TAU);ctx.fillStyle=index%2?'#b66d86':'#d28b73';ctx.fill();}
+   for(let lobe=0;lobe<5;lobe++){const a=lobe/5*TAU,c=project(vec3(x+Math.cos(a)*.22,seabedHeight(x,z)+.1*Math.sin(a),z+Math.sin(a)*.22));ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(1,base.size*.14),Math.max(1,base.size*.22),a,0,TAU);ctx.fillStyle=index%2?'#b66d86':'#d28b73';ctx.fill();}
+  }else if(type===2){
+   for(let layer=0;layer<3;layer++){const y=seabedHeight(x,z)+.18+layer*.16,p=project(vec3(x,y,z));ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(2,base.size*(.18+layer*.07)),Math.max(1,base.size*.07),0,0,TAU);ctx.fillStyle=['#d08d7d','#b97e9f','#dcad83'][layer];ctx.fill();}
+  }else if(type===3){
+   for(let fan=0;fan<5;fan++){const a=(fan-2)*.24,p0=project(vec3(x,seabedHeight(x,z)+.08,z)),p1=project(vec3(x+a,seabedHeight(x,z)+.7+fan%2*.18,z));ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.quadraticCurveTo(p0.x+a*base.size*.2,p0.y-base.size*.28,p1.x,p1.y);ctx.strokeStyle='#d17f9e';ctx.lineWidth=Math.max(1,base.size*.035);ctx.stroke();}
+  }else if(type===4){
+   for(let tube=0;tube<5;tube++){const a=tube/5*TAU,p=project(vec3(x+Math.cos(a)*.16,seabedHeight(x,z)+.24,z+Math.sin(a)*.16));ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(1,base.size*.055),Math.max(1,base.size*.11),a,0,TAU);ctx.fillStyle='#d98b68';ctx.fill();ctx.strokeStyle='#8d554b';ctx.stroke();}
+  }else if(type===5){
+   for(let polyp=0;polyp<7;polyp++){const a=polyp/7*TAU,p=project(vec3(x+Math.cos(a)*.2,seabedHeight(x,z)+.2,z+Math.sin(a)*.2));ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,base.size*.09),0,TAU);ctx.fillStyle='#7fb5a0';ctx.fill();}
+  }else if(type===6){
+   for(let branch=0;branch<4;branch++){const a=branch/4*TAU,p=project(vec3(x+Math.cos(a)*.24,seabedHeight(x,z)+.72,z+Math.sin(a)*.24));ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo(base.x+Math.cos(a)*base.size*.12,base.y-base.size*.28,p.x,p.y);ctx.strokeStyle='#d6a45f';ctx.lineWidth=Math.max(1,base.size*.045);ctx.stroke();}
   }else{
-   for(let branch=0;branch<4;branch++){const a=branch/4*TAU,p1=project(vec3(x+Math.cos(a)*.22,seabedHeight(x,z)+.3,z+Math.sin(a)*.22)),p2=project(vec3(x+Math.cos(a)*.36,seabedHeight(x,z)+.65,z+Math.sin(a)*.36));ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle='#bd8a9e';ctx.lineWidth=Math.max(1,base.size*.055);ctx.stroke();}
+   const p=project(vec3(x,seabedHeight(x,z)+.13,z));ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(2,base.size*.24),Math.max(1.5,base.size*.14),0,0,TAU);ctx.fillStyle='#a98a9b';ctx.fill();for(let dot=0;dot<9;dot++){const a=dot*2.399,pit=project(vec3(x+Math.cos(a)*.13,seabedHeight(x,z)+.15,z+Math.sin(a)*.13));ctx.beginPath();ctx.arc(pit.x,pit.y,Math.max(.6,base.size*.018),0,TAU);ctx.fillStyle='#e4c6b7';ctx.fill();}
   }
   ctx.restore();
  }
