@@ -118,7 +118,7 @@ test('fifteen species have distinct collision envelopes and benthic species spaw
   assert.ok(SCHOOLING_DOLPHIN_COLLISION.halfLength > SCHOOLING_STINGRAY_COLLISION.halfLength);
   const school = createSchool(150, 73421);
   const eels = school.fish.filter(agent => agent.species === 'eel');
-  assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
+  assert.ok(eels.length >= 1 && eels.length <= 5, 'equal-volume prevalence should keep larger eels uncommon but represented');
   for (const species of ['crab','lobster','mantis','starfish','sandEel']) {
     const ground = school.fish.filter(agent => agent.species === species);
     assert.ok(ground.every(agent => Math.abs(agent.p.y - seabedHeight(agent.p.x,agent.p.z) - .06)<1e-8 && agent.v.y === 0));
