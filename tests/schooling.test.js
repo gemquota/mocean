@@ -14,6 +14,11 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   assert.ok(new Set(sizedFish.map(f => f.bodyScale)).size > 20, 'fish should have a continuous range of body sizes');
   assert.ok(school.fish.filter(f => f.species === 'crab').length < 12, 'crabs should be a small minority of the habitat');
   assert.ok(school.fish.some(f => f.species === 'lobster'));
+  const eels=school.fish.filter(f => f.species === 'eel');
+  const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
+  assert.ok(eels.every(f => f.bodyScale >= 1.28 && f.bodyScale <= 1.5), 'eels should be visibly larger than standard fish');
+  assert.ok(benthic.every(f => f.bodyScale >= 0.78 && f.bodyScale <= 1.12), 'crabs and lobsters should vary in body size');
+  assert.ok(new Set(benthic.map(f => f.bodyScale)).size > 10, 'benthic creatures should have individual size variation');
   assert.equal('target' in school, false, 'the school must not have a shared target');
 });
 
