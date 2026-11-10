@@ -297,7 +297,7 @@ function drawMantaRay(fish){
  drawVolume(fish,q,vec3(-.05,.015,0),scale3(vec3(.78,.13,.58),scale),'#245c70',.38,12,5);ctx.restore();
 }
 
-const planktonParticles=Array.from({length:1200},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
+const planktonParticles=Array.from({length:480},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
 function drawSeagrassAndKelp(){
  const grassBeds=[[-33,-10],[-24,12],[-8,-7],[9,13],[25,-12],[34,8],[-2,25]];
  for(let bed=0;bed<grassBeds.length;bed++){const [cx,cz]=grassBeds[bed];for(let i=0;i<18;i++){const a=i*2.3999632297+bed*.8,rad=.25+Math.sqrt(i/18)*2.4,x=cx+Math.cos(a)*rad,z=cz+Math.sin(a)*rad,floor=seabedHeight(x,z),root=project(vec3(x,floor+.04,z)),blades=3+i%3,sway=Math.sin(school.time*.72+i*.9+bed)*.24;ctx.save();ctx.lineCap='round';for(let b=0;b<blades;b++){const side=(b-(blades-1)/2)*.075,height=.55+((i*7+b*3)%5)*.12,tip=project(vec3(x+side+sway*height,floor+height,z+side*.35));if(root.depth<2.5||tip.depth<2.5)continue;ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo(root.x+side*root.size*.2,root.y-tip.size*.22,tip.x,tip.y);ctx.strokeStyle=b%2?'#648d55':'#88a966';ctx.lineWidth=Math.max(.8,root.size*.022);ctx.stroke();}ctx.restore();}}
@@ -318,10 +318,10 @@ function drawPlankton(){
  }
  ctx.restore();
 }
+const coralReefs=[{x:-35,z:-15,rx:7.2,rz:5.2},{x:-27,z:7,rx:5.4,rz:7.4},{x:-10,z:-13,rx:6.4,rz:4.8},{x:4,z:8,rx:8.1,rz:5.5},{x:17,z:-17,rx:6.8,rz:5.1},{x:30,z:10,rx:7.4,rz:6.2},{x:37,z:-7,rx:4.6,rz:6.8},{x:-2,z:20,rx:5.5,rz:4.2},{x:-19,z:18,rx:6.2,rz:4.7},{x:22,z:23,rx:5.8,rz:4.1}];
+const coralColonies=Array.from({length:320},(_,i)=>{const reef=coralReefs[i%coralReefs.length],n=Math.floor(i/coralReefs.length),angle=n*2.3999632297+i*.17,radial=Math.sqrt((n+.5)/32),edge=1+.19*Math.sin(angle*3+reef.x)+.11*Math.cos(angle*5+reef.z)+.07*Math.sin(angle*7);return [reef.x+Math.cos(angle)*reef.rx*radial*edge,reef.z+Math.sin(angle)*reef.rz*radial*edge,i%12];});
 function drawCoral(){
- const reefs=[{x:-35,z:-15,rx:7.2,rz:5.2},{x:-27,z:7,rx:5.4,rz:7.4},{x:-10,z:-13,rx:6.4,rz:4.8},{x:4,z:8,rx:8.1,rz:5.5},{x:17,z:-17,rx:6.8,rz:5.1},{x:30,z:10,rx:7.4,rz:6.2},{x:37,z:-7,rx:4.6,rz:6.8},{x:-2,z:20,rx:5.5,rz:4.2},{x:-19,z:18,rx:6.2,rz:4.7},{x:22,z:23,rx:5.8,rz:4.1}];
- const colonies=Array.from({length:800},(_,i)=>{const reef=reefs[i%reefs.length],n=Math.floor(i/reefs.length),angle=n*2.3999632297+i*.17,radial=Math.sqrt((n+.5)/80),edge=1+.19*Math.sin(angle*3+reef.x)+.11*Math.cos(angle*5+reef.z)+.07*Math.sin(angle*7);return [reef.x+Math.cos(angle)*reef.rx*radial*edge,reef.z+Math.sin(angle)*reef.rz*radial*edge,i%12];});
- for(let index=0;index<colonies.length;index++){
+ for(let index=0;index<coralColonies.length;index++){
   const [x,z,type]=colonies[index],floor=seabedHeight(x,z),base=project(vec3(x,floor+.12,z));ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   if(type===0){for(let branch=0;branch<5;branch++){const spread=(branch-2)*.16,height=.42+((branch*7+index)%4)*.13,p0=project(vec3(x,floor+.08,z)),p1=project(vec3(x+spread*.5,floor+height*.55,z)),p2=project(vec3(x+spread,floor+height,z));ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle=['#d58a72','#d5a66d','#b879a0'][index%3];ctx.lineWidth=Math.max(1,base.size*.07);ctx.stroke();}}
   else if(type===1){for(let lobe=0;lobe<5;lobe++){const a=lobe/5*TAU,c=project(vec3(x+Math.cos(a)*.22,floor+.1*Math.sin(a),z+Math.sin(a)*.22));ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(1,base.size*.14),Math.max(1,base.size*.22),a,0,TAU);ctx.fillStyle=index%2?'#b66d86':'#d28b73';ctx.fill();}}
@@ -637,7 +637,7 @@ function animate(now){
   accumulator-=dt;
  }
  renderAccumulator+=elapsed;
- if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
+ if(renderAccumulator>=1/24){render();renderAccumulator%=1/24;}
  if(frame++%30===0){const counts={fish:0,schoolFish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 19 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>REGULAR FISH · SOCIAL</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray+'<br><b>SHARKS</b> '+counts.shark+'<br><b>WHALE SHARKS</b> '+counts.whaleShark+'<br><b>MOLA MOLA</b> '+counts.mola+'<br><b>ORCAS</b> '+counts.orca+'<br><b>SPERM WHALES</b> '+counts.spermWhale+'<br><b>SEALS</b> '+counts.seal+'<br><b>STARFISH</b> '+counts.starfish+'<br><b>DOLPHINS</b> '+counts.dolphin+'<br><b>SCHOOLING FISH · DEDICATED SHOALS</b> '+counts.schoolFish+'<br><b>SEA TURTLES</b> '+counts.turtle+'<br><b>JELLYFISH</b> '+counts.jellyfish+'<br><b>SAND EELS</b> '+counts.sandEel;metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
  } catch(error) {
   if(!animationFault) {
