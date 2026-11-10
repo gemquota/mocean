@@ -152,13 +152,13 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
   const fish = Array.from({ length: size }, (_, id) => {
     const direction = normalize({
       x: random() * 2 - 1,
-      y: (random() * 2 - 1) * (speciesRoll >= 0.68 && speciesRoll < 0.83 ? 0.10 : 0.35),
+      y: (random() * 2 - 1) * 0.35,
       z: random() * 2 - 1
     });
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.68 ? 'fish' : speciesRoll < 0.83 ? 'eel' : speciesRoll < 0.841 ? 'crab' : 'lobster';
+    const species = speciesRoll < 0.68 ? 'fish' : speciesRoll < 0.83 ? 'eel' : speciesRoll < 0.841 ? 'crab' : 'lobster';\n    if (species === 'eel') direction.y *= 0.28;
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
       : 0.78 + random() * 0.34;
