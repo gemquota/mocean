@@ -263,11 +263,13 @@ function drawMantaRay(fish){
  const flap=Math.sin(fish.wingPhase??0),lift=flap*.42;
  const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
  const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
- ctx.save();ctx.globalAlpha=alpha;ctx.lineJoin='round';
+ ctx.save();ctx.globalAlpha=Math.max(.9,alpha);ctx.lineJoin='round';ctx.lineCap='round';
  // Broad pectoral fins sweep and flap as a single continuous wing on each side.
  for(const side of [-1,1]){
   const wingLift=lift*(side>0?1:.94);
   poly([[.43,.06,side*.3],[.05,.16,side*.82],[-.38,wingLift,side*2.55],[-1.05,wingLift*.72,side*2.18],[-.72,-.12,side*.56],[-.28,-.18,side*.24]],side>0?'#286f80':'#347f89','#143f54');
+  const root=point(.34,.1,side*.42),jointA=point(-.02,.14+wingLift*.18,side*1.12),jointB=point(-.23,.12+wingLift*.42,side*1.82),tip=point(-.38,wingLift,side*2.48);
+  if([root,jointA,jointB,tip].every(p=>p.depth>2.5)){ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo(jointA.x,jointA.y,jointB.x,jointB.y);ctx.quadraticCurveTo(jointB.x,jointB.y,tip.x,tip.y);ctx.strokeStyle='rgba(139,207,194,.95)';ctx.lineWidth=Math.max(1.1,centre.size*.032);ctx.stroke();for(const joint of [jointA,jointB]){ctx.beginPath();ctx.arc(joint.x,joint.y,Math.max(1.2,centre.size*.025),0,TAU);ctx.fillStyle='#7caeb0';ctx.fill();ctx.strokeStyle='#163f50';ctx.stroke();}}
   const leading=[point(.3,.13,side*.45),point(-.05,.18+wingLift*.28,side*1.1),point(-.38,wingLift,side*2.48)];
   if(leading.every(p=>p.depth>2.5)){ctx.beginPath();leading.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(139,207,194,.78)';ctx.lineWidth=Math.max(.8,centre.size*.025);ctx.stroke();}
  }
@@ -323,7 +325,7 @@ function drawCoral(){
 function drawSeabed(){
  const top=[],front=[];
  for(let i=0;i<=36;i++){
-  const x=-42+i*(84/36),ridge=-8.62+Math.sin(i*1.71)*.22+Math.sin(i*.43)*.18;
+  const x=-42+i*(84/36),ridge=seabedHeight(x,-23);
   top.push(project(vec3(x,ridge,-23)));
   front.push(project(vec3(x,-12.1+Math.sin(i*.77)*.16,28)));
  }
@@ -455,7 +457,7 @@ function drawSchoolFish(fish){
  }
  function drawShark(fish,whale){
   const scale=fish.bodyScale??(whale?2.7:1.8),yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z)),q=quatFromEuler(yaw,pitch,0);
-  const centre=project(fish.p),alpha=Math.max(.62,Math.min(.98,1.2-centre.depth*.018));
+  const centre=project(fish.p),alpha=Math.max(.9,Math.min(1,1.12-centre.depth*.008));
   const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
   const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
   ctx.save();ctx.globalAlpha=alpha;ctx.lineJoin='round';
