@@ -61,3 +61,12 @@ test('habitat animation exposes runtime faults and reports advancing simulation 
   assert.match(script, /school\.time\.toFixed\(1\)/);
   assert.match(script, /if\(!animationFault\) requestAnimationFrame\(animate\)/);
 });
+
+
+test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
+  assert.match(script, /const coralColonies=Array\.from\(\{length:320\}/);
+  assert.match(script, /for\(let index=0;index<coralColonies\.length;index\+\+\)/);
+  assert.doesNotMatch(script, /function drawCoral\(\)[\s\S]{0,500}Array\.from/);
+  assert.match(script, /planktonParticles=Array\.from\(\{length:480\}/);
+  assert.match(script, /renderAccumulator>=1\/24/);
+});
