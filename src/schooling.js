@@ -300,9 +300,6 @@ export function stepSchool(school, dt) {
         z: agent.forward.x * Math.sin(turn) + agent.forward.z * Math.cos(turn)
       });
       agent.forward = turnDirection(agent.forward, targetForward, 0.42 * step);
-      const direction = agent.species === 'crab'
-        ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: -agent.forward.z, y: 0, z: agent.forward.x })
-        : { x: agent.forward.x, y: 0, z: agent.forward.z };
       let desiredSpeed;
       if (agent.species === 'crab') {
         agent.shelterTimer -= step;
@@ -321,14 +318,14 @@ export function stepSchool(school, dt) {
         }
         if (agent.sheltering) desiredSpeed = 0.025;
         else {
-          agent.forward = turnDirection(agent.forward, normalize({ x: tx, y: 0, z: tz }), 2.8 * step);
+          agent.forward = turnDirection(agent.forward, normalize({ x: tz, y: 0, z: -tx }), 2.8 * step);
           desiredSpeed = 1.05 + 0.18 * Math.sin(agent.groundPhase * 1.7);
         }
       } else {
         const baseSpeed = 0.34;
         desiredSpeed = baseSpeed * (0.78 + 0.22 * Math.sin(school.time * 0.31 + agent.groundPhase));
       }
-      const desired = { x: direction.x * desiredSpeed, y: 0, z: direction.z * desiredSpeed };
+      const moveDirection = agent.species === 'crab'\n        ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: -agent.forward.z, y: 0, z: agent.forward.x })\n        : { x: agent.forward.x, y: 0, z: agent.forward.z };\n      const desired = { x: moveDirection.x * desiredSpeed, y: 0, z: moveDirection.z * desiredSpeed };
       const response = agent.species === 'crab' ? (agent.sheltering ? 3.5 : 4.2) : 1.05;
       const accelerationLimit = agent.species === 'crab' ? 3.8 : 0.55;
       agent.v.x += clamp((desired.x - agent.v.x) * response, -accelerationLimit, accelerationLimit) * step;
