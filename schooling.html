@@ -20,15 +20,15 @@ header,footer{position:fixed;left:24px;right:24px;display:flex;align-items:cente
 header{top:20px}footer{bottom:18px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
 .brand{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.2em;color:rgba(221,241,233,.78)}
 .mark{width:24px;height:24px;border:1px solid rgba(155,231,200,.5);border-radius:50%;display:grid;place-items:center;color:var(--mint)}
-.status{font-size:9px;letter-spacing:.13em;color:rgba(155,231,200,.8);text-align:right}
+.status{font-size:9px;letter-spacing:.13em;color:rgba(155,231,200,.8);text-align:right}.species-counts{position:fixed;top:51px;right:24px;z-index:2;font-size:9px;line-height:1.8;letter-spacing:.1em;text-align:right;color:rgba(190,220,215,.72);pointer-events:none;text-shadow:0 1px 5px #04121a}.species-counts b{color:#b8e8d1;font-weight:600}
 a{pointer-events:auto;color:var(--mint);text-decoration:none}
 a:hover{text-decoration:underline}
-@media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}.population-control{bottom:43px;width:min(320px,calc(100vw - 32px));padding:8px 11px}.population-heading{font-size:8px}}
+@media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.species-counts{top:42px;right:14px;font-size:8px;line-height:1.65}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}.population-control{bottom:43px;width:min(320px,calc(100vw - 32px));padding:8px 11px}.population-heading{font-size:8px}}
 </style>
 </head>
 <body>
 <canvas id="school" aria-label="A mixed habitat of schooling fish, eels, crabs and lobsters"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 4 SPECIES</div></header>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 4 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 98<br>EELS 25<br>CRABS 7<br>LOBSTERS 20</div>
 <section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><span>50 CREATURES</span><span>200 CREATURES</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
@@ -37,7 +37,7 @@ import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/cor
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
-const status=document.getElementById('status'),metrics=document.getElementById('metrics');
+const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
 let school=createSchool(150);
 function initialiseFishVisualState(nextSchool){
@@ -109,14 +109,14 @@ function eelWorldPoint(fish,q,local){
  const compressed={x:local.x*lengthScale,y:local.y,z:local.z};
  const deformed=deformPoint(compressed,fish.gait);
  deformed.x/=lengthScale;
- return add3(fish.p,quatRotate(q,scale3(deformed,SCHOOLING_FISH_SCALE)));
+ return add3(fish.p,quatRotate(q,scale3(deformed,SCHOOLING_FISH_SCALE*(fish.bodyScale??1))));
 }
 function drawEel(fish){
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p),alpha=Math.max(.56,Math.min(.98,1.18-centre.depth*.018));
  const upper=[],lower=[];
  for(let i=0;i<=28;i++){
-  const u=i/28,x=.98-u*3.95,width=.17*Math.pow(1-u,.72)+.018;
+  const u=i/28,x=1.02-u*4.05,width=.205*Math.pow(1-u,.68)+.02;
   upper.push({x,y:width,z:0});lower.unshift({x,y:-width,z:0});
  }
  const points=[...upper,...lower].map(v=>project(eelWorldPoint(fish,q,vec3(v.x,v.y,v.z))));
@@ -124,45 +124,85 @@ function drawEel(fish){
   ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
   ctx.fillStyle='#477f72';ctx.fill();ctx.strokeStyle='#173f3d';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();
   const ridge=[];
-  for(let i=0;i<=20;i++){const u=i/20,x=.78-u*3.55,width=.17*Math.pow(1-u,.72)+.018;ridge.push(project(eelWorldPoint(fish,q,vec3(x,width*.83,0))));}
+  for(let i=0;i<=20;i++){const u=i/20,x=.82-u*3.62,width=.17*Math.pow(1-u,.72)+.018;ridge.push(project(eelWorldPoint(fish,q,vec3(x,width*.83,0))));}
   if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(164,207,154,.8)';ctx.lineWidth=Math.max(.6,centre.size*.009);ctx.stroke();}
-  const eye=project(eelWorldPoint(fish,q,vec3(.77,.09,.08)));
-  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,eye.size*.026),0,TAU);ctx.fillStyle='#eee9ce';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.006,eye.y,Math.max(.6,eye.size*.011),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
+  const eye=project(eelWorldPoint(fish,q,vec3(.82,.105,.105)));
+  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.2,eye.size*.031),0,TAU);ctx.fillStyle='#e7d9bd';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.006,eye.y,Math.max(.8,eye.size*.016),0,TAU);ctx.fillStyle='#c34e42';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.009,eye.y,Math.max(.5,eye.size*.008),0,TAU);ctx.fillStyle='#10171b';ctx.fill();}
+  const jawA=project(eelWorldPoint(fish,q,vec3(.96,-.055,.015))),jawB=project(eelWorldPoint(fish,q,vec3(.69,-.13,.015)));
+  if(jawA.depth>2.5&&jawB.depth>2.5){ctx.beginPath();ctx.moveTo(jawA.x,jawA.y);ctx.lineTo(jawB.x,jawB.y);ctx.strokeStyle='#d2a28b';ctx.lineWidth=Math.max(.8,centre.size*.013);ctx.stroke();for(let tooth=0;tooth<4;tooth++){const t=(tooth+1)/5,x=jawA.x+(jawB.x-jawA.x)*t,y=jawA.y+(jawB.y-jawA.y)*t;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-centre.size*.012,y+centre.size*.035);ctx.strokeStyle='#eee2cb';ctx.lineWidth=Math.max(.6,centre.size*.008);ctx.stroke();}}
+  for(let spine=0;spine<7;spine++){const u=.2+spine*.105,x=.82-u*3.62,w=.205*Math.pow(1-u,.68)+.02,base=project(eelWorldPoint(fish,q,vec3(x,w*.9,0))),tip=project(eelWorldPoint(fish,q,vec3(x-.045,w*1.35,0)));if(base.depth>2.5&&tip.depth>2.5){ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.lineTo(tip.x,tip.y);ctx.strokeStyle='#a6b18a';ctx.lineWidth=Math.max(.7,centre.size*.01);ctx.stroke();}}
   ctx.restore();
  }
 }
 function drawCrustacean(fish){
- const lobster=fish.species==='lobster';
+ const lobster=fish.species==='lobster',scale=fish.bodyScale??1;
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
  const centre=project(fish.p),alpha=Math.max(.58,Math.min(.98,1.18-centre.depth*.018));
- const bodyLength=lobster ? 0.86 : 0.68,bodyWidth=lobster ? 0.42 : 0.48;
- const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x,y,z))));
+ const bodyLength=lobster?.8:.58,bodyWidth=lobster?.4:.42;
+ const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
  ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';ctx.lineJoin='round';
- // Legs emerge from beneath the shell, with a coxa, sharp knee and distal segment.
  for(let side of [-1,1])for(let leg=0;leg<4;leg++){
-  const x=(leg-1.5)*.25,z=side*bodyWidth*.9;
+  const x=(leg-1.5)*bodyLength*.39,z=side*bodyWidth*.56;
   const phase=fish.groundPhase+leg*Math.PI*.5+(side>0?Math.PI:0);
-  const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.1;
-  const hip=point(x,-.005,z);
-  const coxa=point(x+stride*.035,-.055,side*(bodyWidth*.99));
-  const knee=point(x+(lobster?-.17:-.13)+stride*.085,-.25+lift*.25,side*(bodyWidth+(lobster?.29:.27)));
-  const foot=point(x+(lobster?-.24:-.2)+stride*(lobster?.22:.19),-.43+lift,side*(bodyWidth+(lobster?.67:.61)));
-  ctx.strokeStyle=lobster?'#a96848':'#b77a58';ctx.lineWidth=Math.max(1.35,centre.size*(lobster?.052:.058));
+  const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.075;
+  const hip=point(x,-.015,z),coxa=point(x+stride*.035,-.105,side*(bodyWidth*.78));
+  const knee=point(x+(leg<2?.18:-.18)+stride*.075,-.235+lift*.2,side*(bodyWidth+.22));
+  const foot=point(x+(leg<2?.32:-.32)+stride*.14,-.39+lift,side*(bodyWidth+.56));
+  ctx.strokeStyle=lobster?'#a96848':'#b77a58';ctx.lineWidth=Math.max(1.6,centre.size*(lobster?.062:.07)*scale);
   ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(coxa.x,coxa.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(foot.x,foot.y);ctx.stroke();
   ctx.fillStyle=lobster?'#d59a70':'#e0b080';
-  ctx.beginPath();ctx.arc(knee.x,knee.y,Math.max(1.2,centre.size*.024),0,TAU);ctx.fill();
-  ctx.beginPath();ctx.arc(foot.x,foot.y,Math.max(.9,centre.size*.014),0,TAU);ctx.fill();
+  ctx.beginPath();ctx.arc(coxa.x,coxa.y,Math.max(1.3,centre.size*.022*scale),0,TAU);ctx.fill();
+  ctx.beginPath();ctx.arc(knee.x,knee.y,Math.max(1.7,centre.size*.029*scale),0,TAU);ctx.fill();
+  ctx.beginPath();ctx.arc(foot.x,foot.y,Math.max(1,centre.size*.016*scale),0,TAU);ctx.fill();
  }
- const shell=[];for(let i=0;i<20;i++){const a=i/20*TAU;shell.push(point(Math.cos(a)*bodyLength*.5,.02+Math.sin(a)*.12,Math.sin(a)*bodyWidth));}
+ const shellLocal=lobster
+  ? [[.5,0,0],[.34,.13,.34],[-.22,.16,.39],[-.49,.035,.23],[-.52,-.015,0],[-.49,.035,-.23],[-.22,.16,-.39],[.34,.13,-.34]]
+  : [[.43,0,0],[.28,.15,.42],[-.25,.13,.4],[-.48,.025,.2],[-.5,-.015,0],[-.48,.025,-.2],[-.25,.13,-.4],[.28,.15,-.42]];
+ const shell=shellLocal.map(([x,y,z])=>point(x*bodyLength,y*2,z*bodyWidth));
  ctx.beginPath();shell.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
- ctx.fillStyle=lobster?'#a84e37':'#bd7650';ctx.strokeStyle=lobster?'#5b3029':'#6c4032';ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.fill();ctx.stroke();
- for(const side of [-1,1]){const eye=point(bodyLength*.34,.2,side*.2);ctx.beginPath();ctx.moveTo(eye.x,eye.y+centre.size*.025);ctx.lineTo(eye.x,eye.y-centre.size*.025);ctx.strokeStyle='#d5a47c';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03,Math.max(1,centre.size*.025),0,TAU);ctx.fillStyle='#f0dfbb';ctx.fill();ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03,Math.max(.6,centre.size*.012),0,TAU);ctx.fillStyle='#17252a';ctx.fill();}
+ ctx.fillStyle=lobster?'#a84e37':'#bd7650';ctx.strokeStyle=lobster?'#5b3029':'#6c4032';ctx.lineWidth=Math.max(.9,centre.size*.021*scale);ctx.fill();ctx.stroke();
+ const ridgeA=point(-bodyLength*.3,.2,0),ridgeB=point(bodyLength*.27,.2,0);
+ ctx.beginPath();ctx.moveTo(ridgeA.x,ridgeA.y);ctx.lineTo(ridgeB.x,ridgeB.y);ctx.strokeStyle=lobster?'#d18a68':'#e0a477';ctx.lineWidth=Math.max(.8,centre.size*.018*scale);ctx.stroke();
+ for(const side of [-1,1]){
+  const eye=point(bodyLength*.34,.22,side*.2);
+  ctx.beginPath();ctx.moveTo(eye.x,eye.y+centre.size*.025*scale);ctx.lineTo(eye.x,eye.y-centre.size*.025*scale);ctx.strokeStyle='#d5a47c';ctx.lineWidth=Math.max(.7,centre.size*.013*scale);ctx.stroke();
+  ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03*scale,Math.max(1,centre.size*.025*scale),0,TAU);ctx.fillStyle='#f0dfbb';ctx.fill();
+  ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03*scale,Math.max(.6,centre.size*.012*scale),0,TAU);ctx.fillStyle='#17252a';ctx.fill();
+ }
  if(lobster){
-  for(const side of [-1,1]){const root=point(bodyLength*.46,.1,side*.12),tip=point(bodyLength*1.18,.34,side*.43);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo((root.x+tip.x)*.5,root.y-centre.size*.16,tip.x,tip.y);ctx.strokeStyle='#d39a70';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();}
-  for(let i=-1;i<=1;i++){const a=point(-bodyLength*.55,-.04,i*.12),b=point(-bodyLength*.85,-.1,i*.2);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='#c17c59';ctx.lineWidth=Math.max(1,centre.size*.035);ctx.stroke();}
-  for(const side of [-1,1]){const root=point(bodyLength*.38,-.04,side*.24),claw=point(bodyLength*.78,-.12,side*.48);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle='#c57a55';ctx.lineWidth=Math.max(1,centre.size*.045);ctx.stroke();}
- }else{
-  for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*.68,-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.02,claw.y-centre.size*.035);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.02,claw.y+centre.size*.035);ctx.strokeStyle='#d19a70';ctx.lineWidth=Math.max(1,centre.size*.04);ctx.stroke();}
+  for(const side of [-1,1]){const root=point(bodyLength*.46,.1,side*.12),tip=point(bodyLength*1.18,.34,side*.43);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo((root.x+tip.x)*.5,root.y-centre.size*.16,tip.x,tip.y);ctx.strokeStyle='#d39a70';ctx.lineWidth=Math.max(.8,centre.size*.014*scale);ctx.stroke();}
+  for(let i=-1;i<=1;i++){const a=point(-bodyLength*.55,-.04,i*.12),b=point(-bodyLength*.85,-.1,i*.2);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='#c17c59';ctx.lineWidth=Math.max(1,centre.size*.038*scale);ctx.stroke();}
+ }
+ for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*(lobster?.78:.68),-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle=lobster?'#c57a55':'#d19a70';ctx.lineWidth=Math.max(1,centre.size*.045*scale);ctx.stroke();}
+ ctx.restore();
+}
+function drawSeabed(){
+ const top=[],front=[];
+ for(let i=0;i<=36;i++){
+  const x=-42+i*(84/36),ridge=-8.62+Math.sin(i*1.71)*.22+Math.sin(i*.43)*.18;
+  top.push(project(vec3(x,ridge,-23)));
+  front.push(project(vec3(x,-12.1+Math.sin(i*.77)*.16,28)));
+ }
+ ctx.save();ctx.globalAlpha=.96;ctx.beginPath();
+ top.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+ for(let i=front.length-1;i>=0;i--)ctx.lineTo(front[i].x,front[i].y);
+ ctx.closePath();ctx.fillStyle='#172f32';ctx.fill();ctx.strokeStyle='#45605a';ctx.lineWidth=1.2;ctx.stroke();
+ for(let shelf=0;shelf<5;shelf++){
+  const x=-34+shelf*16.5,y=-8.5+(shelf%2)*.16,z=-17+(shelf%3)*10;
+  const rock=[[-3,0,-1.2],[-2.1,.42,-.8],[-.8,.68,-1.1],[1.5,.38,-.7],[2.8,0,.2],[1.7,-.18,1.1],[-1.6,-.14,1.3]].map(([dx,dy,dz])=>project(vec3(x+dx,y+dy,z+dz)));
+  ctx.beginPath();rock.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=shelf%2?'#29413e':'#304943';ctx.strokeStyle='#60736a';ctx.lineWidth=.8;ctx.fill();ctx.stroke();
+ }
+ for(const [x,z,rx,ry] of [[-25,-8,2.5,1.15],[-4,-3,3.1,1.35],[19,-10,2.25,1.05],[32,2,1.9,.9]]){
+  const c=project(vec3(x,-8.56,z));
+  ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(4,c.size*rx),Math.max(2,c.size*ry),-.08,0,TAU);
+  ctx.fillStyle='#061014';ctx.fill();ctx.strokeStyle='rgba(117,145,128,.8)';ctx.lineWidth=Math.max(1,c.size*.035);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(c.x,c.y+Math.max(1,c.size*.12),Math.max(2,c.size*rx*.72),Math.max(1,c.size*ry*.62),-.08,Math.PI,TAU);
+  ctx.strokeStyle='rgba(2,9,12,.9)';ctx.lineWidth=Math.max(1,c.size*.055);ctx.stroke();
+ }
+ for(const [x,z,lean] of [[-17,-5,-1.2],[8,-1,.8],[27,-4,-.7],[-33,4,1.1]]){
+  const a=project(vec3(x,-8.54,z)),b=project(vec3(x+lean,-8.57,z+5.5)),c=project(vec3(x+lean*.4,-8.59,z+11));
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.strokeStyle='#071417';ctx.lineWidth=Math.max(1.5,a.size*.055);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(a.x-1,a.y-1);ctx.lineTo(b.x-1,b.y-1);ctx.strokeStyle='rgba(120,145,126,.42)';ctx.lineWidth=Math.max(.6,a.size*.012);ctx.stroke();
  }
  ctx.restore();
 }
@@ -216,9 +256,7 @@ function render(){
  ctx.setTransform(dpr,0,0,dpr,0,0);viewWidth=rect.width;viewHeight=rect.height;
  const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
  gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
- ctx.globalAlpha=.13;ctx.strokeStyle='#8bd8c1';ctx.lineWidth=1;ctx.beginPath();
- for(let i=0;i<=72;i++){const a=i/72*TAU,p=project(vec3(41*Math.cos(a),-9.5,31*Math.sin(a)));i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
- ctx.stroke();ctx.globalAlpha=1;
+ drawSeabed();
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);
 }
@@ -238,7 +276,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 4 SPECIES · '+(school.metrics.eaten??0)+' EATEN';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
+ if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 4 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);

@@ -94,7 +94,7 @@ function collisionSegment(agent) {
     : agent.species === 'crab' ? SCHOOLING_CRAB_COLLISION.halfLength
     : agent.species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.halfLength
     : SCHOOLING_COLLISION.halfLength;
-  const scale = agent.species === 'fish' ? (agent.bodyScale ?? 1) : 1;
+  const scale = agent.bodyScale ?? 1;
   const scaledHalf = half * scale;
   const offset = { x: direction.x * scaledHalf, y: direction.y * scaledHalf, z: direction.z * scaledHalf };
   return [subtract(agent.p, offset), add(agent.p, offset)];
@@ -114,7 +114,7 @@ function resolveCollisions(fish, grid) {
         : species === 'crab' ? SCHOOLING_CRAB_COLLISION.radius
         : species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.radius
         : SCHOOLING_COLLISION.radius;
-      const radiusScale = agent => agent.species === 'fish' ? (agent.bodyScale ?? 1) : 1;
+      const radiusScale = agent => agent.bodyScale ?? 1;
       const contactDistance = radiusFor(a.species) * radiusScale(a) + radiusFor(b.species) * radiusScale(b);
       if (distance >= contactDistance) continue;
       if (distance < 1e-8) {
@@ -153,8 +153,10 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.655 ? 'fish' : speciesRoll < 0.825 ? 'eel' : speciesRoll < 0.86 ? 'crab' : 'lobster';
-    const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92 : 1;
+    const species = speciesRoll < 0.655 ? 'fish' : speciesRoll < 0.825 ? 'eel' : speciesRoll < 0.86875 ? 'crab' : 'lobster';
+    const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
+      : species === 'eel' ? 1.28 + random() * 0.22
+      : 0.78 + random() * 0.34;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : 0;
     const grounded = species === 'crab' || species === 'lobster';
     if (grounded) direction.y = 0;
