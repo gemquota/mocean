@@ -135,7 +135,7 @@ function drawCrustacean(fish){
  const lobster=fish.species==='lobster';
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
  const centre=project(fish.p),alpha=Math.max(.58,Math.min(.98,1.18-centre.depth*.018));
- const bodyLength=lobster?.86:.68,bodyWidth=lobster?.42:.48;
+ const bodyLength=lobster ? 0.86 : 0.68,bodyWidth=lobster ? 0.42 : 0.48;
  const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x,y,z))));
  ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';ctx.lineJoin='round';
  for(let side of [-1,1])for(let leg=0;leg<4;leg++){
@@ -143,10 +143,10 @@ function drawCrustacean(fish){
   const phase=fish.groundPhase+leg*Math.PI*.48+(side>0?Math.PI:0);
   const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.12;
   const hip=point(x,-.04,z);
-  const elbow=point(x+(lobster?-.12:-.08)+stride*.10,-.18+lift*.35,side*(bodyWidth+.25+(lobster?.04:0)));
-  const foot=point(x+(lobster?-.16:-.12)+stride*(lobster?.2:.17),-.38+lift,side*(bodyWidth+(lobster?.62:.5)));
+  const elbow=point(x+(lobster?-.12:-.08)+stride*.10,-.18+lift*.35,side*(bodyWidth+.25+(lobster ? 0.04 : 0)));
+  const foot=point(x+(lobster?-.16:-.12)+stride*(lobster ? 0.2 : 0.17),-.38+lift,side*(bodyWidth+(lobster?.62:.5)));
   ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(elbow.x,elbow.y);ctx.lineTo(foot.x,foot.y);
-  ctx.strokeStyle=lobster?'#a96848':'#b77a58';ctx.lineWidth=Math.max(1,centre.size*(lobster?.035:.04));ctx.stroke();
+  ctx.strokeStyle=lobster?'#a96848':'#b77a58';ctx.lineWidth=Math.max(1,centre.size*(lobster ? 0.035 : 0.04));ctx.stroke();
   ctx.beginPath();ctx.arc(foot.x,foot.y,Math.max(.7,centre.size*.012),0,TAU);ctx.fillStyle=lobster?'#d59a70':'#e0b080';ctx.fill();
  }
  const shell=[];for(let i=0;i<20;i++){const a=i/20*TAU;shell.push(point(Math.cos(a)*bodyLength*.5,.02+Math.sin(a)*.12,Math.sin(a)*bodyWidth));}
