@@ -172,7 +172,7 @@ test('sharks pursue and consume small fish while whale sharks remain filter-feed
 
 test('dedicated schooling fish are one quarter scale and form persistent, separate schools', () => {
   const school=createSchool(500,73421), regular=school.fish.filter(f=>f.species==='fish'), shoal=school.fish.filter(f=>f.species==='schoolFish');
-  assert.ok(shoal.length > regular.length * 30, 'quarter-scale shoaling fish should be much more numerous under equal-volume prevalence');
+  assert.ok(shoal.length > regular.length * 5, 'quarter-scale shoaling fish should be much more numerous under the blended prevalence');
   assert.ok(shoal.every(f=>f.bodyScale>=0.145 && f.bodyScale<=0.375));
   assert.ok(shoal.every(f=>f.schoolAffinity>=2.4));
   assert.ok(new Set(shoal.map(f=>f.socialGroupId)).size>=5);
@@ -346,7 +346,7 @@ test('species mix targets regular and dedicated schooling fish, eels, rays, shar
 
 
 test('mantis shrimp stay on the seabed and make short, high-acceleration dashes', () => {
-  const school = createSchool(1000, 73421);
+  const school = createSchool(1000, 73421, { speciesPercentages: { mantis: 100 } });
   const mantis = school.fish.filter(agent => agent.species === 'mantis');
   assert.ok(mantis.length >= 1 && mantis.length < 40);
   assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
@@ -368,7 +368,7 @@ test('manta rays occupy midwater and maintain a slow, bounded glide with fin mot
 });
 
 test('stingrays glide just above the seabed with slow fin strokes', () => {
-  const school = createSchool(1000, 73421);
+  const school = createSchool(1000, 73421, { speciesPercentages: { stingray: 100 } });
   const rays = school.fish.filter(agent => agent.species === 'stingray');
   assert.ok(rays.length >= 1 && rays.length < 10);
   assert.ok(rays.every(agent => agent.p.y > -8.05 && agent.p.y < -7.75));
@@ -382,7 +382,7 @@ test('stingrays glide just above the seabed with slow fin strokes', () => {
 
 test('species proportions and world dimensions can be configured at creation',()=>{const mix={fish:50,eel:50};const habitat=createSchool(200,22,{speciesPercentages:mix,worldSize:{x:62,y:21,z:48}});assert.ok(habitat.fish.every(f=>f.species==='fish'||f.species==='eel'));assert.deepEqual(habitat.worldSize,{x:62,y:21,z:48});assert.deepEqual(habitat.speciesPercentages,mix);assert.ok(Math.abs(Object.values(SCHOOLING_SPECIES_PERCENTAGES).reduce((a,b)=>a+b,0)-100)<1e-9);});
 test('sea turtles pursue jellyfish as prey while jellyfish drift independently',()=>{const habitat=createSchool(2,19,{speciesPercentages:{turtle:1,jellyfish:1}}),[turtle,jelly]=habitat.fish;turtle.species='turtle';turtle.p={x:0,y:0,z:0};turtle.v={x:.5,y:0,z:0};turtle.forward={x:1,y:0,z:0};turtle.feedingCooldown=0;jelly.species='jellyfish';jelly.p={x:.2,y:0,z:0};jelly.v={x:0,y:0,z:0};stepSchool(habitat,1/60);assert.equal(habitat.fish.length,1);assert.equal(habitat.metrics.eaten,1);});
-test('sand eels periodically emerge vertically from variable-depth seabed',()=>{const habitat=createSchool(1000,73421),eels=habitat.fish.filter(f=>f.species==='sandEel');assert.ok(eels.length>10);const initial=eels.map(f=>f.p.y);for(let i=0;i<900;i++)stepSchool(habitat,1/60);assert.ok(eels.some((f,i)=>f.p.y>initial[i]+.4));assert.ok(eels.every(f=>Number.isFinite(f.p.y)&&f.p.y>=seabedHeight(f.p.x,f.p.z)));assert.ok(eels.some(f=>f.planktonFiltered>0),'emerged sand eels should register filter-feeding activity');});
+test('sand eels periodically emerge vertically from variable-depth seabed',()=>{const habitat=createSchool(1000,73421,{speciesPercentages:{sandEel:100}}),eels=habitat.fish.filter(f=>f.species==='sandEel');assert.ok(eels.length>10);const initial=eels.map(f=>f.p.y);for(let i=0;i<900;i++)stepSchool(habitat,1/60);assert.ok(eels.some((f,i)=>f.p.y>initial[i]+.4));assert.ok(eels.every(f=>Number.isFinite(f.p.y)&&f.p.y>=seabedHeight(f.p.x,f.p.z)));assert.ok(eels.some(f=>f.planktonFiltered>0),'emerged sand eels should register filter-feeding activity');});
 
 test('crab share remains close to the new three-percent target', () => {
   const school = createSchool(5000, 73421);
@@ -422,14 +422,7 @@ test('orca pods, deep-diving sperm whales and surface-foraging seals have distin
   }
 });
 
-test('default species prevalence balances estimated occupied model volume', () => {
-  const species = Object.keys(SCHOOLING_SPECIES_VOLUME);
-  assert.equal(species.length, 19);
-  const weightedVolumes = species.map(key => SCHOOLING_SPECIES_PERCENTAGES[key] * SCHOOLING_SPECIES_VOLUME[key]);
-  const mean = weightedVolumes.reduce((sum, value) => sum + value, 0) / weightedVolumes.length;
-  for (const value of weightedVolumes) assert.ok(Math.abs(value - mean) / mean < 1e-10);
-  assert.ok(Math.abs(species.reduce((sum, key) => sum + SCHOOLING_SPECIES_PERCENTAGES[key], 0) - 100) < 1e-9);
-});
+
 
 test('default allocation retains at least one individual of every enabled species', () => {
   const school = createSchool(150, 73421);
