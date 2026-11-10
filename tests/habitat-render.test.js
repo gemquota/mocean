@@ -63,6 +63,14 @@ test('habitat animation exposes runtime faults and reports advancing simulation 
 });
 
 
+test('reef additions include five configured reef fish and animated anchored anemones', () => {
+  for (const species of ['clownfish','parrotfish','blueTang','angelfish','butterflyfish']) assert.match(html, new RegExp(species+':'));
+  assert.match(html, /function drawReefFish\\(fish\\)/);
+  assert.match(html, /function drawAnemones\\(\\)/);
+  assert.match(html, /drawAnemones\\(\\)/);
+  assert.match(src, /REEF_ANEMONE_SITES/);
+});
+
 test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
   assert.match(script, /const coralColonies=Array\.from\(\{length:320\}/);
   assert.match(script, /for\(let index=0;index<coralColonies\.length;index\+\+\)/);
