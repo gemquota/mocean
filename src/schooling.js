@@ -358,7 +358,7 @@ export function stepSchool(school, dt) {
       ax += fleeX * 0.9; ay += fleeY * 0.9; az += fleeZ * 0.9;
       if (preyTarget && (self.feedingCooldown ?? 0) <= 0) {
         const chase = normalize(subtract(preyTarget.p, self.p));
-        const gain = clamp(0.95 - preyDistance * 0.12, 0.28, 0.8);
+        const gain = clamp(0.95 - preyDistance * 0.12, 0.28, 0.8) * clamp(self.aggression ?? 1, 0, 2);
         ax += chase.x * gain; ay += chase.y * gain; az += chase.z * gain;
         self.preyId = preyTarget.id;
       } else self.preyId = null;
@@ -366,7 +366,7 @@ export function stepSchool(school, dt) {
     } else if (self.species === 'shark' || self.species === 'dolphin' || self.species === 'turtle') {
       if (preyTarget && (self.feedingCooldown ?? 0) <= 0) {
         const chase = normalize(subtract(preyTarget.p, self.p));
-        const gain = clamp(1.25 - preyDistance * 0.1, 0.38, 1.05);
+        const gain = clamp(1.25 - preyDistance * 0.1, 0.38, 1.05) * clamp(self.aggression ?? 1, 0, 2);
         ax += chase.x * gain; ay += chase.y * gain; az += chase.z * gain;
         self.preyId = preyTarget.id;
       } else self.preyId = null;

@@ -125,6 +125,20 @@ test('fifteen species have distinct collision envelopes and benthic species spaw
   }
 });
 
+test('species aggression scales active pursuit steering', () => {
+  const passive = createSchool(2, 91), assertive = createSchool(2, 91);
+  for (const school of [passive, assertive]) {
+    const [predator, prey] = school.fish;
+    predator.species = 'shark'; predator.p = {x:0,y:0,z:0}; predator.v = {x:0.4,y:0,z:0}; predator.forward = {x:1,y:0,z:0}; predator.feedingCooldown = 0;
+    prey.species = 'fish'; prey.p = {x:2,y:0,z:0}; prey.v = {x:0.2,y:0,z:0}; prey.forward = {x:1,y:0,z:0}; prey.feedingCooldown = 10;
+  }
+  passive.fish[0].aggression = 0;
+  assertive.fish[0].aggression = 2;
+  stepSchool(passive, 1 / 60);
+  stepSchool(assertive, 1 / 60);
+  assert.ok(assertive.fish[0].v.x > passive.fish[0].v.x, 'higher aggression should produce stronger pursuit acceleration');
+});
+
 test('large fish consume sufficiently small fish at close range', () => {
   const school = createSchool(2, 71);
   const [predator, prey] = school.fish;
