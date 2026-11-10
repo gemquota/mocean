@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const html = readFileSync(new URL('../schooling.html', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../src/schooling.js', import.meta.url), 'utf8');
 const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
 assert.ok(match, 'habitat page should contain its module script');
 const script = match[1].replace(/^import .*?;\s*$/gm, '');
@@ -63,10 +64,36 @@ test('habitat animation exposes runtime faults and reports advancing simulation 
 });
 
 
+test('reef additions include five configured reef fish and animated anchored anemones', () => {
+  for (const species of ['clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda']) assert.match(html, new RegExp(species+':'));
+  assert.match(html, /function drawReefFish\(fish\)/);
+  assert.match(html, /function drawAnemones\(\)/);
+  assert.match(html, /drawAnemones\(\)/);
+  assert.match(src, /REEF_ANEMONE_SITES/);
+});
+
+test('pelagic and benthic additions are represented in controls and renderers', () => {
+  for (const species of ['wobbegong','marlin','tuna']) assert.match(html, new RegExp(species+':'));
+  assert.match(html, /function drawWobbegong\(fish\)/);
+  assert.match(html, /drawWobbegong\(fish\)/);
+  assert.match(src, /wobbegong: 4\\.8/);
+  assert.match(src, /marlin: 5\\.2/);
+  assert.match(src, /tuna: 3\\.8/);
+});
+
 test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
   assert.match(script, /const coralColonies=Array\.from\(\{length:320\}/);
   assert.match(script, /for\(let index=0;index<coralColonies\.length;index\+\+\)/);
   assert.doesNotMatch(script, /function drawCoral\(\)[\s\S]{0,500}Array\.from/);
   assert.match(script, /planktonParticles=Array\.from\(\{length:480\}/);
   assert.match(script, /renderAccumulator>=1\/24/);
+});
+
+test('30-species mix includes three new fish with ecology-adjusted weights', () => {
+  for (const species of ['grouper','moorishIdol','barracuda']) assert.match(html, new RegExp(species+':'));
+  assert.match(src, /grouper: 5\.8/);
+  assert.match(src, /moorishIdol: 0\.20/);
+  assert.match(src, /barracuda: 3\.2/);
+  assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
+  assert.match(html, /30 SPECIES/);
 });

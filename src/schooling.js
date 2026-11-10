@@ -20,19 +20,19 @@ export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
 // is a temperate Australian coastal-reef suitability/encounter index (1 = uncommon,
 // 10 = very common), not a census-derived abundance estimate.
 export const SCHOOLING_SPECIES_VOLUME = Object.freeze({
-  fish: 1, schoolFish: 0.015625, eel: 1.35, crab: 0.38, lobster: 0.32,
+  fish: 1, schoolFish: 0.015625, clownfish: 0.16, parrotfish: 0.72, blueTang: 0.12, angelfish: 0.48, butterflyfish: 0.22, grouper: 5.8, moorishIdol: 0.20, barracuda: 3.2, wobbegong: 4.8, marlin: 5.2, tuna: 3.8, eel: 1.35, crab: 0.38, lobster: 0.32,
   mantis: 0.30, manta: 6.5, stingray: 3.2, shark: 5.8, whaleShark: 21,
   mola: 4.4, orca: 24, spermWhale: 70, seal: 2.2, starfish: 0.08,
   dolphin: 2.9, turtle: 1.4, jellyfish: 0.55, sandEel: 0.38
 });
 export const SCHOOLING_SPECIES_ADULT_MASS_KG = Object.freeze({
-  fish: 0.10, schoolFish: 0.025, eel: 15, crab: 0.30, lobster: 0.90,
+  fish: 0.10, schoolFish: 0.025, clownfish: 0.025, parrotfish: 0.65, blueTang: 0.018, angelfish: 0.35, butterflyfish: 0.045, grouper: 180, moorishIdol: 0.20, barracuda: 18, wobbegong: 100, marlin: 90, tuna: 35, eel: 15, crab: 0.30, lobster: 0.90,
   mantis: 0.09, manta: 350, stingray: 8, shark: 13, whaleShark: 15000,
   mola: 1000, orca: 3500, spermWhale: 36000, seal: 180, starfish: 0.06,
   dolphin: 225, turtle: 150, jellyfish: 0.01, sandEel: 0.01
 });
 export const SCHOOLING_SPECIES_ECOLOGY = Object.freeze({
-  fish: 10, schoolFish: 9, eel: 5, crab: 8, lobster: 4,
+  fish: 10, schoolFish: 9, clownfish: 7, parrotfish: 8, blueTang: 6, angelfish: 5, butterflyfish: 6, grouper: 2, moorishIdol: 5, barracuda: 3, wobbegong: 4, marlin: 2, tuna: 4, eel: 5, crab: 8, lobster: 4,
   mantis: 3, manta: 2, stingray: 5, shark: 3, whaleShark: 1,
   mola: 1, orca: 1, spermWhale: 1, seal: 2, starfish: 8,
   dolphin: 2, turtle: 3, jellyfish: 7, sandEel: 8
@@ -57,6 +57,9 @@ const inverseBalanceTotal = Object.values(SCHOOLING_SPECIES_BALANCE).reduce((sum
 export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze(Object.fromEntries(
   Object.entries(SCHOOLING_SPECIES_BALANCE).map(([species, score]) => [species, (1 / score) / inverseBalanceTotal * 100])
 ));
+export const REEF_ANEMONE_SITES = Object.freeze([
+  Object.freeze({ x: -34.2, z: -14.8 }), Object.freeze({ x: -27.4, z: 7.2 }), Object.freeze({ x: -10.8, z: -12.6 }), Object.freeze({ x: 3.8, z: 8.4 }), Object.freeze({ x: 16.6, z: -16.8 }), Object.freeze({ x: 29.4, z: 9.6 }), Object.freeze({ x: 36.4, z: -6.2 }), Object.freeze({ x: -2.4, z: 19.6 }), Object.freeze({ x: -18.6, z: 17.4 }), Object.freeze({ x: 21.4, z: 22.2 })
+]);
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
@@ -279,6 +282,17 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       : species === 'orca' ? 2.05 + random() * 0.35
       : species === 'spermWhale' ? 3.05 + random() * 0.55
       : species === 'seal' ? 0.92 + random() * 0.22
+      : species === 'clownfish' ? 0.52 + random() * 0.16
+      : species === 'parrotfish' ? 1.05 + random() * 0.28
+      : species === 'blueTang' ? 0.62 + random() * 0.16
+      : species === 'angelfish' ? 0.9 + random() * 0.2
+      : species === 'butterflyfish' ? 0.66 + random() * 0.16
+      : species === 'grouper' ? 1.75 + random() * 0.35
+      : species === 'moorishIdol' ? 0.72 + random() * 0.16
+      : species === 'barracuda' ? 1.55 + random() * 0.25
+      : species === 'wobbegong' ? 1.55 + random() * 0.25
+      : species === 'marlin' ? 1.85 + random() * 0.28
+      : species === 'tuna' ? 1.45 + random() * 0.22
       : species === 'dolphin' ? 1.12 + random() * 0.2
       : species === 'turtle' ? 0.92 + random() * 0.18
       : species === 'jellyfish' ? 0.58 + random() * 0.2
@@ -287,10 +301,11 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : species === 'schoolFish' ? 2.4 : 0;
     const socialGroupId = species === 'schoolFish' ? id % 6 : species === 'dolphin' ? id % 3 : species === 'orca' ? 0 : species === 'seal' ? id % 3 : -1;
-    const grounded = species === 'crab' || species === 'lobster' || species === 'mantis' || species === 'starfish' || species === 'sandEel';
+    const grounded = species === 'crab' || species === 'lobster' || species === 'mantis' || species === 'starfish' || species === 'sandEel' || species === 'wobbegong';
+    const anemoneHome = species === 'clownfish' ? REEF_ANEMONE_SITES[id % REEF_ANEMONE_SITES.length] : null;
     if (grounded) direction.y = 0;
     const heading = normalize(direction);
-    const groundSpeed = species === 'crab' ? 0.28 : species === 'mantis' ? 0.22 : species === 'starfish' ? 0.018 : species === 'sandEel' ? 0 : 0.34;
+    const groundSpeed = species === 'crab' ? 0.28 : species === 'mantis' ? 0.22 : species === 'starfish' ? 0.018 : species === 'sandEel' ? 0 : species === 'wobbegong' ? 0.035 : 0.34;
     const groundVelocity = species === 'crab'
       ? { x: -heading.z * groundSpeed, y: 0, z: heading.x * groundSpeed }
       : { x: heading.x * groundSpeed, y: 0, z: heading.z * groundSpeed };
@@ -304,7 +319,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       feedingCooldown: 0,
       filterFeedPhase: random() * Math.PI * 2,
       planktonFiltered: 0,
-      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-21,-13,-5,5,13,21][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-22,0,22][socialGroupId] + (random() - 0.5) * 3 : species === 'orca' ? (random() - 0.5) * 5 : species === 'seal' ? [-20,0,20][socialGroupId] + (random() - 0.5) * 3 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'orca' ? -1.5 + random() * 3 : species === 'spermWhale' ? -5.5 + random() * 2 : species === 'seal' ? 3.2 + random() * 2 : species === 'stingray' ? -7.92 + random() * 0.12 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : species === 'whaleShark' ? -1.2 + random() * 2.4 : species === 'mola' ? -2.1 + random() * 4.2 : species === 'schoolFish' ? [-4,-1,2,4,-2,1][socialGroupId] + (random() - 0.5) * 1.5 : species === 'dolphin' ? (random() - 0.5) * 3 : species === 'turtle' ? -1.5 + random() * 3 : species === 'jellyfish' ? -3 + random() * 6 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-15,15,-11,11,0,-2][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-16,0,16][socialGroupId] + (random() - 0.5) * 3 : species === 'orca' ? (random() - 0.5) * 5 : species === 'seal' ? [-12,0,12][socialGroupId] + (random() - 0.5) * 3 : (random() - 0.5) * 36 },
+      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-21,-13,-5,5,13,21][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-22,0,22][socialGroupId] + (random() - 0.5) * 3 : species === 'orca' ? (random() - 0.5) * 5 : species === 'seal' ? [-20,0,20][socialGroupId] + (random() - 0.5) * 3 : anemoneHome ? anemoneHome.x + (random() - 0.5) * 1.5 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'orca' ? -1.5 + random() * 3 : species === 'spermWhale' ? -5.5 + random() * 2 : species === 'seal' ? 3.2 + random() * 2 : species === 'stingray' ? -7.92 + random() * 0.12 : species === 'wobbegong' ? -8.48 + random() * 0.08 : species === 'grouper' ? -7.45 + random() * 0.65 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : species === 'whaleShark' ? -1.2 + random() * 2.4 : species === 'mola' ? -2.1 + random() * 4.2 : species === 'marlin' ? -2.2 + random() * 2.4 : species === 'tuna' ? -1.8 + random() * 2.2 : species === 'schoolFish' ? [-4,-1,2,4,-2,1][socialGroupId] + (random() - 0.5) * 1.5 : species === 'dolphin' ? (random() - 0.5) * 3 : species === 'turtle' ? -1.5 + random() * 3 : species === 'jellyfish' ? -3 + random() * 6 : anemoneHome ? seabedHeight(anemoneHome.x, anemoneHome.z) + 1.1 + random() * 0.8 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-15,15,-11,11,0,-2][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-16,0,16][socialGroupId] + (random() - 0.5) * 3 : species === 'orca' ? (random() - 0.5) * 5 : species === 'seal' ? [-12,0,12][socialGroupId] + (random() - 0.5) * 3 : anemoneHome ? anemoneHome.z + (random() - 0.5) * 1.5 : (random() - 0.5) * 36 },
       wingPhase: random() * Math.PI * 2,
       tentaclePhase: random() * Math.PI * 2,
       burrowPhase: random() * Math.PI * 2,
@@ -418,6 +433,17 @@ export function stepSchool(school, dt) {
         az += (group.z - self.p.z) * cohesion + (group.vz - self.v.z) * alignment;
       }
     }
+    if (self.species === 'wobbegong') {
+      const floor = seabedHeight(self.p.x, self.p.z);
+      ay += (floor + 0.28 - self.p.y) * 0.22 - self.v.y * 0.3;
+      ax *= 0.55; az *= 0.55;
+    }
+    if (self.species === 'clownfish') {
+      const home = REEF_ANEMONE_SITES[self.id % REEF_ANEMONE_SITES.length];
+      const dx = home.x - self.p.x, dz = home.z - self.p.z, distance = Math.hypot(dx, dz);
+      if (distance > 1.8) { ax += dx * 0.11; az += dz * 0.11; }
+      ay += ((seabedHeight(home.x, home.z) + 1.45) - self.p.y) * 0.12 - self.v.y * 0.18;
+    }
     if (self.species === 'fish' || self.species === 'schoolFish') {
       ax += fleeX * 0.9; ay += fleeY * 0.9; az += fleeZ * 0.9;
       if (preyTarget && (self.feedingCooldown ?? 0) <= 0) {
@@ -521,11 +547,11 @@ export function stepSchool(school, dt) {
       agent.burrowPhase += step * 0.22;
       const emergence = Math.max(0, Math.sin(agent.burrowPhase));
       agent.buried = emergence < 0.32;
-      agent.p.y = seabedHeight(agent.p.x, agent.p.z) + (agent.buried ? 0.02 : 0.72 + emergence * 0.8);
       agent.filterFeedPhase += step * 1.6;
       if (!agent.buried) agent.planktonFiltered += step * (0.15 + emergence * 0.3);
       agent.v.x = 0.018 * Math.sin(agent.burrowPhase * 0.7); agent.v.z = 0.012 * Math.cos(agent.burrowPhase * 0.6);
       agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step;
+      agent.p.y = seabedHeight(agent.p.x, agent.p.z) + (agent.buried ? 0.02 : 0.72 + emergence * 0.8);
       agent.phase += step * 0.9; speedTotal += length(agent.v); continue;
     }
     if (agent.species === 'jellyfish') {
@@ -631,13 +657,13 @@ export function stepSchool(school, dt) {
       continue;
     }
     // Gently regulate cruising speed through acceleration, preserving inertia.
-    const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.82 : agent.species === 'shark' ? 1.48 : agent.species === 'dolphin' ? 1.72 : 1.12) + (agent.species === 'manta' ? 0.055 : 0.12) * Math.sin(school.time * 0.08 + agent.phase);
+    const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'grouper' ? 0.48 : agent.species === 'barracuda' ? 1.62 : agent.species === 'moorishIdol' ? 0.82 : agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.82 : agent.species === 'shark' ? 1.48 : agent.species === 'dolphin' ? 1.72 : 1.12) + (agent.species === 'manta' ? 0.055 : 0.12) * Math.sin(school.time * 0.08 + agent.phase);
     const direction = currentSpeed > 0.12 ? normalize(agent.v) : agent.forward;
     const speedCorrection = clamp((desiredSpeed - currentSpeed) * 1.05, -0.35, 0.48);
     agent.v.x += (acceleration.x + direction.x * speedCorrection) * step;
     agent.v.y += (acceleration.y + direction.y * speedCorrection) * step;
     agent.v.z += (acceleration.z + direction.z * speedCorrection) * step;
-    agent.v = limit(agent.v, agent.species === 'eel' ? 1.65 : agent.species === 'manta' ? 1.25 : agent.species === 'shark' ? 2.55 : agent.species === 'dolphin' ? 2.2 : MAX_SPEED);
+    agent.v = limit(agent.v, agent.species === 'eel' ? 1.65 : agent.species === 'manta' ? 1.25 : agent.species === 'shark' ? 2.55 : agent.species === 'dolphin' ? 2.2 : agent.species === 'barracuda' ? 2.35 : agent.species === 'grouper' ? 0.72 : MAX_SPEED);
     agent.forward = turnDirection(agent.forward, normalize(agent.v), (agent.species === 'eel' ? 0.92 : agent.species === 'manta' ? 0.62 : agent.species === 'shark' ? 1.08 : agent.species === 'dolphin' ? 1.5 : MAX_HEADING_RATE) * step);
     if (agent.species === 'manta') agent.wingPhase += step * 2.15;
     agent.p.x += agent.v.x * step;
@@ -651,11 +677,11 @@ export function stepSchool(school, dt) {
   const eaten = new Set();
   for (let i = 0; i < fish.length; i++) {
     const predator = fish[i];
-    if (!((predator.species === 'fish' && predator.bodyScale >= 1.08) || predator.species === 'shark' || predator.species === 'dolphin' || predator.species === 'turtle') || predator.feedingCooldown > 0) continue;
+    if (!((predator.species === 'fish' && predator.bodyScale >= 1.08) || predator.species === 'shark' || predator.species === 'dolphin' || predator.species === 'turtle' || predator.species === 'grouper' || predator.species === 'barracuda') || predator.feedingCooldown > 0) continue;
     for (const j of nearbyIndices(predationGrid, cellOf(predator.p))) {
       if (j === i || eaten.has(j)) continue;
       const prey = fish[j];
-      if ((predator.species === 'turtle' ? prey.species !== 'jellyfish' : (prey.species !== 'fish' && prey.species !== 'schoolFish')) || (predator.species === 'fish' && (prey.species !== 'fish' || prey.bodyScale >= predator.bodyScale * 0.68))) continue;
+      if ((predator.species === 'turtle' ? prey.species !== 'jellyfish' : (prey.species !== 'fish' && prey.species !== 'schoolFish' && prey.species !== 'clownfish' && prey.species !== 'moorishIdol' && prey.species !== 'butterflyfish' && prey.species !== 'blueTang')) || (predator.species === 'fish' && (prey.species !== 'fish' || prey.bodyScale >= predator.bodyScale * 0.68))) continue;
       const d = length(subtract(prey.p, predator.p));
       if (d < 0.36 + prey.bodyScale * 0.045) {
         eaten.add(j);
