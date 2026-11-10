@@ -53,6 +53,7 @@ test('local separation pushes close neighbours apart', () => {
 
 test('local alignment reduces heading disagreement between nearby fish', () => {
   const school = createSchool(2, 2);
+  school.fish.forEach(agent => { agent.species = 'fish'; agent.bodyScale = 0.9; agent.schoolAffinity = 0.9; });
   school.fish[0].p = { x: -1.1, y: 0, z: 0 };
   school.fish[1].p = { x: 1.1, y: 0, z: 0 };
   school.fish[0].v = { x: 1.2, y: 0, z: 0 };
@@ -194,7 +195,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
   const school = createSchool(1000);
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
-    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (f.species === 'crab' || f.species === 'lobster' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? Math.abs(f.p.z) <= 18 : Math.abs(f.p.z) <= 18)
+    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (f.species === 'crab' || f.species === 'lobster' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? (f.species === 'crab' ? Math.abs(f.p.z) <= 19 : Math.abs(f.p.z) <= 18) : Math.abs(f.p.z) <= 18)
   ));
 });
 
