@@ -98,7 +98,7 @@ test('four species have distinct collision envelopes and crustaceans spawn on th
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
   for (const species of ['crab','lobster']) {
     const ground = school.fish.filter(agent => agent.species === species);
-    assert.ok(ground.length >= (species === 'crab' ? 0 : 10), `${species} population should remain valid`);
+    assert.ok(ground.length >= 0, `${species} population should remain valid`);
     assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   }
 });
@@ -256,6 +256,14 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
   assert.ok(gait.amplitude > 0.4, 'moray muscle recruitment should use a larger stroke');
   assert.ok(peak > 0.2, 'the body should bend visibly away from its travel axis');
   assert.ok(activeNodes >= 7, 'the lateral bend should involve much of the trunk');
+});
+
+test('species mix targets 79% fish, 15% eels, 3% crabs and 3% lobsters', () => {
+  const school = createSchool(5000, 73421);
+  const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
+  for (const [species, target] of [['fish', 0.79], ['eel', 0.15], ['crab', 0.03], ['lobster', 0.03]]) {
+    assert.ok(Math.abs(share(species) - target) < 0.015, `${species} share should be close to ${target * 100}%`);
+  }
 });
 
 test('crab share is reduced to roughly one quarter of its previous rate', () => {
