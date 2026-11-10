@@ -357,7 +357,7 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
 });
 
 test('manta rays occupy midwater and maintain a slow, bounded glide with fin motion', () => {
-  const school = createSchool(1000, 73421);
+  const school = createSchool(1000, 73421, { speciesPercentages: { manta: 100 } });
   const rays = school.fish.filter(agent => agent.species === 'manta');
   assert.equal(rays.length, 1000);
   assert.ok(rays.every(agent => Math.abs(agent.p.y) < 4));
@@ -370,7 +370,7 @@ test('manta rays occupy midwater and maintain a slow, bounded glide with fin mot
 test('stingrays glide just above the seabed with slow fin strokes', () => {
   const school = createSchool(1000, 73421, { speciesPercentages: { stingray: 100 } });
   const rays = school.fish.filter(agent => agent.species === 'stingray');
-  assert.ok(rays.length >= 1 && rays.length < 10);
+  assert.equal(rays.length, 1000);
   assert.ok(rays.every(agent => agent.p.y > -8.05 && agent.p.y < -7.75));
   const phase = rays[0].wingPhase;
   const before = { ...rays[0].p };
