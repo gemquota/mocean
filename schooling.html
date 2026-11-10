@@ -494,6 +494,7 @@ function drawWobbegong(fish){
  const eye=point(.72,.12,.16);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.02),0,TAU);ctx.fillStyle='#171a16';ctx.fill();}ctx.restore();
 }
 function drawFish(fish){
+ if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
  if(['clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','marlin','tuna'].includes(fish.species)){drawReefFish(fish);return;}
  if(fish.species==='wobbegong'){drawWobbegong(fish);return;}
  if(fish.species==='orca'){drawOrca(fish);return;}
