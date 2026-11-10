@@ -162,7 +162,28 @@ function drawCrustacean(fish){
  const bodyLength=lobster?.8:.72,bodyWidth=lobster?.4:.56,hidden=!lobster&&fish.sheltering;
  const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
  ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';ctx.lineJoin='round';
- if(lobster){
+ if(!lobster){
+  // Four paired walking legs. Each limb has a visible coxa, backward-kneed
+  // merus and tapered distal segment, all rooted beneath the carapace edge.
+  for(const side of [-1,1])for(let leg=0;leg<4;leg++){
+   const x=(leg-1.5)*bodyLength*.34;
+   const phase=fish.groundPhase+leg*Math.PI+(side>0?Math.PI:0);
+   const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.085;
+   const hip=point(x,-.035,side*.285);
+   const coxa=point(x+stride*.035,-.075,side*.43);
+   const knee=point(x+(leg<2?.13:-.16)+stride*.075,-.19+lift*.18,side*.67);
+   const ankle=point(x+(leg<2?.21:-.24)+stride*.13,-.265+lift,side*.86);
+   const tip=point(x+(leg<2?.27:-.3)+stride*.17,-.285+lift,side*1.02);
+   const width=Math.max(1.25,centre.size*.038*scale);
+   ctx.strokeStyle='#9b7652';ctx.lineWidth=width*1.18;
+   ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(coxa.x,coxa.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(ankle.x,ankle.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+   for(const joint of [coxa,knee,ankle]){
+    ctx.beginPath();ctx.arc(joint.x,joint.y,Math.max(.8,width*.58),0,TAU);ctx.fillStyle='#bd9368';ctx.fill();
+   }
+   ctx.strokeStyle='rgba(45,35,27,.8)';ctx.lineWidth=Math.max(.65,width*.34);
+   ctx.beginPath();ctx.moveTo(knee.x,knee.y);ctx.lineTo(ankle.x,ankle.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+  }
+ }else{
   for(let side of [-1,1])for(let leg=0;leg<4;leg++){
    const x=(leg-1.5)*bodyLength*.39,z=side*bodyWidth*.56,phase=fish.groundPhase+leg*Math.PI*.5+(side>0?Math.PI:0);
    const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.075;
@@ -316,7 +337,7 @@ function animate(now){
   for(const fish of school.fish){
    const nextYaw=Math.atan2(-fish.forward.z,fish.forward.x),nextPitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
    const turn=Math.max(-1,Math.min(1,angleDelta(fish.heading,nextYaw)*1.7));
-   if(fish.species==='fish'||fish.species==='eel')stepGait(fish.gait,fish.species==='eel'?'EXPLORE':'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
+   if(fish.species==='fish'||fish.species==='eel')stepGait(fish.gait,fish.species==='eel'?'MORAY':'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
    fish.heading=nextYaw;fish.pitch=nextPitch;
   }
   accumulator-=dt;

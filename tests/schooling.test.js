@@ -219,3 +219,28 @@ test('1000-fish school remains finite with spatially bounded neighbour work', ()
   assert.ok(metrics.candidateChecks < 1000 * 1000, 'spatial hash should avoid all-pairs neighbour checks');
   assert.ok(metrics.averageSpeed > 0.5);
 });
+
+
+test('moray eels settle near the seabed and maintain a near-horizontal swimming path', () => {
+  const school = createSchool(500, 73421);
+  const eels = school.fish.filter(agent => agent.species === 'eel');
+  const initialMeanY = eels.reduce((sum, eel) => sum + eel.p.y, 0) / eels.length;
+  for (let i = 0; i < 900; i++) stepSchool(school, 1 / 60);
+  const meanY = eels.reduce((sum, eel) => sum + eel.p.y, 0) / eels.length;
+  const meanVerticalSpeed = eels.reduce((sum, eel) => sum + Math.abs(eel.v.y), 0) / eels.length;
+  assert.ok(meanY < initialMeanY, 'eels should actively settle toward the seabed');
+  assert.ok(meanY < -4.5, 'eels should spend most of their time in the lower habitat');
+  assert.ok(meanVerticalSpeed < 0.22, 'eels should favour horizontal swimming');
+});
+
+test('exposed crabs scuttle sideways relative to their shell heading', () => {
+  const school = createSchool(500, 73421);
+  const crab = school.fish.find(agent => agent.species === 'crab');
+  crab.sheltering = false;
+  crab.shelterIndex = 0;
+  crab.p = { x: -20, y: -8.55, z: -17 };
+  for (let i = 0; i < 90; i++) stepSchool(school, 1 / 60);
+  const forwardSpeed = crab.v.x * crab.forward.x + crab.v.z * crab.forward.z;
+  const lateralSpeed = crab.v.x * -crab.forward.z + crab.v.z * crab.forward.x;
+  assert.ok(Math.abs(forwardSpeed) < Math.abs(lateralSpeed) * 0.45, 'crab velocity should be predominantly sideways');
+});

@@ -159,6 +159,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
     const species = speciesRoll < 0.68 ? 'fish' : speciesRoll < 0.83 ? 'eel' : speciesRoll < 0.841 ? 'crab' : 'lobster';
+    if (species === 'eel') direction.y *= 0.28;
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
       : 0.78 + random() * 0.34;
@@ -178,7 +179,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       eelLengthScale,
       schoolAffinity,
       feedingCooldown: 0,
-      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
+      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'eel' ? -7.25 + random() * 1.65 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
       v: grounded ? groundVelocity : { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: heading,
       phase,
@@ -274,6 +275,10 @@ export function stepSchool(school, dt) {
     // Slow, individual heading drift replaces high-frequency random steering.
     if (self.species !== 'crab' && self.species !== 'lobster') {
       const wanderGain = self.species === 'eel' ? 0.052 : 0.035;
+      if (self.species === 'eel') {
+        const bottomTarget = -6.75;
+        ay += clamp((bottomTarget - self.p.y) * 0.3 - self.v.y * 1.15, -0.82, 0.82);
+      }
       ax += Math.sin(school.time * 0.13 + self.phase) * wanderGain;
       ay += Math.sin(school.time * 0.09 + self.phase * 1.7) * wanderGain * 0.52;
       az += Math.cos(school.time * 0.11 + self.phase * 0.83) * wanderGain;
@@ -295,9 +300,6 @@ export function stepSchool(school, dt) {
         z: agent.forward.x * Math.sin(turn) + agent.forward.z * Math.cos(turn)
       });
       agent.forward = turnDirection(agent.forward, targetForward, 0.42 * step);
-      const direction = agent.species === 'crab'
-        ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: agent.forward.x, y: 0, z: agent.forward.z })
-        : { x: agent.forward.x, y: 0, z: agent.forward.z };
       let desiredSpeed;
       if (agent.species === 'crab') {
         agent.shelterTimer -= step;
@@ -316,14 +318,17 @@ export function stepSchool(school, dt) {
         }
         if (agent.sheltering) desiredSpeed = 0.025;
         else {
-          agent.forward = turnDirection(agent.forward, normalize({ x: tx, y: 0, z: tz }), 2.8 * step);
+          agent.forward = turnDirection(agent.forward, normalize({ x: tz, y: 0, z: -tx }), 2.8 * step);
           desiredSpeed = 1.05 + 0.18 * Math.sin(agent.groundPhase * 1.7);
         }
       } else {
         const baseSpeed = 0.34;
         desiredSpeed = baseSpeed * (0.78 + 0.22 * Math.sin(school.time * 0.31 + agent.groundPhase));
       }
-      const desired = { x: direction.x * desiredSpeed, y: 0, z: direction.z * desiredSpeed };
+      const moveDirection = agent.species === 'crab'
+        ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: -agent.forward.z, y: 0, z: agent.forward.x })
+        : { x: agent.forward.x, y: 0, z: agent.forward.z };
+      const desired = { x: moveDirection.x * desiredSpeed, y: 0, z: moveDirection.z * desiredSpeed };
       const response = agent.species === 'crab' ? (agent.sheltering ? 3.5 : 4.2) : 1.05;
       const accelerationLimit = agent.species === 'crab' ? 3.8 : 0.55;
       agent.v.x += clamp((desired.x - agent.v.x) * response, -accelerationLimit, accelerationLimit) * step;
