@@ -1,6 +1,6 @@
 # Mocean
 
-[**Live simulation →**](https://gemquota.github.io/mocean/) · [**Development presentation →**](https://gemquota.github.io/mocean/development.html)
+[**GitHub Pages deployment · Live simulation →**](https://gemquota.github.io/mocean/) · [**Development presentation →**](https://gemquota.github.io/mocean/development.html)
 
 An autonomous aquatic creature study focused on believable movement and procedural anatomy.
 
