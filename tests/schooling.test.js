@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGait, stepGait } from '../src/core/body.js';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
 
 test('mixed-species habitat creates 150 independent agents by default', () => {
   const school = createSchool();
@@ -16,6 +16,7 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   assert.ok(school.fish.filter(f => f.species === 'crab').length <= 10, 'crabs should remain a small part of the habitat');
   assert.ok(school.fish.some(f => f.species === 'mantis'), 'mantis shrimp should be present');
   assert.ok(school.fish.some(f => f.species === 'manta'), 'manta rays should be present');
+  assert.ok(school.fish.some(f => f.species === 'stingray'), 'stingrays should be present');
   assert.ok(school.fish.some(f => f.species === 'lobster'));
   const eels=school.fish.filter(f => f.species === 'eel');
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
@@ -88,7 +89,7 @@ test('100-fish school remains finite and speed-bounded over sustained simulation
   assert.ok(metrics.averageNeighbours > 0);
 });
 
-test('six species have distinct collision envelopes and benthic species spawn on the seabed', () => {
+test('seven species have distinct collision envelopes and benthic species spawn on the seabed', () => {
   assert.equal(SCHOOLING_FISH_SCALE, 0.25);
   assert.ok(SCHOOLING_COLLISION.halfLength > 0.18 && SCHOOLING_COLLISION.halfLength < 0.23);
   assert.ok(SCHOOLING_COLLISION.radius > 0.06 && SCHOOLING_COLLISION.radius < 0.09);
@@ -98,6 +99,8 @@ test('six species have distinct collision envelopes and benthic species spawn on
   assert.ok(SCHOOLING_LOBSTER_COLLISION.halfLength > SCHOOLING_CRAB_COLLISION.halfLength);
   assert.ok(SCHOOLING_MANTIS_COLLISION.radius > 0.07 && SCHOOLING_MANTIS_COLLISION.radius < SCHOOLING_CRAB_COLLISION.radius);
   assert.ok(SCHOOLING_MANTA_COLLISION.halfLength > SCHOOLING_EEL_COLLISION.halfLength);
+  assert.ok(SCHOOLING_STINGRAY_COLLISION.halfLength > SCHOOLING_CRAB_COLLISION.halfLength);
+  assert.ok(SCHOOLING_STINGRAY_COLLISION.radius > SCHOOLING_FISH_SCALE * 0.7);
   const school = createSchool(150, 73421);
   const eels = school.fish.filter(agent => agent.species === 'eel');
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
@@ -265,7 +268,7 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
 test('species mix targets fish, eels, crustaceans, mantis shrimp and manta rays', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.75], ['eel', 0.15], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02]]) {
+  for (const [species, target] of [['fish', 0.74], ['eel', 0.15], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.01], ['manta', 0.02], ['stingray', 0.02]]) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
@@ -291,6 +294,19 @@ test('manta rays occupy midwater and maintain a slow, bounded glide with fin mot
   for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
   assert.notEqual(rays[0].wingPhase, phase);
   assert.ok(rays.every(agent => Math.hypot(agent.v.x, agent.v.y, agent.v.z) <= 1.25 + 1e-9));
+});
+
+test('stingrays glide just above the seabed with slow fin strokes', () => {
+  const school = createSchool(1000, 73421);
+  const rays = school.fish.filter(agent => agent.species === 'stingray');
+  assert.ok(rays.length > 10 && rays.length < 35);
+  assert.ok(rays.every(agent => agent.p.y > -8.05 && agent.p.y < -7.75));
+  const phase = rays[0].wingPhase;
+  const before = { ...rays[0].p };
+  for (let i = 0; i < 240; i++) stepSchool(school, 1 / 60);
+  assert.notEqual(rays[0].wingPhase, phase);
+  assert.ok(Math.hypot(rays[0].p.x-before.x, rays[0].p.z-before.z) > 1);
+  assert.ok(rays.every(agent => agent.p.y === -7.92 && Math.hypot(agent.v.x,agent.v.z) <= 0.83));
 });
 
 test('crab share remains close to the new three-percent target', () => {
