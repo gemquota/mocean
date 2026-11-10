@@ -27,8 +27,8 @@ a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<canvas id="school" aria-label="A mixed habitat of schooling fish and independently swimming eels"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · FISH + EELS</div></header>
+<canvas id="school" aria-label="A mixed habitat of schooling fish, eels, crabs and lobsters"></canvas>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 4 SPECIES</div></header>
 <section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><span>50 CREATURES</span><span>200 CREATURES</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
@@ -50,7 +50,7 @@ function setPopulation(value){
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' CREATURES · FISH + EELS';
+ status.textContent=count.toLocaleString('en-US')+' CREATURES · 4 SPECIES';
 }
 populationSlider.addEventListener('input',event=>{
  const count=Math.max(50,Math.min(200,Math.round(Number(event.target.value)/10)*10));
@@ -131,8 +131,40 @@ function drawEel(fish){
   ctx.restore();
  }
 }
+function drawCrustacean(fish){
+ const lobster=fish.species==='lobster';
+ const yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
+ const centre=project(fish.p),alpha=Math.max(.58,Math.min(.98,1.18-centre.depth*.018));
+ const bodyLength=lobster?.86:.68,bodyWidth=lobster?.42:.48;
+ const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x,y,z))));
+ ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';ctx.lineJoin='round';
+ for(let side of [-1,1])for(let leg=0;leg<4;leg++){
+  const x=(leg-1.5)*.27,z=side*bodyWidth*.78;
+  const phase=fish.groundPhase+leg*Math.PI*.48+(side>0?Math.PI:0);
+  const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.12;
+  const hip=point(x,-.04,z);
+  const elbow=point(x+(lobster?-.12:-.08)+stride*.10,-.18+lift*.35,side*(bodyWidth+.25+(lobster?.04:0)));
+  const foot=point(x+(lobster?-.16:-.12)+stride*(lobster?.2:.17),-.38+lift,side*(bodyWidth+(lobster?.62:.5)));
+  ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(elbow.x,elbow.y);ctx.lineTo(foot.x,foot.y);
+  ctx.strokeStyle=lobster?'#a96848':'#b77a58';ctx.lineWidth=Math.max(1,centre.size*(lobster?.035:.04));ctx.stroke();
+  ctx.beginPath();ctx.arc(foot.x,foot.y,Math.max(.7,centre.size*.012),0,TAU);ctx.fillStyle=lobster?'#d59a70':'#e0b080';ctx.fill();
+ }
+ const shell=[];for(let i=0;i<20;i++){const a=i/20*TAU;shell.push(point(Math.cos(a)*bodyLength*.5,.02+Math.sin(a)*.12,Math.sin(a)*bodyWidth));}
+ ctx.beginPath();shell.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
+ ctx.fillStyle=lobster?'#a84e37':'#bd7650';ctx.strokeStyle=lobster?'#5b3029':'#6c4032';ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.fill();ctx.stroke();
+ for(const side of [-1,1]){const eye=point(bodyLength*.34,.2,side*.2);ctx.beginPath();ctx.moveTo(eye.x,eye.y+centre.size*.025);ctx.lineTo(eye.x,eye.y-centre.size*.025);ctx.strokeStyle='#d5a47c';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03,Math.max(1,centre.size*.025),0,TAU);ctx.fillStyle='#f0dfbb';ctx.fill();ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03,Math.max(.6,centre.size*.012),0,TAU);ctx.fillStyle='#17252a';ctx.fill();}
+ if(lobster){
+  for(const side of [-1,1]){const root=point(bodyLength*.46,.1,side*.12),tip=point(bodyLength*1.18,.34,side*.43);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo((root.x+tip.x)*.5,root.y-centre.size*.16,tip.x,tip.y);ctx.strokeStyle='#d39a70';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();}
+  for(let i=-1;i<=1;i++){const a=point(-bodyLength*.55,-.04,i*.12),b=point(-bodyLength*.85,-.1,i*.2);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='#c17c59';ctx.lineWidth=Math.max(1,centre.size*.035);ctx.stroke();}
+  for(const side of [-1,1]){const root=point(bodyLength*.38,-.04,side*.24),claw=point(bodyLength*.78,-.12,side*.48);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle='#c57a55';ctx.lineWidth=Math.max(1,centre.size*.045);ctx.stroke();}
+ }else{
+  for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*.68,-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.02,claw.y-centre.size*.035);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.02,claw.y+centre.size*.035);ctx.strokeStyle='#d19a70';ctx.lineWidth=Math.max(1,centre.size*.04);ctx.stroke();}
+ }
+ ctx.restore();
+}
 function drawFish(fish){
  if(fish.species==='eel'){drawEel(fish);return;}
+ if(fish.species==='crab'||fish.species==='lobster'){drawCrustacean(fish);return;}
  const speed=Math.hypot(fish.v.x,fish.v.y,fish.v.z);
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p);
@@ -195,14 +227,14 @@ function animate(now){
   for(const fish of school.fish){
    const nextYaw=Math.atan2(-fish.forward.z,fish.forward.x),nextPitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
    const turn=Math.max(-1,Math.min(1,angleDelta(fish.heading,nextYaw)*1.7));
-   stepGait(fish.gait,fish.species==='eel'?'EXPLORE':'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
+   if(fish.species==='fish'||fish.species==='eel')stepGait(fish.gait,fish.species==='eel'?'EXPLORE':'CRUISE',Math.hypot(fish.v.x,fish.v.y,fish.v.z),turn,dt);
    fish.heading=nextYaw;fish.pitch=nextPitch;
   }
   accumulator-=dt;
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · FISH + EELS · SPATIAL HASH';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · ARTICULATED GAIT';}
+ if(frame++%30===0){status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 4 SPECIES · SPATIAL HASH';metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · ARTICULATED GAIT';}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
