@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
 
 test('mixed-species habitat creates 150 independent agents by default', () => {
   const school = createSchool();
@@ -9,6 +9,8 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   assert.ok(school.fish.every(f => f.p !== f.v && Number.isFinite(f.phase)));
   assert.ok(school.fish.some(f => f.species === 'eel'));
   assert.ok(school.fish.some(f => f.species === 'fish'));
+  assert.ok(school.fish.some(f => f.species === 'crab'));
+  assert.ok(school.fish.some(f => f.species === 'lobster'));
   assert.equal('target' in school, false, 'the school must not have a shared target');
 });
 
@@ -72,15 +74,34 @@ test('100-fish school remains finite and speed-bounded over sustained simulation
   assert.ok(metrics.averageNeighbours > 0);
 });
 
-test('fish and eel species have distinct visual and collision envelopes', () => {
+test('four species have distinct collision envelopes and crustaceans spawn on the seabed', () => {
   assert.equal(SCHOOLING_FISH_SCALE, 0.25);
   assert.ok(SCHOOLING_COLLISION.halfLength > 0.18 && SCHOOLING_COLLISION.halfLength < 0.23);
   assert.ok(SCHOOLING_COLLISION.radius > 0.06 && SCHOOLING_COLLISION.radius < 0.09);
   assert.ok(SCHOOLING_EEL_COLLISION.halfLength > SCHOOLING_COLLISION.halfLength * 2.5);
   assert.ok(SCHOOLING_EEL_COLLISION.radius < SCHOOLING_COLLISION.radius);
+  assert.ok(SCHOOLING_CRAB_COLLISION.radius > SCHOOLING_COLLISION.radius);
+  assert.ok(SCHOOLING_LOBSTER_COLLISION.halfLength > SCHOOLING_CRAB_COLLISION.halfLength);
   const school = createSchool(150, 73421);
   const eels = school.fish.filter(agent => agent.species === 'eel');
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
+  for (const species of ['crab','lobster']) {
+    const ground = school.fish.filter(agent => agent.species === species);
+    assert.ok(ground.length >= 10, `${species} should be represented in the seeded population`);
+    assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
+  }
+});
+
+test('crabs and lobsters use bounded grounded locomotion without fish schooling', () => {
+  const school = createSchool(150, 73421);
+  const ground = school.fish.filter(agent => agent.species === 'crab' || agent.species === 'lobster');
+  const before = ground.map(agent => ({...agent.p}));
+  for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
+  assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
+  assert.ok(ground.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
+  assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 0.5));
+  assert.ok(ground.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.z-before[i].z) > 0.25));
+  assert.ok(ground.every(agent => agent.neighbourCount === 0), 'crustaceans must not be pulled into fish schooling');
 });
 
 test('spatial hashing reduces neighbour candidate work below all-pairs scanning', () => {
