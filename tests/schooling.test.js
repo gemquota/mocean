@@ -12,7 +12,7 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   const sizedFish = school.fish.filter(f => f.species === 'fish');
   assert.ok(sizedFish.every(f => f.bodyScale >= 0.58 && f.bodyScale <= 1.5));
   assert.ok(new Set(sizedFish.map(f => f.bodyScale)).size > 20, 'fish should have a continuous range of body sizes');
-  assert.ok(school.fish.filter(f => f.species === 'crab').length < 12, 'crabs should be a small minority of the habitat');
+  assert.ok(school.fish.filter(f => f.species === 'crab').length <= 4, 'crabs should be rare in the habitat');
   assert.ok(school.fish.some(f => f.species === 'lobster'));
   const eels=school.fish.filter(f => f.species === 'eel');
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
@@ -96,7 +96,7 @@ test('four species have distinct collision envelopes and crustaceans spawn on th
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
   for (const species of ['crab','lobster']) {
     const ground = school.fish.filter(agent => agent.species === species);
-    assert.ok(ground.length >= (species === 'crab' ? 3 : 10), `${species} should be represented in the seeded population`);
+    assert.ok(ground.length >= (species === 'crab' ? 1 : 10), `${species} should be represented in the seeded population`);
     assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   }
 });
@@ -120,6 +120,20 @@ test('small fish have stronger schooling affinity than large fish', () => {
   assert.ok(small.length>0 && large.length>0);
   assert.ok(small.every(f=>f.schoolAffinity>0.9));
   assert.ok(large.every(f=>f.schoolAffinity<0.8));
+});
+
+test('crabs use rare, shelter-seeking bursts and pause under cover', () => {
+  const school = createSchool(500, 73421);
+  const crabs = school.fish.filter(agent => agent.species === 'crab');
+  assert.ok(crabs.length < 10, 'crabs should be substantially rarer than before');
+  assert.ok(crabs.every(agent => Number.isInteger(agent.shelterIndex) && agent.sheltering));
+  const crab = crabs[0];
+  crab.sheltering = false;
+  crab.shelterIndex = 0;
+  crab.p = { x: -20, y: -8.55, z: -17 };
+  const before = { ...crab.p };
+  for (let i = 0; i < 30; i++) stepSchool(school, 1 / 60);
+  assert.ok(Math.hypot(crab.p.x-before.x, crab.p.z-before.z) > 0.2, 'an exposed crab should scuttle decisively toward cover');
 });
 
 test('crabs and lobsters use bounded grounded locomotion without fish schooling', () => {
