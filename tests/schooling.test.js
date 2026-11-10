@@ -402,3 +402,21 @@ test('mola mola are distinct slow midwater cruisers with a deep-bodied collision
   assert.ok(mola.every(agent => Math.hypot(agent.v.x,agent.v.y,agent.v.z) < 1.5));
   assert.ok(mola.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.y-before[i].y,agent.p.z-before[i].z) > 0.1));
 });
+
+test('orca pods, deep-diving sperm whales and surface-foraging seals have distinct stable movement', () => {
+  const school = createSchool(1200, 82317);
+  const orcas = school.fish.filter(agent => agent.species === 'orca');
+  const spermWhales = school.fish.filter(agent => agent.species === 'spermWhale');
+  const seals = school.fish.filter(agent => agent.species === 'seal');
+  assert.ok(orcas.length >= 14 && orcas.length <= 22);
+  assert.ok(spermWhales.length >= 4 && spermWhales.length <= 8);
+  assert.ok(seals.length >= 20 && seals.length <= 28);
+  assert.ok(orcas.every(agent => agent.bodyScale >= 2.05 && agent.bodyScale <= 2.4));
+  assert.ok(spermWhales.every(agent => agent.bodyScale >= 3.05 && agent.bodyScale <= 3.6));
+  const start = [...orcas,...spermWhales,...seals].map(agent=>({...agent.p}));
+  for(let i=0;i<600;i++) stepSchool(school,1/60);
+  for(const [index,agent] of [...orcas,...spermWhales,...seals].entries()) {
+    assert.ok([agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite));
+    assert.ok(Math.hypot(agent.p.x-start[index].x,agent.p.y-start[index].y,agent.p.z-start[index].z)>.1);
+  }
+});
