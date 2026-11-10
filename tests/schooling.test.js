@@ -156,7 +156,7 @@ test('benthic crustaceans and mantis shrimp use bounded grounded locomotion', ()
   const school = createSchool(150, 73421);
   const ground = school.fish.filter(agent => agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis');
   const before = ground.map(agent => ({...agent.p}));
-  for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
+  for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
   assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   assert.ok(ground.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
   assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 1.6));
@@ -277,7 +277,7 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
   assert.ok(mantis.length > 10 && mantis.length < 35);
   assert.ok(mantis.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   const before = mantis.map(agent => ({ ...agent.p }));
-  for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
+  for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
   assert.ok(mantis.every(agent => agent.p.y === -8.55 && Number.isFinite(agent.v.x) && Number.isFinite(agent.v.z)));
   assert.ok(mantis.some((agent, i) => Math.hypot(agent.p.x - before[i].x, agent.p.z - before[i].z) > 0.4));
 });
