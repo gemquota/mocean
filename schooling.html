@@ -106,7 +106,10 @@ function polygon(fish,q,points,fill,alpha=1,stroke=null){
 }
 function eelWorldPoint(fish,q,local){
  const lengthScale=2.65/3.95;
- const compressed={x:local.x*lengthScale,y:local.y,z:local.z};
+ // Stretch aft of the head pivot, preserving the blunt head and jaw proportions.
+ const eelLength=fish.eelLengthScale??3;
+ const stretchedX=1.08+(local.x-1.08)*eelLength;
+ const compressed={x:stretchedX*lengthScale,y:local.y,z:local.z};
  const deformed=deformPoint(compressed,fish.gait);
  deformed.x/=lengthScale;
  return add3(fish.p,quatRotate(q,scale3(deformed,SCHOOLING_FISH_SCALE*(fish.bodyScale??1))));

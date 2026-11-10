@@ -123,6 +123,16 @@ test('small fish have stronger schooling affinity than large fish', () => {
   assert.ok(large.every(f=>f.schoolAffinity<0.8));
 });
 
+test('moray eels receive individual 2x to 5x length scaling and matching collision envelopes', () => {
+  const school = createSchool(500, 73421);
+  const eels = school.fish.filter(agent => agent.species === 'eel');
+  assert.ok(eels.length > 20);
+  assert.ok(eels.every(agent => agent.eelLengthScale >= 2 && agent.eelLengthScale <= 5));
+  const short = eels.reduce((a, b) => a.eelLengthScale < b.eelLengthScale ? a : b);
+  const long = eels.reduce((a, b) => a.eelLengthScale > b.eelLengthScale ? a : b);
+  assert.ok(long.eelLengthScale > short.eelLengthScale);
+});
+
 test('crabs use rare, shelter-seeking bursts and pause under cover', () => {
   const school = createSchool(500, 73421);
   const crabs = school.fish.filter(agent => agent.species === 'crab');

@@ -100,7 +100,7 @@ function collisionSegment(agent) {
     : agent.species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.halfLength
     : SCHOOLING_COLLISION.halfLength;
   const scale = agent.bodyScale ?? 1;
-  const scaledHalf = half * scale;
+  const scaledHalf = half * scale * (agent.species === 'eel' ? (agent.eelLengthScale ?? 1) : 1);
   const offset = { x: direction.x * scaledHalf, y: direction.y * scaledHalf, z: direction.z * scaledHalf };
   return [subtract(agent.p, offset), add(agent.p, offset)];
 }
@@ -162,6 +162,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
       : 0.78 + random() * 0.34;
+    const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : 0;
     const grounded = species === 'crab' || species === 'lobster';
     if (grounded) direction.y = 0;
@@ -174,6 +175,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       id,
       species,
       bodyScale,
+      eelLengthScale,
       schoolAffinity,
       feedingCooldown: 0,
       p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
