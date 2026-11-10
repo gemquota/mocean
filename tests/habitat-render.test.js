@@ -107,3 +107,18 @@ test('30-species mix includes three new fish with ecology-adjusted weights', () 
   assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
   assert.match(html, /30 SPECIES/);
 });
+
+
+test('every habitat range slider supports long-press min/max editing persisted in local storage', () => {
+  assert.match(html, /LONG-PRESS ANY SLIDER TO EDIT ITS MINIMUM AND MAXIMUM/);
+  assert.match(script, /const SLIDER_BOUNDS_STORAGE_KEY='mocean\.sliderBounds\.v1'/);
+  assert.match(script, /localStorage\.getItem\(SLIDER_BOUNDS_STORAGE_KEY/);
+  assert.match(script, /localStorage\.setItem\(SLIDER_BOUNDS_STORAGE_KEY/);
+  assert.match(script, /function editSliderBounds\(slider\)/);
+  assert.match(script, /window\.prompt\('Set slider minimum value:'/);
+  assert.match(script, /window\.prompt\('Set slider maximum value:'/);
+  assert.match(script, /setTimeout\(\(\)=>\{pressTimer=null;editSliderBounds\(slider\);\},650\)/);
+  assert.match(script, /document\.querySelectorAll\('input\[type="range"\]'\)/);
+  assert.match(script, /slider\.dataset\.rangeKey=key/);
+  assert.match(script, /savedSliderBounds\[slider\.dataset\.rangeKey\]/);
+});
