@@ -127,7 +127,10 @@ function drawEel(fish){
   for(let i=0;i<=20;i++){const u=i/20,x=.82-u*3.62,width=.17*Math.pow(1-u,.72)+.018;ridge.push(project(eelWorldPoint(fish,q,vec3(x,width*.83,0))));}
   if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(164,207,154,.8)';ctx.lineWidth=Math.max(.6,centre.size*.009);ctx.stroke();}
   const eye=project(eelWorldPoint(fish,q,vec3(.82,.105,.105)));
-  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,eye.size*.026),0,TAU);ctx.fillStyle='#eee9ce';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.006,eye.y,Math.max(.6,eye.size*.011),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
+  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.2,eye.size*.031),0,TAU);ctx.fillStyle='#e7d9bd';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.006,eye.y,Math.max(.8,eye.size*.016),0,TAU);ctx.fillStyle='#c34e42';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.009,eye.y,Math.max(.5,eye.size*.008),0,TAU);ctx.fillStyle='#10171b';ctx.fill();}
+  const jawA=project(eelWorldPoint(fish,q,vec3(.96,-.055,.015))),jawB=project(eelWorldPoint(fish,q,vec3(.69,-.13,.015)));
+  if(jawA.depth>2.5&&jawB.depth>2.5){ctx.beginPath();ctx.moveTo(jawA.x,jawA.y);ctx.lineTo(jawB.x,jawB.y);ctx.strokeStyle='#d2a28b';ctx.lineWidth=Math.max(.8,centre.size*.013);ctx.stroke();for(let tooth=0;tooth<4;tooth++){const t=(tooth+1)/5,x=jawA.x+(jawB.x-jawA.x)*t,y=jawA.y+(jawB.y-jawA.y)*t;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-centre.size*.012,y+centre.size*.035);ctx.strokeStyle='#eee2cb';ctx.lineWidth=Math.max(.6,centre.size*.008);ctx.stroke();}}
+  for(let spine=0;spine<7;spine++){const u=.2+spine*.105,x=.82-u*3.62,w=.205*Math.pow(1-u,.68)+.02,base=project(eelWorldPoint(fish,q,vec3(x,w*.9,0))),tip=project(eelWorldPoint(fish,q,vec3(x-.045,w*1.35,0)));if(base.depth>2.5&&tip.depth>2.5){ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.lineTo(tip.x,tip.y);ctx.strokeStyle='#a6b18a';ctx.lineWidth=Math.max(.7,centre.size*.01);ctx.stroke();}}
   ctx.restore();
  }
 }
