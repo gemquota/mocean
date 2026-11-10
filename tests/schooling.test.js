@@ -285,7 +285,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
   const school = createSchool(1000);
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
-    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (['crab','lobster','mantis','starfish','sandEel'].includes(f.species) ? Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? (f.species === 'crab' ? Math.abs(f.p.z) <= 19 : Math.abs(f.p.z) <= 18) : Math.abs(f.p.z) <= 18)
+    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (['crab','lobster','mantis','starfish','sandEel','wobbegong'].includes(f.species) ? Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? (f.species === 'crab' ? Math.abs(f.p.z) <= 19 : Math.abs(f.p.z) <= 18) : Math.abs(f.p.z) <= 18)
   ));
 });
 
@@ -348,7 +348,7 @@ test('species mix targets regular and dedicated schooling fish, eels, rays, shar
 test('mantis shrimp stay on the seabed and make short, high-acceleration dashes', () => {
   const school = createSchool(1000, 73421, { speciesPercentages: { mantis: 100 } });
   const mantis = school.fish.filter(agent => agent.species === 'mantis');
-  assert.ok(mantis.length >= 1 && mantis.length < 40);
+  assert.equal(mantis.length, 1000);
   assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
   const before = mantis.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
@@ -359,7 +359,7 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
 test('manta rays occupy midwater and maintain a slow, bounded glide with fin motion', () => {
   const school = createSchool(1000, 73421);
   const rays = school.fish.filter(agent => agent.species === 'manta');
-  assert.ok(rays.length >= 1 && rays.length < 10);
+  assert.equal(rays.length, 1000);
   assert.ok(rays.every(agent => Math.abs(agent.p.y) < 4));
   const phase = rays[0].wingPhase;
   for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
@@ -434,7 +434,7 @@ test('default allocation retains at least one individual of every enabled specie
 
 test('species prevalence blends model volume, adult mass and ecological prevalence equally', () => {
   const species = Object.keys(SCHOOLING_SPECIES_VOLUME);
-  assert.equal(species.length, 19);
+  assert.equal(species.length, 30);
   for (const key of species) {
     assert.ok(SCHOOLING_SPECIES_ADULT_MASS_KG[key] > 0);
     assert.ok(SCHOOLING_SPECIES_ECOLOGY[key] > 0);
