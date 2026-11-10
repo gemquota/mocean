@@ -119,6 +119,9 @@ function collisionSegment(agent) {
     : agent.species === 'schoolFish' ? SCHOOLING_SHOAL_COLLISION.halfLength
     : agent.species === 'starfish' ? SCHOOLING_STARFISH_COLLISION.halfLength
     : agent.species === 'dolphin' ? SCHOOLING_DOLPHIN_COLLISION.halfLength
+    : agent.species === 'turtle' ? SCHOOLING_TURTLE_COLLISION.halfLength
+    : agent.species === 'jellyfish' ? SCHOOLING_JELLYFISH_COLLISION.halfLength
+    : agent.species === 'sandEel' ? SCHOOLING_SAND_EEL_COLLISION.halfLength
     : SCHOOLING_COLLISION.halfLength;
   const scale = agent.bodyScale ?? 1;
   const scaledHalf = half * scale * (agent.species === 'eel' ? (agent.eelLengthScale ?? 1) : 1);
@@ -147,6 +150,9 @@ function resolveCollisions(fish, grid) {
         : species === 'schoolFish' ? SCHOOLING_SHOAL_COLLISION.radius
         : species === 'starfish' ? SCHOOLING_STARFISH_COLLISION.radius
         : species === 'dolphin' ? SCHOOLING_DOLPHIN_COLLISION.radius
+        : species === 'turtle' ? SCHOOLING_TURTLE_COLLISION.radius
+        : species === 'jellyfish' ? SCHOOLING_JELLYFISH_COLLISION.radius
+        : species === 'sandEel' ? SCHOOLING_SAND_EEL_COLLISION.radius
         : SCHOOLING_COLLISION.radius;
       const radiusScale = agent => agent.bodyScale ?? 1;
       const contactDistance = radiusFor(a.species) * radiusScale(a) + radiusFor(b.species) * radiusScale(b);
@@ -282,7 +288,7 @@ export function stepSchool(school, dt) {
       const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= NEIGHBOUR_RADIUS * NEIGHBOUR_RADIUS) continue;
       const d = Math.sqrt(d2);
-      if ((self.species === 'shark' || self.species === 'dolphin') && (other.species === 'fish' || other.species === 'schoolFish') && d < preyDistance) {
+      if (((self.species === 'shark' || self.species === 'dolphin') && (other.species === 'fish' || other.species === 'schoolFish') || (self.species === 'turtle' && other.species === 'jellyfish')) && d < preyDistance) {
         preyTarget = other; preyDistance = d;
       }
       if ((self.species === 'fish' || self.species === 'schoolFish') && (other.species === 'shark' || other.species === 'dolphin') && d < 3.3) {
@@ -350,7 +356,7 @@ export function stepSchool(school, dt) {
         self.preyId = preyTarget.id;
       } else self.preyId = null;
       self.feedingCooldown = Math.max(0, (self.feedingCooldown ?? 0) - step);
-    } else if (self.species === 'shark' || self.species === 'dolphin') {
+    } else if (self.species === 'shark' || self.species === 'dolphin' || self.species === 'turtle') {
       if (preyTarget && (self.feedingCooldown ?? 0) <= 0) {
         const chase = normalize(subtract(preyTarget.p, self.p));
         const gain = clamp(1.25 - preyDistance * 0.1, 0.38, 1.05);
