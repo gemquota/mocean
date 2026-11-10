@@ -32,6 +32,7 @@ test('school initialisation is reproducible for a fixed seed', () => {
 
 test('local separation pushes close neighbours apart', () => {
   const school = createSchool(2, 1);
+  school.fish.forEach(agent => { agent.species = 'fish'; });
   school.fish[0].p = { x: -0.25, y: 0, z: 0 };
   school.fish[1].p = { x: 0.25, y: 0, z: 0 };
   school.fish[0].v = { x: 1, y: 0, z: 0 };
@@ -113,6 +114,7 @@ test('spatial hashing reduces neighbour candidate work below all-pairs scanning'
 
 test('overlapping fish capsules produce contact response instead of passing through', () => {
   const school = createSchool(2, 17);
+  school.fish.forEach(agent => { agent.species = 'fish'; });
   school.fish[0].p = { x: -0.16, y: 0, z: 0 };
   school.fish[1].p = { x: 0.16, y: 0, z: 0 };
   school.fish[0].v = { x: 1.1, y: 0, z: 0 };
@@ -149,7 +151,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
   const school = createSchool(1000);
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
-    Math.abs(f.p.x) <= 23.5 && Math.abs(f.p.y) <= 8 && Math.abs(f.p.z) <= 18
+    Math.abs(f.p.x) <= 23.5 && (f.species === 'crab' || f.species === 'lobster' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && Math.abs(f.p.z) <= 18
   ));
 });
 
