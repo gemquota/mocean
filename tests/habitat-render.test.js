@@ -19,7 +19,7 @@ test('habitat browser module parses and initializes every fish before rendering'
 
 test('each species gets controls on speed, size, min/max size and aggression tabs', () => {
   for (const id of ['species-speed', 'species-size', 'species-size-range', 'species-aggression']) {
-    assert.ok(html.includes(\`id="\${id}"\`), \`missing species control group: \${id}\`);
+    assert.ok(html.includes('id="' + id + '"'), 'missing species control group: ' + id);
   }
   assert.match(script, /for\s*\(const \[species,label\] of Object\.entries\(speciesLabels\)\)/);
   assert.match(script, /addSpeciesSlider\('species-speed'/);
