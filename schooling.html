@@ -27,8 +27,8 @@ a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<canvas id="school" aria-label="A mixed habitat of schooling fish, eels, crabs and lobsters"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 4 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 98<br>EELS 25<br>CRABS 7<br>LOBSTERS 20</div>
+<canvas id="school" aria-label="A mixed habitat of schooling fish, moray eels, crabs, lobsters, mantis shrimp and manta rays"></canvas>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 6 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 113<br>EELS 23<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 2<br>MANTA RAYS 2</div>
 <section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><span>50 CREATURES</span><span>200 CREATURES</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
@@ -50,7 +50,7 @@ function setPopulation(value){
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' CREATURES · 4 SPECIES';
+ status.textContent=count.toLocaleString('en-US')+' CREATURES · 6 SPECIES';
 }
 populationSlider.addEventListener('input',event=>{
  const count=Math.max(50,Math.min(200,Math.round(Number(event.target.value)/10)*10));
@@ -212,6 +212,70 @@ function drawCrustacean(fish){
  }
  ctx.restore();
 }
+function drawMantisShrimp(fish){
+ const scale=fish.bodyScale??.8,yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
+ const centre=project(fish.p),alpha=Math.max(.62,Math.min(.99,1.2-centre.depth*.018));
+ const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
+ ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';ctx.lineJoin='round';
+ // Six walking legs keep the small hunter close to the substrate.
+ for(const side of [-1,1])for(let leg=0;leg<3;leg++){
+  const x=-.28+leg*.25,phase=fish.groundPhase+leg*2.1+(side>0?Math.PI:0);
+  const stride=Math.sin(phase)*.055,lift=Math.max(0,Math.cos(phase))*.055;
+  const hip=point(x,-.06,side*.2),knee=point(x-.08+stride,-.19+lift,side*.34),foot=point(x-.16+stride*1.4,-.28+lift,side*.48);
+  ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(foot.x,foot.y);
+  ctx.strokeStyle='#5f9a83';ctx.lineWidth=Math.max(1.1,centre.size*.055);ctx.stroke();
+  for(const joint of [knee]){ctx.beginPath();ctx.arc(joint.x,joint.y,Math.max(.8,centre.size*.018),0,TAU);ctx.fillStyle='#b5cf86';ctx.fill();}
+ }
+ // Segmented emerald body with a bright, armoured dorsal plate.
+ const shell=[[-.62,0,0],[-.43,.2,.28],[.08,.23,.31],[.48,.12,.2],[.58,.02,0],[.48,.12,-.2],[.08,.23,-.31],[-.43,.2,-.28]].map(v=>point(...v));
+ ctx.beginPath();shell.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
+ ctx.fillStyle='#397d67';ctx.strokeStyle='#173f43';ctx.lineWidth=Math.max(1,centre.size*.035);ctx.fill();ctx.stroke();
+ for(let segment=0;segment<4;segment++){
+  const x=-.34+segment*.19,a=point(x,.18,.22),b=point(x-.04,.16,-.22);
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(177,211,139,.68)';ctx.lineWidth=Math.max(.7,centre.size*.018);ctx.stroke();
+ }
+ // Independent eye stalks and fine antennae.
+ for(const side of [-1,1]){
+  const root=point(.42,.12,side*.16),eye=point(.53,.3,side*.22),antenna=point(.62,.22,side*.31);
+  ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(eye.x,eye.y);ctx.strokeStyle='#9bc68a';ctx.lineWidth=Math.max(1,centre.size*.025);ctx.stroke();
+  ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.5,centre.size*.045),0,TAU);ctx.fillStyle='#e4d77d';ctx.fill();ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.7,centre.size*.02),0,TAU);ctx.fillStyle='#172b2b';ctx.fill();
+  ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo(antenna.x+centre.size*.035,antenna.y-centre.size*.025,antenna.x,antenna.y);ctx.strokeStyle='#b6c98a';ctx.lineWidth=Math.max(.6,centre.size*.012);ctx.stroke();
+  // Raptorial clubs cock back, then snap forward during the short strike pulse.
+  const strike=Math.pow(Math.max(0,Math.sin(fish.groundPhase*.42+side*.28)),8);
+  const shoulder=point(.43,.015,side*.2),elbow=point(.67+strike*.12,.1,side*.31),club=point(.83+strike*.25,.13,side*.37);
+  ctx.beginPath();ctx.moveTo(shoulder.x,shoulder.y);ctx.lineTo(elbow.x,elbow.y);ctx.lineTo(club.x,club.y);ctx.strokeStyle='#b4c77b';ctx.lineWidth=Math.max(1.8,centre.size*.065);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(club.x,club.y,Math.max(2,centre.size*.065),Math.max(1.3,centre.size*.035),-.2,0,TAU);ctx.fillStyle='#d3c875';ctx.fill();ctx.strokeStyle='#456e5b';ctx.lineWidth=.7;ctx.stroke();
+ }
+ ctx.restore();
+}
+function drawMantaRay(fish){
+ const scale=fish.bodyScale??1.7,yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z)),q=quatFromEuler(yaw,pitch,0);
+ const centre=project(fish.p),alpha=Math.max(.58,Math.min(.98,1.18-centre.depth*.018));
+ const flap=Math.sin(fish.wingPhase??0),lift=flap*.42;
+ const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
+ const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
+ ctx.save();ctx.globalAlpha=alpha;ctx.lineJoin='round';
+ // Broad pectoral fins sweep and flap as a single continuous wing on each side.
+ for(const side of [-1,1]){
+  const wingLift=lift*(side>0?1:.94);
+  poly([[.43,.06,side*.3],[.05,.16,side*.82],[-.38,wingLift,side*2.55],[-1.05,wingLift*.72,side*2.18],[-.72,-.12,side*.56],[-.28,-.18,side*.24]],side>0?'#286f80':'#347f89','#143f54');
+  const leading=[point(.3,.13,side*.45),point(-.05,.18+wingLift*.28,side*1.1),point(-.38,wingLift,side*2.48)];
+  if(leading.every(p=>p.depth>2.5)){ctx.beginPath();leading.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(139,207,194,.78)';ctx.lineWidth=Math.max(.8,centre.size*.025);ctx.stroke();}
+ }
+ // Wide flattened disc, pale underside and characteristic cephalic lobes.
+ poly([[.9,.02,0],[.66,.22,.42],[.08,.19,.62],[-.62,.08,.48],[-1.05,-.02,0],[-.62,.08,-.48],[.08,.19,-.62],[.66,.22,-.42]],'#245c70','#123c50');
+ poly([[.72,-.015,0],[.45,-.12,.42],[-.48,-.12,.34],[-.82,-.08,0],[-.48,-.12,-.34],[.45,-.12,-.42]],'#8bbab0');
+ for(const side of [-1,1]){
+  poly([[.7,.07,side*.35],[1.02,.02,side*.52],[1.13,-.04,side*.36],[.88,-.09,side*.28]],'#347f89','#17495a');
+  const eye=point(.7,.16,side*.43);
+  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.4,centre.size*.035),0,TAU);ctx.fillStyle='#d8e1c5';ctx.fill();ctx.beginPath();ctx.arc(eye.x+centre.size*.008,eye.y,Math.max(.8,centre.size*.017),0,TAU);ctx.fillStyle='#142b38';ctx.fill();}
+  for(let gill=0;gill<5;gill++){const a=point(.12-gill*.13,-.1,side*.48),b=point(.08-gill*.13,-.2,side*.5);if(a.depth>2.5&&b.depth>2.5){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(15,47,58,.75)';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();}}
+ }
+ const tailA=point(-.9,.015,0),tailB=point(-2.1,-.04,0);
+ if(tailA.depth>2.5&&tailB.depth>2.5){ctx.beginPath();ctx.moveTo(tailA.x,tailA.y);ctx.quadraticCurveTo((tailA.x+tailB.x)*.5,tailA.y-centre.size*.025,tailB.x,tailB.y);ctx.strokeStyle='#286f80';ctx.lineWidth=Math.max(.8,centre.size*.025);ctx.stroke();}
+ ctx.restore();
+}
+
 function drawCoral(){
  const colonies=[
   [-36,-14,0],[-28,5,1],[-11,-13,2],[4,8,0],[16,-16,1],[29,10,2],[37,-5,0],[-2,17,1]
@@ -275,6 +339,8 @@ function drawShelterForeground(){
 function drawFish(fish){
  if(fish.species==='eel'){drawEel(fish);return;}
  if(fish.species==='crab'||fish.species==='lobster'){drawCrustacean(fish);return;}
+ if(fish.species==='mantis'){drawMantisShrimp(fish);return;}
+ if(fish.species==='manta'){drawMantaRay(fish);return;}
  const speed=Math.hypot(fish.v.x,fish.v.y,fish.v.z);
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p);
@@ -344,7 +410,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 4 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
+ if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 6 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
