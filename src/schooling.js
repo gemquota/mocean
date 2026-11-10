@@ -20,9 +20,9 @@ export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius:
 export const SCHOOLING_CRAB_COLLISION = Object.freeze({ halfLength: 0.25, radius: 0.13 });
 export const SCHOOLING_LOBSTER_COLLISION = Object.freeze({ halfLength: 0.34, radius: 0.105 });
 export const CRAB_SHELTERS = Object.freeze([
-  Object.freeze({ x: -34, z: -17 }), Object.freeze({ x: -17, z: -5 }),
-  Object.freeze({ x: -4, z: -3 }), Object.freeze({ x: 8, z: -1 }),
-  Object.freeze({ x: 19, z: -10 }), Object.freeze({ x: 32, z: 2 })
+  Object.freeze({ x: -25, z: -8 }), Object.freeze({ x: -4, z: -3 }),
+  Object.freeze({ x: 19, z: -10 }), Object.freeze({ x: 32, z: 2 }),
+  Object.freeze({ x: -34, z: -17 }), Object.freeze({ x: 16, z: 18 })
 ]);
 const NEIGHBOUR_RADIUS = 2.7;
 const SEPARATION_RADIUS = 0.78;
@@ -176,7 +176,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       bodyScale,
       schoolAffinity,
       feedingCooldown: 0,
-      p: { x: (random() - 0.5) * 47, y: grounded ? -8.55 : (random() - 0.5) * 16, z: (random() - 0.5) * 36 },
+      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
       v: grounded ? groundVelocity : { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: heading,
       phase,
