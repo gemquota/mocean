@@ -325,7 +325,10 @@ export function stepSchool(school, dt) {
         const baseSpeed = 0.34;
         desiredSpeed = baseSpeed * (0.78 + 0.22 * Math.sin(school.time * 0.31 + agent.groundPhase));
       }
-      const moveDirection = agent.species === 'crab'\n        ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: -agent.forward.z, y: 0, z: agent.forward.x })\n        : { x: agent.forward.x, y: 0, z: agent.forward.z };\n      const desired = { x: moveDirection.x * desiredSpeed, y: 0, z: moveDirection.z * desiredSpeed };
+      const moveDirection = agent.species === 'crab'
+        ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: -agent.forward.z, y: 0, z: agent.forward.x })
+        : { x: agent.forward.x, y: 0, z: agent.forward.z };
+      const desired = { x: moveDirection.x * desiredSpeed, y: 0, z: moveDirection.z * desiredSpeed };
       const response = agent.species === 'crab' ? (agent.sheltering ? 3.5 : 4.2) : 1.05;
       const accelerationLimit = agent.species === 'crab' ? 3.8 : 0.55;
       agent.v.x += clamp((desired.x - agent.v.x) * response, -accelerationLimit, accelerationLimit) * step;
