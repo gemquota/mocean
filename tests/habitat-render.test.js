@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const html = readFileSync(new URL('../schooling.html', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../src/schooling.js', import.meta.url), 'utf8');
 const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
 assert.ok(match, 'habitat page should contain its module script');
 const script = match[1].replace(/^import .*?;\s*$/gm, '');
@@ -65,9 +66,9 @@ test('habitat animation exposes runtime faults and reports advancing simulation 
 
 test('reef additions include five configured reef fish and animated anchored anemones', () => {
   for (const species of ['clownfish','parrotfish','blueTang','angelfish','butterflyfish']) assert.match(html, new RegExp(species+':'));
-  assert.match(html, /function drawReefFish\\(fish\\)/);
-  assert.match(html, /function drawAnemones\\(\\)/);
-  assert.match(html, /drawAnemones\\(\\)/);
+  assert.match(html, /function drawReefFish\(fish\)/);
+  assert.match(html, /function drawAnemones\(\)/);
+  assert.match(html, /drawAnemones\(\)/);
   assert.match(src, /REEF_ANEMONE_SITES/);
 });
 
