@@ -17,6 +17,8 @@ export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
+export const SCHOOLING_CRAB_COLLISION = Object.freeze({ halfLength: 0.25, radius: 0.13 });
+export const SCHOOLING_LOBSTER_COLLISION = Object.freeze({ halfLength: 0.34, radius: 0.105 });
 const NEIGHBOUR_RADIUS = 2.7;
 const SEPARATION_RADIUS = 0.78;
 const MAX_SPEED = 2.0;
@@ -88,7 +90,10 @@ function closestSegmentPoints(p1, q1, p2, q2) {
 }
 function collisionSegment(agent) {
   const direction = agent.forward ?? normalize(agent.v);
-  const half = agent.species === 'eel' ? SCHOOLING_EEL_COLLISION.halfLength : SCHOOLING_COLLISION.halfLength;
+  const half = agent.species === 'eel' ? SCHOOLING_EEL_COLLISION.halfLength
+    : agent.species === 'crab' ? SCHOOLING_CRAB_COLLISION.halfLength
+    : agent.species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.halfLength
+    : SCHOOLING_COLLISION.halfLength;
   const offset = { x: direction.x * half, y: direction.y * half, z: direction.z * half };
   return [subtract(agent.p, offset), add(agent.p, offset)];
 }
@@ -103,8 +108,11 @@ function resolveCollisions(fish, grid) {
       const [b0, b1] = collisionSegment(b);
       const [pa, pb] = closestSegmentPoints(a0, a1, b0, b1);
       let delta = subtract(pb, pa), distance = length(delta);
-      const contactDistance = (a.species === 'eel' ? SCHOOLING_EEL_COLLISION.radius : SCHOOLING_COLLISION.radius)
-        + (b.species === 'eel' ? SCHOOLING_EEL_COLLISION.radius : SCHOOLING_COLLISION.radius);
+      const radiusFor = species => species === 'eel' ? SCHOOLING_EEL_COLLISION.radius
+        : species === 'crab' ? SCHOOLING_CRAB_COLLISION.radius
+        : species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.radius
+        : SCHOOLING_COLLISION.radius;
+      const contactDistance = radiusFor(a.species) + radiusFor(b.species);
       if (distance >= contactDistance) continue;
       if (distance < 1e-8) {
         delta = normalize({ x: (j - i) % 3 === 0 ? 1 : 0.37, y: (j - i) % 3 === 1 ? 1 : 0.23, z: (j - i) % 3 === 2 ? 1 : 0.41 });
@@ -141,14 +149,23 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     });
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
-    const species = random() < 0.2 ? 'eel' : 'fish';
+    const speciesRoll = random();
+    const species = speciesRoll < 0.55 ? 'fish' : speciesRoll < 0.72 ? 'eel' : speciesRoll < 0.86 ? 'crab' : 'lobster';
+    const grounded = species === 'crab' || species === 'lobster';
+    if (grounded) direction.y = 0;
+    const heading = normalize(direction);
+    const groundSpeed = species === 'crab' ? 0.28 : 0.34;
+    const groundVelocity = species === 'crab'
+      ? { x: -heading.z * groundSpeed, y: 0, z: heading.x * groundSpeed }
+      : { x: heading.x * groundSpeed, y: 0, z: heading.z * groundSpeed };
     return {
       id,
       species,
-      p: { x: (random() - 0.5) * 47, y: (random() - 0.5) * 16, z: (random() - 0.5) * 36 },
-      v: { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
-      forward: { ...direction },
+      p: { x: (random() - 0.5) * 47, y: grounded ? -8.55 : (random() - 0.5) * 16, z: (random() - 0.5) * 36 },
+      v: grounded ? groundVelocity : { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
+      forward: heading,
       phase,
+      groundPhase: random() * Math.PI * 2,
       neighbourCount: 0,
       collisionCount: 0
     };
@@ -214,10 +231,12 @@ export function stepSchool(school, dt) {
       az -= self.p.z / (SCHOOLING_LIMITS.z ** 2) * pressure * 5.2;
     }
     // Slow, individual heading drift replaces high-frequency random steering.
-    const wanderGain = self.species === 'eel' ? 0.052 : 0.035;
-    ax += Math.sin(school.time * 0.13 + self.phase) * wanderGain;
-    ay += Math.sin(school.time * 0.09 + self.phase * 1.7) * wanderGain * 0.52;
-    az += Math.cos(school.time * 0.11 + self.phase * 0.83) * wanderGain;
+    if (self.species !== 'crab' && self.species !== 'lobster') {
+      const wanderGain = self.species === 'eel' ? 0.052 : 0.035;
+      ax += Math.sin(school.time * 0.13 + self.phase) * wanderGain;
+      ay += Math.sin(school.time * 0.09 + self.phase * 1.7) * wanderGain * 0.52;
+      az += Math.cos(school.time * 0.11 + self.phase * 0.83) * wanderGain;
+    }
     accelerations[i] = limit({ x: ax, y: ay, z: az }, MAX_ACCELERATION);
     self.collisionCount = 0;
   }
@@ -225,6 +244,34 @@ export function stepSchool(school, dt) {
   let speedTotal = 0;
   for (let i = 0; i < fish.length; i++) {
     const agent = fish[i], acceleration = accelerations[i];
+    if (agent.species === 'crab' || agent.species === 'lobster') {
+      // Benthic locomotion keeps the shell grounded and uses a species-specific
+      // walking direction: crabs sidestep, lobsters progress more longitudinally.
+      const turn = Math.sin(school.time * 0.17 + agent.groundPhase) * 0.22;
+      const targetForward = normalize({
+        x: agent.forward.x * Math.cos(turn) - agent.forward.z * Math.sin(turn),
+        y: 0,
+        z: agent.forward.x * Math.sin(turn) + agent.forward.z * Math.cos(turn)
+      });
+      agent.forward = turnDirection(agent.forward, targetForward, 0.42 * step);
+      const direction = agent.species === 'crab'
+        ? { x: -agent.forward.z, y: 0, z: agent.forward.x }
+        : { x: agent.forward.x, y: 0, z: agent.forward.z };
+      const baseSpeed = agent.species === 'crab' ? 0.27 : 0.34;
+      const desiredSpeed = baseSpeed * (0.78 + 0.22 * Math.sin(school.time * 0.31 + agent.groundPhase));
+      const desired = { x: direction.x * desiredSpeed, y: 0, z: direction.z * desiredSpeed };
+      const response = agent.species === 'crab' ? 0.85 : 1.05;
+      agent.v.x += clamp((desired.x - agent.v.x) * response, -0.55, 0.55) * step;
+      agent.v.z += clamp((desired.z - agent.v.z) * response, -0.55, 0.55) * step;
+      agent.v.y = 0;
+      agent.p.x += agent.v.x * step;
+      agent.p.z += agent.v.z * step;
+      agent.p.y = -8.55;
+      agent.groundPhase += step * (agent.species === 'crab' ? 5.2 : 4.1);
+      agent.phase += step * 1.2;
+      speedTotal += length(agent.v);
+      continue;
+    }
     // Gently regulate cruising speed through acceleration, preserving inertia.
     const currentSpeed = length(agent.v), desiredSpeed = (agent.species === 'eel' ? 0.92 : 1.12) + 0.12 * Math.sin(school.time * 0.08 + agent.phase);
     const direction = currentSpeed > 0.12 ? normalize(agent.v) : agent.forward;
@@ -244,6 +291,10 @@ export function stepSchool(school, dt) {
   // Rebuild after integration so the contact pass sees the current positions.
   const collisionGrid = buildGrid(fish);
   const collisions = resolveCollisions(fish, collisionGrid);
+  for (const agent of fish) if (agent.species === 'crab' || agent.species === 'lobster') {
+    agent.p.y = -8.55;
+    agent.v.y = 0;
+  }
   school.time += step;
   school.metrics = {
     averageSpeed: speedTotal / Math.max(1, fish.length),
