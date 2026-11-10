@@ -21,6 +21,7 @@ export const SCHOOLING_CRAB_COLLISION = Object.freeze({ halfLength: 0.25, radius
 export const SCHOOLING_LOBSTER_COLLISION = Object.freeze({ halfLength: 0.34, radius: 0.105 });
 export const SCHOOLING_MANTIS_COLLISION = Object.freeze({ halfLength: 0.27, radius: 0.085 });
 export const SCHOOLING_MANTA_COLLISION = Object.freeze({ halfLength: 0.82, radius: 0.2 });
+export const SCHOOLING_STINGRAY_COLLISION = Object.freeze({ halfLength: 0.68, radius: 0.22 });
 export const CRAB_SHELTERS = Object.freeze([
   Object.freeze({ x: -25, z: -8 }), Object.freeze({ x: -4, z: -3 }),
   Object.freeze({ x: 19, z: -10 }), Object.freeze({ x: 32, z: 2 }),
@@ -102,6 +103,7 @@ function collisionSegment(agent) {
     : agent.species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.halfLength
     : agent.species === 'mantis' ? SCHOOLING_MANTIS_COLLISION.halfLength
     : agent.species === 'manta' ? SCHOOLING_MANTA_COLLISION.halfLength
+    : agent.species === 'stingray' ? SCHOOLING_STINGRAY_COLLISION.halfLength
     : SCHOOLING_COLLISION.halfLength;
   const scale = agent.bodyScale ?? 1;
   const scaledHalf = half * scale * (agent.species === 'eel' ? (agent.eelLengthScale ?? 1) : 1);
@@ -124,6 +126,7 @@ function resolveCollisions(fish, grid) {
         : species === 'lobster' ? SCHOOLING_LOBSTER_COLLISION.radius
         : species === 'mantis' ? SCHOOLING_MANTIS_COLLISION.radius
         : species === 'manta' ? SCHOOLING_MANTA_COLLISION.radius
+        : species === 'stingray' ? SCHOOLING_STINGRAY_COLLISION.radius
         : SCHOOLING_COLLISION.radius;
       const radiusScale = agent => agent.bodyScale ?? 1;
       const contactDistance = radiusFor(a.species) * radiusScale(a) + radiusFor(b.species) * radiusScale(b);
@@ -164,12 +167,13 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.75 ? 'fish' : speciesRoll < 0.90 ? 'eel' : speciesRoll < 0.93 ? 'crab' : speciesRoll < 0.96 ? 'lobster' : speciesRoll < 0.98 ? 'mantis' : 'manta';
+    const species = speciesRoll < 0.74 ? 'fish' : speciesRoll < 0.89 ? 'eel' : speciesRoll < 0.92 ? 'crab' : speciesRoll < 0.95 ? 'lobster' : speciesRoll < 0.96 ? 'mantis' : speciesRoll < 0.98 ? 'manta' : 'stingray';
     if (species === 'eel') direction.y *= 0.28;
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
       : species === 'mantis' ? 0.72 + random() * 0.18
       : species === 'manta' ? 1.55 + random() * 0.35
+      : species === 'stingray' ? 0.98 + random() * 0.28
       : 0.78 + random() * 0.34;
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : 0;
@@ -187,7 +191,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       eelLengthScale,
       schoolAffinity,
       feedingCooldown: 0,
-      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
+      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'stingray' ? -7.92 + random() * 0.12 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : (random() - 0.5) * 36 },
       wingPhase: random() * Math.PI * 2,
       v: grounded ? groundVelocity : { x: direction.x * speed, y: direction.y * speed, z: direction.z * speed },
       forward: heading,
@@ -301,6 +305,25 @@ export function stepSchool(school, dt) {
   let speedTotal = 0;
   for (let i = 0; i < fish.length; i++) {
     const agent = fish[i], acceleration = accelerations[i];
+    if (agent.species === 'stingray') {
+      // Stingrays cruise just above the substrate with slow, continuous pectoral-fin strokes.
+      const desiredSpeed = 0.62 + 0.055 * Math.sin(school.time * 0.12 + agent.phase);
+      const currentSpeed = Math.hypot(agent.v.x, agent.v.z);
+      const direction = currentSpeed > 0.08 ? normalize({ x: agent.v.x, y: 0, z: agent.v.z }) : agent.forward;
+      const speedCorrection = clamp((desiredSpeed - currentSpeed) * 0.72, -0.24, 0.3);
+      agent.v.x += (acceleration.x + direction.x * speedCorrection) * step;
+      agent.v.z += (acceleration.z + direction.z * speedCorrection) * step;
+      agent.v.y = 0;
+      agent.v = limit(agent.v, 0.82);
+      agent.forward = turnDirection(agent.forward, normalize({ x: agent.v.x, y: 0, z: agent.v.z }), 0.72 * step);
+      agent.p.x += agent.v.x * step;
+      agent.p.z += agent.v.z * step;
+      agent.p.y = -7.92;
+      agent.wingPhase += step * 1.55;
+      agent.phase += step * 1.1;
+      speedTotal += length(agent.v);
+      continue;
+    }
     if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis') {
       // Benthic locomotion keeps the shell grounded and uses a species-specific
       // walking direction: crabs sidestep, lobsters progress more longitudinally.
