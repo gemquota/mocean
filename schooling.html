@@ -140,7 +140,8 @@ function project(point){
  const relative=sub(point,camera.p),depth=dot3(relative,cameraForward),focal=Math.min(viewWidth,viewHeight)*1.08,size=focal/Math.max(4,depth);
  return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};
 }
-function makeMesh(){ const vertices=[],faces=[],rings=12,sides=10;
+function makeMesh(){
+ const vertices=[],faces=[],rings=12,sides=10;
  for(let i=0;i<=rings;i++){
   const t=i/rings,x=.98-2.65*t,profile=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.68);
   const ry=.43*profile*(1.08-.22*t),rz=.35*profile*(1.06-.2*t);
@@ -239,7 +240,8 @@ function drawCrustacean(fish){
    ctx.strokeStyle='#527e78';ctx.lineWidth=width*1.18;
    ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(coxa.x,coxa.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(ankle.x,ankle.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
    for(const joint of [coxa,knee,ankle]){
-    ctx.beginPath();ctx.arc(joint.x,joint.y,Math.max(.8,width*.58),0,TAU);ctx.fillStyle='#79a99a';ctx.fill();   }
+    ctx.beginPath();ctx.arc(joint.x,joint.y,Math.max(.8,width*.58),0,TAU);ctx.fillStyle='#79a99a';ctx.fill();
+   }
    ctx.strokeStyle='rgba(45,35,27,.8)';ctx.lineWidth=Math.max(.65,width*.34);
    ctx.beginPath();ctx.moveTo(knee.x,knee.y);ctx.lineTo(ankle.x,ankle.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
   }
@@ -338,7 +340,8 @@ function drawMantaRay(fish){
  drawVolume(fish,q,vec3(-.05,.015,0),scale3(vec3(.78,.13,.58),scale),'#245c70',.38,12,5);ctx.restore();
 }
 
-const planktonParticles=Array.from({length:480},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));function drawSeagrassAndKelp(){
+const planktonParticles=Array.from({length:480},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
+function drawSeagrassAndKelp(){
  const grassBeds=[[-33,-10],[-24,12],[-8,-7],[9,13],[25,-12],[34,8],[-2,25]];
  for(let bed=0;bed<grassBeds.length;bed++){const [cx,cz]=grassBeds[bed];for(let i=0;i<18;i++){const a=i*2.3999632297+bed*.8,rad=.25+Math.sqrt(i/18)*2.4,x=cx+Math.cos(a)*rad,z=cz+Math.sin(a)*rad,floor=seabedHeight(x,z),root=project(vec3(x,floor+.04,z)),blades=3+i%3,sway=Math.sin(school.time*.72+i*.9+bed)*.24;ctx.save();ctx.lineCap='round';for(let b=0;b<blades;b++){const side=(b-(blades-1)/2)*.075,height=.55+((i*7+b*3)%5)*.12,tip=project(vec3(x+side+sway*height,floor+height,z+side*.35));if(root.depth<2.5||tip.depth<2.5)continue;ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo(root.x+side*root.size*.2,root.y-tip.size*.22,tip.x,tip.y);ctx.strokeStyle=b%2?'#648d55':'#88a966';ctx.lineWidth=Math.max(.8,root.size*.022);ctx.stroke();}ctx.restore();}}
  const kelpBeds=[[-31,-16],[-12,-16],[5,4],[21,-19],[32,13],[-4,23]];
@@ -437,7 +440,8 @@ function drawVolume(fish,q,centre,radii,colour,alpha=1,segments=9,rings=5){
  for(let r=0;r<=rings;r++){
   const v=r/rings,phi=-Math.PI/2+v*Math.PI;
   for(let j=0;j<segments;j++){
-   const theta=j/segments*TAU,nx=Math.cos(phi)*Math.cos(theta),ny=Math.sin(phi),nz=Math.cos(phi)*Math.sin(theta);   const local=vec3(centre.x+nx*radii.x,centre.y+ny*radii.y,centre.z+nz*radii.z);
+   const theta=j/segments*TAU,nx=Math.cos(phi)*Math.cos(theta),ny=Math.sin(phi),nz=Math.cos(phi)*Math.sin(theta);
+   const local=vec3(centre.x+nx*radii.x,centre.y+ny*radii.y,centre.z+nz*radii.z);
    vertices.push(project(add3(fish.p,quatRotate(q,local))));
   }
  }
@@ -536,7 +540,8 @@ function drawFish(fish){
  if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
  if(['clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','marlin','tuna'].includes(fish.species)){drawReefFish(fish);return;}
  if(fish.species==='wobbegong'){drawWobbegong(fish);return;}
- if(fish.species==='orca'){drawOrca(fish);return;} if(fish.species==='spermWhale'){drawSpermWhale(fish);return;}
+ if(fish.species==='orca'){drawOrca(fish);return;}
+ if(fish.species==='spermWhale'){drawSpermWhale(fish);return;}
  if(fish.species==='seal'){drawSeal(fish);return;}
  if(fish.species==='mola'){drawMola(fish);return;}
  if(fish.species==='jellyfish'){drawJellyfish(fish);return;}
@@ -635,7 +640,8 @@ function drawSchoolFish(fish){
     for(let row=0;row<3;row++)for(let col=0;col<9;col++){
       const x=.72-col*.19,y=.16+Math.sin(col*.35)*.045,z=(row-1)*.17;
       const p=point(x,y,z);if(p.depth<2.5)continue;
-      ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.7,centre.size*.012),0,TAU);ctx.fillStyle='rgba(218,232,224,.88)';ctx.fill();    }
+      ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.7,centre.size*.012),0,TAU);ctx.fillStyle='rgba(218,232,224,.88)';ctx.fill();
+    }
     poly([[.35,.22,0],[.05,.66,0],[-.28,.22,0]],'#3d5e70',outline);
     poly([[-.48,.2,0],[-.82,.5,0],[-.78,.13,0]],'#3d5e70',outline);
     poly([[-1.12,.02,0],[-1.68,.34,0],[-1.54,.015,0],[-1.68,-.25,0],[-1.12,-.04,0]],'#3d5e70',outline);
