@@ -338,7 +338,7 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
 test('species mix targets regular and dedicated schooling fish, eels, rays, sharks, reef fauna and new turtle species', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.17], ['schoolFish', 0.36], ['eel', 0.17], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['mola', 0.01], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
+  for (const [species, target] of [['fish', 0.17], ['schoolFish', 0.33], ['eel', 0.16], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['mola', 0.01], ['orca', 0.015], ['spermWhale', 0.005], ['seal', 0.02], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
@@ -401,4 +401,22 @@ test('mola mola are distinct slow midwater cruisers with a deep-bodied collision
   assert.ok(meanSpeed < 0.85, 'mola mola should retain a slow cruising pace despite occasional collision impulses');
   assert.ok(mola.every(agent => Math.hypot(agent.v.x,agent.v.y,agent.v.z) < 1.5));
   assert.ok(mola.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.y-before[i].y,agent.p.z-before[i].z) > 0.1));
+});
+
+test('orca pods, deep-diving sperm whales and surface-foraging seals have distinct stable movement', () => {
+  const school = createSchool(500, 82317);
+  const orcas = school.fish.filter(agent => agent.species === 'orca');
+  const spermWhales = school.fish.filter(agent => agent.species === 'spermWhale');
+  const seals = school.fish.filter(agent => agent.species === 'seal');
+  assert.ok(orcas.length >= 6 && orcas.length <= 10);
+  assert.ok(spermWhales.length >= 1 && spermWhales.length <= 4);
+  assert.ok(seals.length >= 8 && seals.length <= 13);
+  assert.ok(orcas.every(agent => agent.bodyScale >= 2.05 && agent.bodyScale <= 2.4));
+  assert.ok(spermWhales.every(agent => agent.bodyScale >= 3.05 && agent.bodyScale <= 3.6));
+  const start = [...orcas,...spermWhales,...seals].map(agent=>({...agent.p}));
+  for(let i=0;i<240;i++) stepSchool(school,1/60);
+  for(const [index,agent] of [...orcas,...spermWhales,...seals].entries()) {
+    assert.ok([agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite));
+    assert.ok(Math.hypot(agent.p.x-start[index].x,agent.p.y-start[index].y,agent.p.z-start[index].z)>.1);
+  }
 });

@@ -37,3 +37,13 @@ test('reef habitat includes mola mola, irregular reef formations, seagrass, kelp
   assert.match(script, /i%12/);
   assert.match(script, /drawSeagrassAndKelp\(\)/);
 });
+
+test('orca, sperm whale and seal have dedicated volumetric renderers and habitat counts', () => {
+  for(const [species,renderer] of [['orca','drawOrca'],['spermWhale','drawSpermWhale'],['seal','drawSeal']]) {
+    assert.ok(html.includes(species+':'),species+' config label missing');
+    assert.ok(script.includes('function '+renderer+'(fish)'),renderer+' missing');
+  }
+  assert.match(script,/counts\.orca/);
+  assert.match(script,/counts\.spermWhale/);
+  assert.match(script,/counts\.seal/);
+});
