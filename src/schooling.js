@@ -195,7 +195,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
     });
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
-    let speciesRoll = random() * speciesTotal;
+    let speciesRoll = ((id + random()) / size) * speciesTotal;
     let species = speciesEntries[speciesEntries.length - 1]?.[0] ?? 'fish';
     for (const [candidate, weight] of speciesEntries) { speciesRoll -= weight; if (speciesRoll < 0) { species = candidate; break; } }
     if (species === 'eel') direction.y *= 0.28;
