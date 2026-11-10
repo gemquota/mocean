@@ -218,7 +218,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       : species === 'dolphin' ? 1.12 + random() * 0.2
       : species === 'turtle' ? 0.92 + random() * 0.18
       : species === 'jellyfish' ? 0.58 + random() * 0.2
-      : species === 'sandEel' ? 0.72 + random() * 0.16
+      : species === 'sandEel' ? 2.2 + random() * 0.5
       : 0.78 + random() * 0.34;
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : species === 'schoolFish' ? 2.4 : 0;
@@ -426,6 +426,8 @@ export function stepSchool(school, dt) {
       const emergence = Math.max(0, Math.sin(agent.burrowPhase));
       agent.buried = emergence < 0.32;
       agent.p.y = seabedHeight(agent.p.x, agent.p.z) + (agent.buried ? 0.02 : 0.72 + emergence * 0.8);
+      agent.filterFeedPhase += step * 1.6;
+      if (!agent.buried) agent.planktonFiltered += step * (0.15 + emergence * 0.3);
       agent.v.x = 0.018 * Math.sin(agent.burrowPhase * 0.7); agent.v.z = 0.012 * Math.cos(agent.burrowPhase * 0.6);
       agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step;
       agent.phase += step * 0.9; speedTotal += length(agent.v); continue;
