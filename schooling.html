@@ -29,7 +29,7 @@ a:hover{text-decoration:underline}
 </head>
 <body>
 <canvas id="school" aria-label="A mixed habitat of schooling fish, moray eels, crabs, lobsters, mantis shrimp, manta rays, stingrays, reef sharks, whale sharks, starfish, dolphins, dedicated shoaling fish and drifting plankton"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 12 SPECIES</div></header><div class="species-counts" id="species-counts">REGULAR FISH · SOCIAL 31<br>SCHOOLING FISH · DEDICATED SHOALS 63<br>EELS 22<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 3<br>MANTA RAYS 3<br>STINGRAYS 3<br>SHARKS 3<br>WHALE SHARKS 3<br>STARFISH 4<br>DOLPHINS 5</div>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 15 SPECIES</div></header><div class="species-counts" id="species-counts">REGULAR FISH · SOCIAL 31<br>SCHOOLING FISH · DEDICATED SHOALS 63<br>EELS 22<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 3<br>MANTA RAYS 3<br>STINGRAYS 3<br>SHARKS 3<br>WHALE SHARKS 3<br>STARFISH 4<br>DOLPHINS 5</div>
 <button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><p>Species proportions · normalised when applied</p><div id="species-mix"></div><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">41</output><input id="world-x" type="range" min="20" max="100" value="41"></label><label>Y <output id="world-y-value">15.5</output><input id="world-y" type="range" min="8" max="40" step="0.5" value="15.5"></label><label>Z <output id="world-z-value">31</output><input id="world-z" type="range" min="15" max="90" value="31"></label></div></aside><section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><button id="population-min">50 CREATURES</button><button id="population-max">200 CREATURES</button></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
@@ -55,11 +55,11 @@ function initialiseFishVisualState(nextSchool){
 function setPopulation(value){
  const count=Math.max(50,Math.min(200,Math.round(Number(value)/10)*10));
  if(count===school.fish.length)return;
- const nextSchool=createSchool(count);
+ const nextSchool=createSchool(count,73421,{speciesPercentages:speciesMix,worldSize});
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' CREATURES · 12 SPECIES';
+ status.textContent=count.toLocaleString('en-US')+' CREATURES · 15 SPECIES';
 }
 populationSlider.addEventListener('input',event=>{
  const count=Math.max(50,Math.min(200,Math.round(Number(event.target.value)/10)*10));
@@ -317,7 +317,7 @@ function drawCoral(){
   }else if(type===1){
    for(let lobe=0;lobe<5;lobe++){const a=lobe/5*TAU,c=project(vec3(x+Math.cos(a)*.22,-8.48+.1*Math.sin(a),z+Math.sin(a)*.22));ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(1,base.size*.14),Math.max(1,base.size*.22),a,0,TAU);ctx.fillStyle=index%2?'#b66d86':'#d28b73';ctx.fill();}
   }else{
-   for(let branch=0;branch<4;branch++){const a=branch/4*TAU,p1=project(vec3(x+Math.cos(a)*.22,-8.48+.3,z+Math.sin(a)*.22)),p2=project(vec3(x+Math.cos(a)*.36,-8.48+.65,z+Math.sin(a)*.36));ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle='#bd8a9e';ctx.lineWidth=Math.max(1,base.size*.055);ctx.stroke();}
+   for(let branch=0;branch<4;branch++){const a=branch/4*TAU,p1=project(vec3(x+Math.cos(a)*.22,seabedHeight(x,z)+.3,z+Math.sin(a)*.22)),p2=project(vec3(x+Math.cos(a)*.36,seabedHeight(x,z)+.65,z+Math.sin(a)*.36));ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle='#bd8a9e';ctx.lineWidth=Math.max(1,base.size*.055);ctx.stroke();}
   }
   ctx.restore();
  }
