@@ -15,7 +15,7 @@ export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
-export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze({ fish:17, schoolFish:36, eel:17, crab:3, lobster:3, mantis:2, manta:2, stingray:2, shark:2, whaleShark:2, mola:1, starfish:3, dolphin:3, turtle:2, jellyfish:3, sandEel:2 });
+export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze({ fish:13, schoolFish:36, eel:17, crab:3, lobster:3, mantis:2, manta:2, stingray:2, shark:2, whaleShark:2, mola:1, orca:1.5, spermWhale:0.5, seal:2, starfish:3, dolphin:3, turtle:2, jellyfish:3, sandEel:2 });
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
@@ -27,6 +27,9 @@ export const SCHOOLING_STINGRAY_COLLISION = Object.freeze({ halfLength: 0.68, ra
 export const SCHOOLING_SHARK_COLLISION = Object.freeze({ halfLength: 1.02, radius: 0.25 });
 export const SCHOOLING_WHALE_SHARK_COLLISION = Object.freeze({ halfLength: 1.34, radius: 0.38 });
 export const SCHOOLING_MOLA_COLLISION = Object.freeze({ halfLength: 0.58, radius: 0.39 });
+export const SCHOOLING_ORCA_COLLISION = Object.freeze({ halfLength: 1.18, radius: 0.36 });
+export const SCHOOLING_SPERM_WHALE_COLLISION = Object.freeze({ halfLength: 1.72, radius: 0.52 });
+export const SCHOOLING_SEAL_COLLISION = Object.freeze({ halfLength: 0.62, radius: 0.25 });
 export const SCHOOLING_SHOAL_COLLISION = Object.freeze({ halfLength: 0.236, radius: 0.045 });
 export const SCHOOLING_STARFISH_COLLISION = Object.freeze({ halfLength: 0.27, radius: 0.19 });
 export const SCHOOLING_DOLPHIN_COLLISION = Object.freeze({ halfLength: 0.94, radius: 0.21 });
@@ -118,6 +121,9 @@ function collisionSegment(agent) {
     : agent.species === 'shark' ? SCHOOLING_SHARK_COLLISION.halfLength
     : agent.species === 'whaleShark' ? SCHOOLING_WHALE_SHARK_COLLISION.halfLength
     : agent.species === 'mola' ? SCHOOLING_MOLA_COLLISION.halfLength
+    : agent.species === 'orca' ? SCHOOLING_ORCA_COLLISION.halfLength
+    : agent.species === 'spermWhale' ? SCHOOLING_SPERM_WHALE_COLLISION.halfLength
+    : agent.species === 'seal' ? SCHOOLING_SEAL_COLLISION.halfLength
     : agent.species === 'schoolFish' ? SCHOOLING_SHOAL_COLLISION.halfLength
     : agent.species === 'starfish' ? SCHOOLING_STARFISH_COLLISION.halfLength
     : agent.species === 'dolphin' ? SCHOOLING_DOLPHIN_COLLISION.halfLength
@@ -150,6 +156,9 @@ function resolveCollisions(fish, grid) {
         : species === 'shark' ? SCHOOLING_SHARK_COLLISION.radius
         : species === 'whaleShark' ? SCHOOLING_WHALE_SHARK_COLLISION.radius
         : species === 'mola' ? SCHOOLING_MOLA_COLLISION.radius
+        : species === 'orca' ? SCHOOLING_ORCA_COLLISION.radius
+        : species === 'spermWhale' ? SCHOOLING_SPERM_WHALE_COLLISION.radius
+        : species === 'seal' ? SCHOOLING_SEAL_COLLISION.radius
         : species === 'schoolFish' ? SCHOOLING_SHOAL_COLLISION.radius
         : species === 'starfish' ? SCHOOLING_STARFISH_COLLISION.radius
         : species === 'dolphin' ? SCHOOLING_DOLPHIN_COLLISION.radius
@@ -219,6 +228,9 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       : species === 'shark' ? 1.62 + random() * 0.3
       : species === 'whaleShark' ? 2.45 + random() * 0.55
       : species === 'mola' ? 1.42 + random() * 0.28
+      : species === 'orca' ? 2.05 + random() * 0.35
+      : species === 'spermWhale' ? 3.05 + random() * 0.55
+      : species === 'seal' ? 0.92 + random() * 0.22
       : species === 'dolphin' ? 1.12 + random() * 0.2
       : species === 'turtle' ? 0.92 + random() * 0.18
       : species === 'jellyfish' ? 0.58 + random() * 0.2
@@ -226,7 +238,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       : 0.78 + random() * 0.34;
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : species === 'schoolFish' ? 2.4 : 0;
-    const socialGroupId = species === 'schoolFish' ? id % 6 : species === 'dolphin' ? id % 3 : -1;
+    const socialGroupId = species === 'schoolFish' ? id % 6 : species === 'dolphin' ? id % 3 : species === 'orca' ? 0 : species === 'seal' ? id % 3 : -1;
     const grounded = species === 'crab' || species === 'lobster' || species === 'mantis' || species === 'starfish' || species === 'sandEel';
     if (grounded) direction.y = 0;
     const heading = normalize(direction);
@@ -244,7 +256,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       feedingCooldown: 0,
       filterFeedPhase: random() * Math.PI * 2,
       planktonFiltered: 0,
-      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-21,-13,-5,5,13,21][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-22,0,22][socialGroupId] + (random() - 0.5) * 3 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'stingray' ? -7.92 + random() * 0.12 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : species === 'whaleShark' ? -1.2 + random() * 2.4 : species === 'mola' ? -2.1 + random() * 4.2 : species === 'schoolFish' ? [-4,-1,2,4,-2,1][socialGroupId] + (random() - 0.5) * 1.5 : species === 'dolphin' ? (random() - 0.5) * 3 : species === 'turtle' ? -1.5 + random() * 3 : species === 'jellyfish' ? -3 + random() * 6 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-15,15,-11,11,0,-2][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-16,0,16][socialGroupId] + (random() - 0.5) * 3 : (random() - 0.5) * 36 },
+      p: { x: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].x + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-21,-13,-5,5,13,21][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-22,0,22][socialGroupId] + (random() - 0.5) * 3 : (random() - 0.5) * 47, y: grounded ? -8.55 : species === 'orca' ? -1.5 + random() * 3 : species === 'spermWhale' ? -5.5 + random() * 2 : species === 'seal' ? 3.2 + random() * 2 : species === 'stingray' ? -7.92 + random() * 0.12 : species === 'eel' ? -7.25 + random() * 1.65 : species === 'manta' ? (random() - 0.5) * 7 : species === 'whaleShark' ? -1.2 + random() * 2.4 : species === 'mola' ? -2.1 + random() * 4.2 : species === 'schoolFish' ? [-4,-1,2,4,-2,1][socialGroupId] + (random() - 0.5) * 1.5 : species === 'dolphin' ? (random() - 0.5) * 3 : species === 'turtle' ? -1.5 + random() * 3 : species === 'jellyfish' ? -3 + random() * 6 : (random() - 0.5) * 16, z: species === 'crab' ? CRAB_SHELTERS[id % CRAB_SHELTERS.length].z + (random() - 0.5) * 0.55 : species === 'schoolFish' ? [-15,15,-11,11,0,-2][socialGroupId] + (random() - 0.5) * 2.4 : species === 'dolphin' ? [-16,0,16][socialGroupId] + (random() - 0.5) * 3 : (random() - 0.5) * 36 },
       wingPhase: random() * Math.PI * 2,
       tentaclePhase: random() * Math.PI * 2,
       burrowPhase: random() * Math.PI * 2,
@@ -274,7 +286,7 @@ export function stepSchool(school, dt) {
   if (step === 0) return school.metrics;
   const fish = school.fish, grid = buildGrid(fish);
   const socialGroups = new Map();
-  for (const agent of fish) if (agent.species === 'schoolFish' || agent.species === 'dolphin') {
+  for (const agent of fish) if (agent.species === 'schoolFish' || agent.species === 'dolphin' || agent.species === 'orca' || agent.species === 'seal') {
     const key = agent.species + ':' + agent.socialGroupId;
     let group = socialGroups.get(key);
     if (!group) { group = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, count: 0 }; socialGroups.set(key, group); }
@@ -299,10 +311,10 @@ export function stepSchool(school, dt) {
       const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= NEIGHBOUR_RADIUS * NEIGHBOUR_RADIUS) continue;
       const d = Math.sqrt(d2);
-      if (((self.species === 'shark' || self.species === 'dolphin') && (other.species === 'fish' || other.species === 'schoolFish') || (self.species === 'turtle' && other.species === 'jellyfish')) && d < preyDistance) {
+      if (((self.species === 'shark' || self.species === 'dolphin' || self.species === 'orca' || self.species === 'seal') && (other.species === 'fish' || other.species === 'schoolFish') || (self.species === 'turtle' && other.species === 'jellyfish')) && d < preyDistance) {
         preyTarget = other; preyDistance = d;
       }
-      if ((self.species === 'fish' || self.species === 'schoolFish') && (other.species === 'shark' || other.species === 'dolphin') && d < 3.3) {
+      if ((self.species === 'fish' || self.species === 'schoolFish') && (other.species === 'shark' || other.species === 'dolphin' || other.species === 'orca') && d < 3.3) {
         const flee = (3.3 - d) / 3.3 / Math.max(d, 0.3);
         fleeX -= dx * flee * 1.6; fleeY -= dy * flee * 1.6; fleeZ -= dz * flee * 1.6;
       }
@@ -348,11 +360,11 @@ export function stepSchool(school, dt) {
       ay += ((posY * inv - self.p.y) * 0.075 + (velY * inv - self.v.y) * 0.34) * affinity;
       az += ((posZ * inv - self.p.z) * 0.075 + (velZ * inv - self.v.z) * 0.34) * affinity;
     }
-    if (self.species === 'schoolFish' || self.species === 'dolphin') {
+    if (self.species === 'schoolFish' || self.species === 'dolphin' || self.species === 'orca' || self.species === 'seal') {
       const group = socialGroups.get(self.species + ':' + self.socialGroupId);
       if (group && group.count > 1) {
-        const cohesion = self.species === 'schoolFish' ? 0.22 : 0.13;
-        const alignment = self.species === 'schoolFish' ? 0.78 : 0.48;
+        const cohesion = self.species === 'schoolFish' ? 0.22 : self.species === 'orca' ? 0.2 : 0.13;
+        const alignment = self.species === 'schoolFish' ? 0.78 : self.species === 'orca' ? 0.72 : 0.48;
         ax += (group.x - self.p.x) * cohesion + (group.vx - self.v.x) * alignment;
         ay += (group.y - self.p.y) * cohesion + (group.vy - self.v.y) * alignment;
         az += (group.z - self.p.z) * cohesion + (group.vz - self.v.z) * alignment;
@@ -367,7 +379,7 @@ export function stepSchool(school, dt) {
         self.preyId = preyTarget.id;
       } else self.preyId = null;
       self.feedingCooldown = Math.max(0, (self.feedingCooldown ?? 0) - step);
-    } else if (self.species === 'shark' || self.species === 'dolphin' || self.species === 'turtle') {
+    } else if (self.species === 'shark' || self.species === 'dolphin' || self.species === 'turtle' || self.species === 'orca' || self.species === 'seal') {
       if (preyTarget && (self.feedingCooldown ?? 0) <= 0) {
         const chase = normalize(subtract(preyTarget.p, self.p));
         const gain = clamp(1.25 - preyDistance * 0.1, 0.38, 1.05) * clamp(self.aggression ?? 1, 0, 2);
@@ -424,6 +436,21 @@ export function stepSchool(school, dt) {
       agent.phase += step * 0.8;
       speedTotal += length(agent.v);
       continue;
+    }
+    if (agent.species === 'orca') {
+      const desired=agent.preyId!=null?1.18:0.88+0.08*Math.sin(school.time*.12+agent.phase),speed=length(agent.v),dir=speed>.06?normalize(agent.v):agent.forward,correction=clamp((desired-speed)*.7,-.2,.24),depth=-.4+Math.sin(school.time*.17+agent.phase)*1.7;
+      agent.v.x+=(acceleration.x*.48+dir.x*correction)*step;agent.v.y+=(acceleration.y*.42+(depth-agent.p.y)*.1-agent.v.y*.2)*step;agent.v.z+=(acceleration.z*.48+dir.z*correction)*step;
+      agent.v=limit(agent.v,1.42);agent.forward=turnDirection(agent.forward,normalize(agent.v),.62*step);agent.p.x+=agent.v.x*step;agent.p.y+=agent.v.y*step;agent.p.z+=agent.v.z*step;agent.phase+=step*1.35;speedTotal+=length(agent.v);continue;
+    }
+    if (agent.species === 'spermWhale') {
+      const depth=-4.6+Math.sin(school.time*.075+agent.phase*.22)*5.1,desired=.58+.045*Math.sin(school.time*.06+agent.phase),speed=length(agent.v),dir=speed>.05?normalize(agent.v):agent.forward,correction=clamp((desired-speed)*.65,-.14,.16);
+      agent.v.x+=(acceleration.x*.22+dir.x*correction)*step;agent.v.y+=(acceleration.y*.12+(depth-agent.p.y)*.095-agent.v.y*.22)*step;agent.v.z+=(acceleration.z*.22+dir.z*correction)*step;
+      agent.v=limit(agent.v,.78);agent.forward=turnDirection(agent.forward,normalize(agent.v),.24*step);agent.p.x+=agent.v.x*step;agent.p.y+=agent.v.y*step;agent.p.z+=agent.v.z*step;agent.phase+=step*.48;speedTotal+=length(agent.v);continue;
+    }
+    if (agent.species === 'seal') {
+      const dive=Math.max(0,Math.sin(school.time*.19+agent.phase)),depth=3.4-dive*6.4,desired=.68+.13*dive,speed=length(agent.v),dir=speed>.05?normalize(agent.v):agent.forward,correction=clamp((desired-speed)*.78,-.16,.2);
+      agent.v.x+=(acceleration.x*.52+dir.x*correction)*step;agent.v.y+=(acceleration.y*.3+(depth-agent.p.y)*.16-agent.v.y*.28)*step;agent.v.z+=(acceleration.z*.52+dir.z*correction)*step;
+      agent.v=limit(agent.v,1.02);agent.forward=turnDirection(agent.forward,normalize(agent.v),.58*step);agent.p.x+=agent.v.x*step;agent.p.y+=agent.v.y*step;agent.p.z+=agent.v.z*step;agent.phase+=step*1.05;speedTotal+=length(agent.v);continue;
     }
     if (agent.species === 'mola') {
       // Slow, deep-bodied ocean sunfish cruise through midwater with gentle vertical drift.
