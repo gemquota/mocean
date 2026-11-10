@@ -17,8 +17,15 @@ export function createGait() {
 }
 
 function muscleWave(u, gait, turn) {
-  const envelope = Math.pow(u, 1.65);
-  const wave = Math.sin(gait.phase - u * 3.55);
+  const moray = gait.moray === true;
+  // Morays recruit a broader section of the trunk and carry a stronger,
+  // asymmetric travelling wave. The spatial envelope alternates broad and
+  // narrower bends along the body instead of producing a uniform ribbon.
+  const envelope = Math.pow(u, moray ? 1.08 : 1.65) * (moray ? 1 + 0.28 * Math.sin(u * Math.PI * 2.15) : 1);
+  const wavePhase = gait.phase - u * (moray ? 4.65 : 3.55);
+  const wave = moray
+    ? Math.sin(wavePhase) + 0.18 * Math.sin(wavePhase * 2 - 0.35)
+    : Math.sin(wavePhase);
   // Axial muscle recruitment grows toward the tail; turning adds a persistent bend.
   return gait.amplitude * envelope * wave + turn * 0.72 * envelope * envelope;
 }
@@ -48,6 +55,7 @@ export function stepGait(gait, behaviour, speed, turnIntent, dt, brakeIntent = 0
     GLIDE: [0.018, 0.32], RECOVER: [0.085, 0.72]
   };
   const [baseAmplitude, baseFrequency] = profiles[behaviour] ?? profiles.CRUISE;
+  gait.moray = behaviour === 'MORAY';
   const cost = behaviour === 'DART' ? 0.19 * dt : behaviour === 'TURN' ? 0.035 * dt : 0;
   gait.energy = clamp(gait.energy - cost + (behaviour === 'RECOVER' ? 0.105 : 0.025) * dt, 0.1, 1);
   const reserve = 0.52 + gait.energy * 0.48;
