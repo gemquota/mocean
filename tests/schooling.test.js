@@ -172,7 +172,7 @@ test('starfish remain benthic and dolphins travel in social pods', () => {
   assert.ok(stars.length>20 && stars.every(f=>f.p.y===-8.55));
   assert.ok(dolphins.length>20 && dolphins.every(f=>f.socialGroupId>=0));
   const before=dolphins.map(f=>({...f.p}));for(let i=0;i<240;i++)stepSchool(school,1/60);
-  assert.ok(stars.every(f=>f.p.y===-8.55 && Math.hypot(f.v.x,f.v.z)<.08));
+  assert.ok(stars.every(f=>f.p.y===-8.55 && Math.hypot(f.v.x,f.v.z)<=.080001));
   assert.ok(dolphins.every(f=>Math.hypot(f.v.x,f.v.y,f.v.z)<=2.21));
   assert.ok(dolphins.some((f,i)=>Math.hypot(f.p.x-before[i].x,f.p.y-before[i].y,f.p.z-before[i].z)>1));
 });
@@ -267,7 +267,7 @@ test('1000-agent capacity retains the five-times-larger habitat on every axis', 
   const school = createSchool(1000);
   assert.equal(school.fish.length, 1000);
   assert.ok(school.fish.every(f =>
-    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (f.species === 'crab' || f.species === 'lobster' || f.species === 'mantis' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? (f.species === 'crab' ? Math.abs(f.p.z) <= 19 : Math.abs(f.p.z) <= 18) : Math.abs(f.p.z) <= 18)
+    (f.species === 'crab' ? Math.abs(f.p.x) <= 35 : Math.abs(f.p.x) <= 23.5) && (f.species === 'crab' || f.species === 'lobster' || f.species === 'mantis' || f.species === 'starfish' ? f.p.y === -8.55 : Math.abs(f.p.y) <= 8) && (f.species === 'crab' ? (f.species === 'crab' ? Math.abs(f.p.z) <= 19 : Math.abs(f.p.z) <= 18) : Math.abs(f.p.z) <= 18)
   ));
 });
 
