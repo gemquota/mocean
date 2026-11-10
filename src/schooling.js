@@ -190,9 +190,12 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
   const size = Math.max(1, Math.min(5000, Math.floor(count)));
   const speciesOrder = Array.from({ length: size }, (_, id) => id);
   for (let i = size - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [speciesOrder[i], speciesOrder[j]] = [speciesOrder[j], speciesOrder[i]]; }
-  const speciesById = new Array(size); let speciesCursor = 0;
-  for (let entry = 0; entry < speciesEntries.length; entry++) { const [name, weight] = speciesEntries[entry]; const allocation = entry === speciesEntries.length - 1 ? size - speciesCursor : Math.round(size * weight / speciesTotal); for (let n = 0; n < allocation && speciesCursor < size; n++) speciesById[speciesOrder[speciesCursor++]] = name; }
-  while (speciesCursor < size) speciesById[speciesOrder[speciesCursor++]] = speciesEntries[speciesEntries.length - 1][0];
+  const speciesById = new Array(size);
+  const allocations = speciesEntries.map(([name, weight]) => { const exact = size * weight / speciesTotal; return { name, count: Math.floor(exact), remainder: exact - Math.floor(exact) }; });
+  let remaining = size - allocations.reduce((sum, entry) => sum + entry.count, 0);
+  for (const entry of [...allocations].sort((a, b) => b.remainder - a.remainder).slice(0, remaining)) entry.count++;
+  let speciesCursor = 0;
+  for (const entry of allocations) for (let n = 0; n < entry.count; n++) speciesById[speciesOrder[speciesCursor++]] = entry.name;
   const fish = Array.from({ length: size }, (_, id) => {
     const direction = normalize({
       x: random() * 2 - 1,
@@ -568,7 +571,7 @@ export function stepSchool(school, dt) {
   const survivors = school.fish;
   const collisionGrid = buildGrid(survivors);
   const collisions = resolveCollisions(survivors, collisionGrid);
-  for (const agent of survivors) if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish' || agent.species === 'sandEel') {
+  for (const agent of survivors) if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish') {
     agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
     agent.v.y = 0;
     if (agent.species === 'starfish') agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.08);
