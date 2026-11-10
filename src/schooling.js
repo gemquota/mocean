@@ -193,6 +193,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       : species === 'stingray' ? 0.98 + random() * 0.28
       : species === 'shark' ? 1.62 + random() * 0.3
       : species === 'whaleShark' ? 2.45 + random() * 0.55
+      : species === 'dolphin' ? 1.12 + random() * 0.2
       : 0.78 + random() * 0.34;
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : species === 'schoolFish' ? 2.4 : 0;
@@ -231,9 +232,9 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
 }
 
 /**
- * Inertial local-interaction schooling. A spatial hash limits neighbour work to
- * nearby cells. Fish steer by bounded acceleration, use anticipatory separation,
- * and collide as short oriented capsules rather than point particles.
+ * Inertial local-interaction schooling. Regular fish retain soft social schooling;
+ * dedicated schoolFish form persistent, cohesive shoals, while dolphins travel in pods.
+ * A spatial hash bounds local interactions and capsules handle body contact.
  */
 export function stepSchool(school, dt) {
   const step = clamp(dt, 0, 0.05);
