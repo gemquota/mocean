@@ -115,22 +115,40 @@ function drawEel(fish){
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p),alpha=Math.max(.56,Math.min(.98,1.18-centre.depth*.018));
  const upper=[],lower=[];
- for(let i=0;i<=28;i++){
-  const u=i/28,x=1.02-u*4.05,width=.205*Math.pow(1-u,.68)+.02;
-  upper.push({x,y:width,z:0});lower.unshift({x,y:-width,z:0});
+ for(let i=0;i<=36;i++){
+  const u=i/36,x=1.08-u*4.1;
+  const headBulge=Math.exp(-Math.pow(u/.19,2));
+  const width=.12 + .18*Math.pow(1-u,.58) + .13*headBulge;
+  upper.push({x,y:width,z:0});lower.unshift({x,y:-width*.92,z:0});
  }
  const points=[...upper,...lower].map(v=>project(eelWorldPoint(fish,q,vec3(v.x,v.y,v.z))));
  if(points.every(v=>v.depth>2.5)){
   ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
-  ctx.fillStyle='#477f72';ctx.fill();ctx.strokeStyle='#173f3d';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();
+  const skin=ctx.createLinearGradient(centre.x,centre.y-centre.size*.2,centre.x,centre.y+centre.size*.2);
+  skin.addColorStop(0,'#91a27a');skin.addColorStop(.42,'#526d53');skin.addColorStop(1,'#263f3b');
+  ctx.fillStyle=skin;ctx.fill();ctx.strokeStyle='#182f2d';ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();
   const ridge=[];
-  for(let i=0;i<=20;i++){const u=i/20,x=.82-u*3.62,width=.17*Math.pow(1-u,.72)+.018;ridge.push(project(eelWorldPoint(fish,q,vec3(x,width*.83,0))));}
-  if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(164,207,154,.8)';ctx.lineWidth=Math.max(.6,centre.size*.009);ctx.stroke();}
-  const eye=project(eelWorldPoint(fish,q,vec3(.82,.105,.105)));
-  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.2,eye.size*.031),0,TAU);ctx.fillStyle='#e7d9bd';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.006,eye.y,Math.max(.8,eye.size*.016),0,TAU);ctx.fillStyle='#c34e42';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.009,eye.y,Math.max(.5,eye.size*.008),0,TAU);ctx.fillStyle='#10171b';ctx.fill();}
-  const jawA=project(eelWorldPoint(fish,q,vec3(.96,-.055,.015))),jawB=project(eelWorldPoint(fish,q,vec3(.69,-.13,.015)));
-  if(jawA.depth>2.5&&jawB.depth>2.5){ctx.beginPath();ctx.moveTo(jawA.x,jawA.y);ctx.lineTo(jawB.x,jawB.y);ctx.strokeStyle='#d2a28b';ctx.lineWidth=Math.max(.8,centre.size*.013);ctx.stroke();for(let tooth=0;tooth<4;tooth++){const t=(tooth+1)/5,x=jawA.x+(jawB.x-jawA.x)*t,y=jawA.y+(jawB.y-jawA.y)*t;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-centre.size*.012,y+centre.size*.035);ctx.strokeStyle='#eee2cb';ctx.lineWidth=Math.max(.6,centre.size*.008);ctx.stroke();}}
-  for(let spine=0;spine<7;spine++){const u=.2+spine*.105,x=.82-u*3.62,w=.205*Math.pow(1-u,.68)+.02,base=project(eelWorldPoint(fish,q,vec3(x,w*.9,0))),tip=project(eelWorldPoint(fish,q,vec3(x-.045,w*1.35,0)));if(base.depth>2.5&&tip.depth>2.5){ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.lineTo(tip.x,tip.y);ctx.strokeStyle='#a6b18a';ctx.lineWidth=Math.max(.7,centre.size*.01);ctx.stroke();}}
+  for(let i=0;i<=24;i++){const u=i/24,x=.82-u*3.62,w=.12+.18*Math.pow(1-u,.58);ridge.push(project(eelWorldPoint(fish,q,vec3(x,w*.88,0))));}
+  if(ridge.every(v=>v.depth>2.5)){ctx.beginPath();ridge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(176,194,143,.82)';ctx.lineWidth=Math.max(.6,centre.size*.009);ctx.stroke();}
+  // Irregular olive mottling gives the skin the broken pattern of a moray.
+  for(let spot=0;spot<18;spot++){
+   const u=.12+(spot*0.137)%0.78,x=.88-u*3.55,w=.11+.18*Math.pow(1-u,.58);
+   const p=project(eelWorldPoint(fish,q,vec3(x,w*(.35+((spot*7)%9)/12),.015)));
+   if(p.depth>2.5){ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(.7,p.size*.026),Math.max(.45,p.size*.014),spot*.71,0,TAU);ctx.fillStyle=spot%3===0?'rgba(24,43,34,.58)':'rgba(179,174,119,.35)';ctx.fill();}
+  }
+  const eye=project(eelWorldPoint(fish,q,vec3(.88,.17,.105)));
+  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.3,eye.size*.034),0,TAU);ctx.fillStyle='#e4d4ae';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.007,eye.y,Math.max(.8,eye.size*.018),0,TAU);ctx.fillStyle='#171c18';ctx.fill();}
+  // Broad hinged jaw with a dark mouth cavity and fine conical teeth.
+  const upperA=project(eelWorldPoint(fish,q,vec3(1.06,.035,.015)));
+  const upperB=project(eelWorldPoint(fish,q,vec3(.72,-.005,.015)));
+  const lowerA=project(eelWorldPoint(fish,q,vec3(1.02,-.085,.015)));
+  const lowerB=project(eelWorldPoint(fish,q,vec3(.72,-.005,.015)));
+  if([upperA,upperB,lowerA,lowerB].every(p=>p.depth>2.5)){
+   ctx.beginPath();ctx.moveTo(upperA.x,upperA.y);ctx.lineTo(upperB.x,upperB.y);ctx.lineTo(lowerA.x,lowerA.y);ctx.closePath();ctx.fillStyle='#172321';ctx.fill();
+   ctx.beginPath();ctx.moveTo(lowerA.x,lowerA.y);ctx.lineTo(lowerB.x,lowerB.y);ctx.strokeStyle='#b58d73';ctx.lineWidth=Math.max(1,centre.size*.025);ctx.stroke();
+   for(let tooth=0;tooth<5;tooth++){const t=(tooth+1)/6,x=upperA.x+(upperB.x-upperA.x)*t,y=upperA.y+(upperB.y-upperA.y)*t;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-centre.size*.012,y+centre.size*.035);ctx.strokeStyle='#eee2c7';ctx.lineWidth=Math.max(.65,centre.size*.009);ctx.stroke();}
+  }
+  for(let g=0;g<3;g++){const a=project(eelWorldPoint(fish,q,vec3(.43-g*.1,-.12,.02))),b=project(eelWorldPoint(fish,q,vec3(.39-g*.1,-.2,.02)));if(a.depth>2.5&&b.depth>2.5){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(24,43,34,.7)';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();}}
   ctx.restore();
  }
 }
@@ -138,43 +156,58 @@ function drawCrustacean(fish){
  const lobster=fish.species==='lobster',scale=fish.bodyScale??1;
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
  const centre=project(fish.p),alpha=Math.max(.58,Math.min(.98,1.18-centre.depth*.018));
- const bodyLength=lobster?.8:.58,bodyWidth=lobster?.4:.42;
+ const bodyLength=lobster?.8:.72,bodyWidth=lobster?.4:.56,hidden=!lobster&&fish.sheltering;
  const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
  ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';ctx.lineJoin='round';
- for(let side of [-1,1])for(let leg=0;leg<4;leg++){
-  const x=(leg-1.5)*bodyLength*.39,z=side*bodyWidth*.56;
-  const phase=fish.groundPhase+leg*Math.PI*.5+(side>0?Math.PI:0);
-  const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.075;
-  const hip=point(x,-.015,z),coxa=point(x+stride*.035,-.105,side*(bodyWidth*.78));
-  const knee=point(x+(leg<2?.18:-.18)+stride*.075,-.235+lift*.2,side*(bodyWidth+.22));
-  const foot=point(x+(leg<2?.32:-.32)+stride*.14,-.39+lift,side*(bodyWidth+.56));
-  ctx.strokeStyle=lobster?'#a96848':'#b77a58';ctx.lineWidth=Math.max(1.6,centre.size*(lobster?.062:.07)*scale);
-  ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(coxa.x,coxa.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(foot.x,foot.y);ctx.stroke();
-  ctx.fillStyle=lobster?'#d59a70':'#e0b080';
-  ctx.beginPath();ctx.arc(coxa.x,coxa.y,Math.max(1.3,centre.size*.022*scale),0,TAU);ctx.fill();
-  ctx.beginPath();ctx.arc(knee.x,knee.y,Math.max(1.7,centre.size*.029*scale),0,TAU);ctx.fill();
-  ctx.beginPath();ctx.arc(foot.x,foot.y,Math.max(1,centre.size*.016*scale),0,TAU);ctx.fill();
+ if(lobster){
+  for(let side of [-1,1])for(let leg=0;leg<4;leg++){
+   const x=(leg-1.5)*bodyLength*.39,z=side*bodyWidth*.56,phase=fish.groundPhase+leg*Math.PI*.5+(side>0?Math.PI:0);
+   const stride=Math.sin(phase),lift=Math.max(0,Math.cos(phase))*.075;
+   const hip=point(x,-.035,z),coxa=point(x+stride*.035,-.13,side*(bodyWidth*.78));
+   const knee=point(x+(leg<2?.18:-.18)+stride*.075,-.235+lift*.2,side*(bodyWidth+.22));
+   const foot=point(x+(leg<2?.32:-.32)+stride*.14,-.39+lift,side*(bodyWidth+.56));
+   ctx.strokeStyle='#a96848';ctx.lineWidth=Math.max(1.5,centre.size*.055*scale);
+   ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(coxa.x,coxa.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(foot.x,foot.y);ctx.stroke();
+  }
  }
  const shellLocal=lobster
   ? [[.5,0,0],[.34,.13,.34],[-.22,.16,.39],[-.49,.035,.23],[-.52,-.015,0],[-.49,.035,-.23],[-.22,.16,-.39],[.34,.13,-.34]]
-  : [[.43,0,0],[.28,.15,.42],[-.25,.13,.4],[-.48,.025,.2],[-.5,-.015,0],[-.48,.025,-.2],[-.25,.13,-.4],[.28,.15,-.42]];
- const shell=shellLocal.map(([x,y,z])=>point(x*bodyLength,y*2,z*bodyWidth));
+  : [[.58,0,0],[.43,.18,.48],[.08,.24,.58],[-.38,.19,.52],[-.62,.04,.29],[-.66,-.015,0],[-.62,.04,-.29],[-.38,.19,-.52],[.08,.24,-.58],[.43,.18,-.48]];
+ const shell=shellLocal.map(([x,y,z])=>point(x*bodyLength,y*(lobster?2.1:2.45),z*bodyWidth));
  ctx.beginPath();shell.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
- ctx.fillStyle=lobster?'#a84e37':'#bd7650';ctx.strokeStyle=lobster?'#5b3029':'#6c4032';ctx.lineWidth=Math.max(.9,centre.size*.021*scale);ctx.fill();ctx.stroke();
- const ridgeA=point(-bodyLength*.3,.2,0),ridgeB=point(bodyLength*.27,.2,0);
- ctx.beginPath();ctx.moveTo(ridgeA.x,ridgeA.y);ctx.lineTo(ridgeB.x,ridgeB.y);ctx.strokeStyle=lobster?'#d18a68':'#e0a477';ctx.lineWidth=Math.max(.8,centre.size*.018*scale);ctx.stroke();
- for(const side of [-1,1]){
-  const eye=point(bodyLength*.34,.22,side*.2);
-  ctx.beginPath();ctx.moveTo(eye.x,eye.y+centre.size*.025*scale);ctx.lineTo(eye.x,eye.y-centre.size*.025*scale);ctx.strokeStyle='#d5a47c';ctx.lineWidth=Math.max(.7,centre.size*.013*scale);ctx.stroke();
-  ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03*scale,Math.max(1,centre.size*.025*scale),0,TAU);ctx.fillStyle='#f0dfbb';ctx.fill();
-  ctx.beginPath();ctx.arc(eye.x,eye.y-centre.size*.03*scale,Math.max(.6,centre.size*.012*scale),0,TAU);ctx.fillStyle='#17252a';ctx.fill();
+ ctx.fillStyle=lobster?'#a84e37':'#876044';ctx.strokeStyle=lobster?'#5b3029':'#493c2d';ctx.lineWidth=Math.max(1,centre.size*.027*scale);ctx.fill();ctx.stroke();
+ const ridgeA=point(-bodyLength*.42,.2,0),ridgeB=point(bodyLength*.38,.2,0);
+ ctx.beginPath();ctx.moveTo(ridgeA.x,ridgeA.y);ctx.lineTo(ridgeB.x,ridgeB.y);ctx.strokeStyle=lobster?'#d18a68':'#c4a17a';ctx.lineWidth=Math.max(.8,centre.size*.022*scale);ctx.stroke();
+ if(!lobster){
+  // A low domed carapace dominates the silhouette; legs remain short and tucked.
+  for(let seam=0;seam<3;seam++){const a=point(-bodyLength*.25+seam*.2,.25,.0),b=point(-bodyLength*.25+seam*.2,.25,.28);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(52,43,31,.55)';ctx.lineWidth=Math.max(.6,centre.size*.01);ctx.stroke();}
+  for(const side of [-1,1]){const eye=point(bodyLength*.43,.18,side*.24);ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.7,centre.size*.016*scale),0,TAU);ctx.fillStyle='#27251f';ctx.fill();}
+ }else{
+  for(const side of [-1,1]){const eye=point(bodyLength*.34,.22,side*.2);ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.025*scale),0,TAU);ctx.fillStyle='#f0dfbb';ctx.fill();}
+  for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*.78,-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle='#c57a55';ctx.lineWidth=Math.max(1,centre.size*.045*scale);ctx.stroke();}
  }
- if(lobster){
-  for(const side of [-1,1]){const root=point(bodyLength*.46,.1,side*.12),tip=point(bodyLength*1.18,.34,side*.43);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo((root.x+tip.x)*.5,root.y-centre.size*.16,tip.x,tip.y);ctx.strokeStyle='#d39a70';ctx.lineWidth=Math.max(.8,centre.size*.014*scale);ctx.stroke();}
-  for(let i=-1;i<=1;i++){const a=point(-bodyLength*.55,-.04,i*.12),b=point(-bodyLength*.85,-.1,i*.2);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='#c17c59';ctx.lineWidth=Math.max(1,centre.size*.038*scale);ctx.stroke();}
- }
- for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*(lobster?.78:.68),-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle=lobster?'#c57a55':'#d19a70';ctx.lineWidth=Math.max(1,centre.size*.045*scale);ctx.stroke();}
  ctx.restore();
+}
+function drawCoral(){
+ const colonies=[
+  [-36,-14,0],[-28,5,1],[-11,-13,2],[4,8,0],[16,-16,1],[29,10,2],[37,-5,0],[-2,17,1]
+ ];
+ for(let index=0;index<colonies.length;index++){
+  const [x,z,type]=colonies[index],base=project(vec3(x,-8.48,z));
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  if(type===0){
+   for(let branch=0;branch<5;branch++){
+    const spread=(branch-2)*.16,height=.42+((branch*7+index)%4)*.13;
+    const p0=project(vec3(x,-8.5,z)),p1=project(vec3(x+spread*.5,-8.5+height*.55,z)),p2=project(vec3(x+spread,-8.5+height,z));
+    ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle=['#d58a72','#d5a66d','#b879a0'][index%3];ctx.lineWidth=Math.max(1,base.size*.07);ctx.stroke();
+   }
+  }else if(type===1){
+   for(let lobe=0;lobe<5;lobe++){const a=lobe/5*TAU,c=project(vec3(x+Math.cos(a)*.22,-8.48+.1*Math.sin(a),z+Math.sin(a)*.22));ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(1,base.size*.14),Math.max(1,base.size*.22),a,0,TAU);ctx.fillStyle=index%2?'#b66d86':'#d28b73';ctx.fill();}
+  }else{
+   for(let branch=0;branch<4;branch++){const a=branch/4*TAU,p1=project(vec3(x+Math.cos(a)*.22,-8.48+.3,z+Math.sin(a)*.22)),p2=project(vec3(x+Math.cos(a)*.36,-8.48+.65,z+Math.sin(a)*.36));ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle='#bd8a9e';ctx.lineWidth=Math.max(1,base.size*.055);ctx.stroke();}
+  }
+  ctx.restore();
+ }
 }
 function drawSeabed(){
  const top=[],front=[];
@@ -257,6 +290,7 @@ function render(){
  const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
  gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
  drawSeabed();
+ drawCoral();
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);
 }
