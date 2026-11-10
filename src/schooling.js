@@ -547,11 +547,11 @@ export function stepSchool(school, dt) {
       agent.burrowPhase += step * 0.22;
       const emergence = Math.max(0, Math.sin(agent.burrowPhase));
       agent.buried = emergence < 0.32;
-      agent.p.y = seabedHeight(agent.p.x, agent.p.z) + (agent.buried ? 0.02 : 0.72 + emergence * 0.8);
       agent.filterFeedPhase += step * 1.6;
       if (!agent.buried) agent.planktonFiltered += step * (0.15 + emergence * 0.3);
       agent.v.x = 0.018 * Math.sin(agent.burrowPhase * 0.7); agent.v.z = 0.012 * Math.cos(agent.burrowPhase * 0.6);
       agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step;
+      agent.p.y = seabedHeight(agent.p.x, agent.p.z) + (agent.buried ? 0.02 : 0.72 + emergence * 0.8);
       agent.phase += step * 0.9; speedTotal += length(agent.v); continue;
     }
     if (agent.species === 'jellyfish') {
