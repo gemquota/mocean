@@ -136,7 +136,7 @@ test('moray eels receive individual 2x to 5x length scaling and matching collisi
 test('crabs use rare, shelter-seeking bursts and pause under cover', () => {
   const school = createSchool(500, 73421);
   const crabs = school.fish.filter(agent => agent.species === 'crab');
-  assert.ok(crabs.length < 10, 'crabs should be substantially rarer than before');
+  assert.ok(crabs.length > 5 && crabs.length < 30, 'crabs should remain a small but visible population');
   assert.ok(crabs.every(agent => Number.isInteger(agent.shelterIndex) && agent.sheltering));
   const crab = crabs[0];
   crab.sheltering = false;
@@ -265,9 +265,8 @@ test('species mix targets 79% fish, 15% eels, 3% crabs and 3% lobsters', () => {
   }
 });
 
-test('crab share is reduced to roughly one quarter of its previous rate', () => {
+test('crab share remains close to the new three-percent target', () => {
   const school = createSchool(5000, 73421);
   const crabShare = school.fish.filter(agent => agent.species === 'crab').length / school.fish.length;
-  assert.ok(crabShare < 0.006, 'crabs should make up well under one percent of the population');
-  assert.ok(crabShare > 0.001, 'crabs should remain present but uncommon at large populations');
+  assert.ok(Math.abs(crabShare - 0.03) < 0.003, 'crabs should make up about three percent of the population');
 });
