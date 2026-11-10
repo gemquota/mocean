@@ -19,6 +19,11 @@ export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
 export const SCHOOLING_CRAB_COLLISION = Object.freeze({ halfLength: 0.25, radius: 0.13 });
 export const SCHOOLING_LOBSTER_COLLISION = Object.freeze({ halfLength: 0.34, radius: 0.105 });
+export const CRAB_SHELTERS = Object.freeze([
+  Object.freeze({ x: -34, z: -17 }), Object.freeze({ x: -17, z: -5 }),
+  Object.freeze({ x: -4, z: -3 }), Object.freeze({ x: 8, z: -1 }),
+  Object.freeze({ x: 19, z: -10 }), Object.freeze({ x: 32, z: 2 })
+]);
 const NEIGHBOUR_RADIUS = 2.7;
 const SEPARATION_RADIUS = 0.78;
 const MAX_SPEED = 2.0;
@@ -153,7 +158,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
     const speed = 1.0 + random() * 0.35;
     const phase = random() * Math.PI * 2;
     const speciesRoll = random();
-    const species = speciesRoll < 0.655 ? 'fish' : speciesRoll < 0.825 ? 'eel' : speciesRoll < 0.86875 ? 'crab' : 'lobster';
+    const species = speciesRoll < 0.68 ? 'fish' : speciesRoll < 0.83 ? 'eel' : speciesRoll < 0.841 ? 'crab' : 'lobster';
     const bodyScale = species === 'fish' ? 0.58 + Math.pow(random(), 1.35) * 0.92
       : species === 'eel' ? 1.28 + random() * 0.22
       : 0.78 + random() * 0.34;
@@ -176,6 +181,9 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421) {
       forward: heading,
       phase,
       groundPhase: random() * Math.PI * 2,
+      shelterIndex: id % 6,
+      shelterTimer: 2 + random() * 5,
+      sheltering: species === 'crab',
       neighbourCount: 0,
       collisionCount: 0
     };
@@ -286,19 +294,42 @@ export function stepSchool(school, dt) {
       });
       agent.forward = turnDirection(agent.forward, targetForward, 0.42 * step);
       const direction = agent.species === 'crab'
-        ? { x: -agent.forward.z, y: 0, z: agent.forward.x }
+        ? (agent.sheltering ? { x: 0, y: 0, z: 0 } : { x: agent.forward.x, y: 0, z: agent.forward.z })
         : { x: agent.forward.x, y: 0, z: agent.forward.z };
-      const baseSpeed = agent.species === 'crab' ? 0.27 : 0.34;
-      const desiredSpeed = baseSpeed * (0.78 + 0.22 * Math.sin(school.time * 0.31 + agent.groundPhase));
+      let desiredSpeed;
+      if (agent.species === 'crab') {
+        agent.shelterTimer -= step;
+        const shelter = CRAB_SHELTERS[agent.shelterIndex % CRAB_SHELTERS.length];
+        const dx = shelter.x - agent.p.x, dz = shelter.z - agent.p.z, distance = Math.hypot(dx, dz);
+        if (agent.sheltering && agent.shelterTimer <= 0) {
+          agent.sheltering = false;
+          agent.shelterIndex = (agent.shelterIndex + 1 + (agent.id % 2)) % CRAB_SHELTERS.length;
+          agent.shelterTimer = 0;
+        }
+        const target = CRAB_SHELTERS[agent.shelterIndex % CRAB_SHELTERS.length];
+        const tx = target.x - agent.p.x, tz = target.z - agent.p.z, targetDistance = Math.hypot(tx, tz);
+        if (!agent.sheltering && targetDistance < 1.15) {
+          agent.sheltering = true;
+          agent.shelterTimer = 3.5 + ((agent.id * 17 + Math.floor(school.time * 3)) % 45) / 10;
+        }
+        if (agent.sheltering) desiredSpeed = 0.025;
+        else {
+          agent.forward = turnDirection(agent.forward, normalize({ x: tx, y: 0, z: tz }), 2.8 * step);
+          desiredSpeed = 1.05 + 0.18 * Math.sin(agent.groundPhase * 1.7);
+        }
+      } else {
+        const baseSpeed = 0.34;
+        desiredSpeed = baseSpeed * (0.78 + 0.22 * Math.sin(school.time * 0.31 + agent.groundPhase));
+      }
       const desired = { x: direction.x * desiredSpeed, y: 0, z: direction.z * desiredSpeed };
-      const response = agent.species === 'crab' ? 0.85 : 1.05;
+      const response = agent.species === 'crab' ? (agent.sheltering ? 3.5 : 4.2) : 1.05;
       agent.v.x += clamp((desired.x - agent.v.x) * response, -0.55, 0.55) * step;
       agent.v.z += clamp((desired.z - agent.v.z) * response, -0.55, 0.55) * step;
       agent.v.y = 0;
       agent.p.x += agent.v.x * step;
       agent.p.z += agent.v.z * step;
       agent.p.y = -8.55;
-      agent.groundPhase += step * (agent.species === 'crab' ? 5.2 : 4.1);
+      agent.groundPhase += step * (agent.species === 'crab' ? (agent.sheltering ? 0.35 : 11.5) : 4.1);
       agent.phase += step * 1.2;
       speedTotal += length(agent.v);
       continue;
