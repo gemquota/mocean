@@ -11,10 +11,11 @@ const limit = (v, maximum) => {
 const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 const subtract = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 + Math.sin(z * .31 - x * .045) * .22 + Math.cos(x * .075 + z * .19) * .16;
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
-export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze({ fish:18, schoolFish:36, eel:15, crab:3, lobster:3, mantis:2, manta:2, stingray:2, shark:2, whaleShark:2, starfish:3, dolphin:3, turtle:2, jellyfish:3, sandEel:2 });
+export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze({ fish:18, schoolFish:36, eel:17, crab:3, lobster:3, mantis:2, manta:2, stingray:2, shark:2, whaleShark:2, starfish:3, dolphin:3, turtle:2, jellyfish:3, sandEel:2 });
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
@@ -242,6 +243,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       collisionCount: 0
     };
   });
+  for (const agent of fish) if (['crab','lobster','mantis','starfish','sandEel'].includes(agent.species)) agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
   return { fish, time: 0, worldSize: { ...(options.worldSize ?? SCHOOLING_LIMITS) }, speciesPercentages: { ...mix }, metrics: { averageSpeed: 0, averageNeighbours: 0, collisions: 0, candidateChecks: 0 } };
 }
 
@@ -410,7 +412,7 @@ export function stepSchool(school, dt) {
       agent.burrowPhase += step * 0.22;
       const emergence = Math.max(0, Math.sin(agent.burrowPhase));
       agent.buried = emergence < 0.32;
-      agent.p.y = -8.55 + (agent.buried ? 0.02 : 0.72 + emergence * 0.8);
+      agent.p.y = seabedHeight(agent.p.x, agent.p.z) + (agent.buried ? 0.02 : 0.72 + emergence * 0.8);
       agent.v.x = 0.018 * Math.sin(agent.burrowPhase * 0.7); agent.v.z = 0.012 * Math.cos(agent.burrowPhase * 0.6);
       agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step;
       agent.phase += step * 0.9; speedTotal += length(agent.v); continue;
@@ -436,7 +438,7 @@ export function stepSchool(school, dt) {
       const desired = { x: agent.forward.x * drift, z: agent.forward.z * drift };
       agent.v.x += clamp((desired.x - agent.v.x) * 0.5, -0.035, 0.035) * step;
       agent.v.z += clamp((desired.z - agent.v.z) * 0.5, -0.035, 0.035) * step;
-      agent.v.y = 0; agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step; agent.p.y = -8.55;
+      agent.v.y = 0; agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step; agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
       agent.forward = turnDirection(agent.forward, normalize({x: agent.v.x || agent.forward.x,y:0,z: agent.v.z || agent.forward.z}),0.12*step);
       agent.groundPhase += step * 0.22; agent.phase += step * 0.12; speedTotal += length(agent.v); continue;
     }
@@ -557,7 +559,7 @@ export function stepSchool(school, dt) {
   const collisionGrid = buildGrid(survivors);
   const collisions = resolveCollisions(survivors, collisionGrid);
   for (const agent of survivors) if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish' || agent.species === 'sandEel') {
-    agent.p.y = -8.55;
+    agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
     agent.v.y = 0;
     if (agent.species === 'starfish') agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.08);
   }
