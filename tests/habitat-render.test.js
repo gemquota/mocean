@@ -65,7 +65,7 @@ test('habitat animation exposes runtime faults and reports advancing simulation 
 
 
 test('reef additions include five configured reef fish and animated anchored anemones', () => {
-  for (const species of ['clownfish','parrotfish','blueTang','angelfish','butterflyfish']) assert.match(html, new RegExp(species+':'));
+  for (const species of ['clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda']) assert.match(html, new RegExp(species+':'));
   assert.match(html, /function drawReefFish\(fish\)/);
   assert.match(html, /function drawAnemones\(\)/);
   assert.match(html, /drawAnemones\(\)/);
@@ -87,4 +87,13 @@ test('habitat rendering keeps static reef geometry out of the frame loop and bou
   assert.doesNotMatch(script, /function drawCoral\(\)[\s\S]{0,500}Array\.from/);
   assert.match(script, /planktonParticles=Array\.from\(\{length:480\}/);
   assert.match(script, /renderAccumulator>=1\/24/);
+});
+
+test('30-species mix includes three new fish with ecology-adjusted weights', () => {
+  for (const species of ['grouper','moorishIdol','barracuda']) assert.match(html, new RegExp(species+':'));
+  assert.match(src, /grouper: 5\.8/);
+  assert.match(src, /moorishIdol: 0\.20/);
+  assert.match(src, /barracuda: 3\.2/);
+  assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
+  assert.match(html, /30 SPECIES/);
 });
