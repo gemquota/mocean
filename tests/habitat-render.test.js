@@ -44,7 +44,7 @@ test('orca, sperm whale and seal have dedicated volumetric renderers and habitat
     assert.ok(html.includes(species+':'),species+' config label missing');
     assert.ok(script.includes('function '+renderer+'(fish)'),renderer+' missing');
   }
-  assert.match(script,/speciesCounts\.textContent/);
+  assert.match(script,/speciesCounts\.innerHTML/);
 });
 
 
@@ -77,6 +77,13 @@ test('pelagic and benthic additions are represented in controls and renderers', 
   assert.match(src, /wobbegong: 4\.8/);
   assert.match(src, /marlin: 5\.2/);
   assert.match(src, /tuna: 3\.8/);
+});
+
+test('one creature renderer fault cannot stop the habitat frame or hide every later animal', () => {
+  assert.match(script, /for\(const fish of ordered\)\{[\s\S]*?try \{ drawFish\(fish\); \}[\s\S]*?catch\(error\)/);
+  assert.match(script, /const renderFaults=new Map\(\)/);
+  assert.match(script, /RENDER WARN/);
+  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\)\+' CREATURES · 30 SPECIES/);
 });
 
 test('coral renderer reads from its precomputed colony collection', () => {
