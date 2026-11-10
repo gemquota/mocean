@@ -620,8 +620,9 @@ function render(){
  for(const fish of ordered)drawFish(fish);
  drawShelterForeground();
 }
-let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0;
+let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null;
 function animate(now){
+ try {
  const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;
  const dt=1/60;
  while(accumulator>=dt){
@@ -637,8 +638,17 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){const counts={fish:0,schoolFish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 19 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>REGULAR FISH · SOCIAL</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray+'<br><b>SHARKS</b> '+counts.shark+'<br><b>WHALE SHARKS</b> '+counts.whaleShark+'<br><b>MOLA MOLA</b> '+counts.mola+'<br><b>ORCAS</b> '+counts.orca+'<br><b>SPERM WHALES</b> '+counts.spermWhale+'<br><b>SEALS</b> '+counts.seal+'<br><b>STARFISH</b> '+counts.starfish+'<br><b>DOLPHINS</b> '+counts.dolphin+'<br><b>SCHOOLING FISH · DEDICATED SHOALS</b> '+counts.schoolFish+'<br><b>SEA TURTLES</b> '+counts.turtle+'<br><b>JELLYFISH</b> '+counts.jellyfish+'<br><b>SAND EELS</b> '+counts.sandEel;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
- requestAnimationFrame(animate);
+ if(frame++%30===0){const counts={fish:0,schoolFish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 19 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>REGULAR FISH · SOCIAL</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray+'<br><b>SHARKS</b> '+counts.shark+'<br><b>WHALE SHARKS</b> '+counts.whaleShark+'<br><b>MOLA MOLA</b> '+counts.mola+'<br><b>ORCAS</b> '+counts.orca+'<br><b>SPERM WHALES</b> '+counts.spermWhale+'<br><b>SEALS</b> '+counts.seal+'<br><b>STARFISH</b> '+counts.starfish+'<br><b>DOLPHINS</b> '+counts.dolphin+'<br><b>SCHOOLING FISH · DEDICATED SHOALS</b> '+counts.schoolFish+'<br><b>SEA TURTLES</b> '+counts.turtle+'<br><b>JELLYFISH</b> '+counts.jellyfish+'<br><b>SAND EELS</b> '+counts.sandEel;metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
+ } catch(error) {
+  if(!animationFault) {
+   animationFault=error;
+   const message=String(error?.message??error).slice(0,140);
+   status.textContent='SIMULATION FAULT · '+message;
+   metrics.textContent='Animation stopped; runtime error captured';
+   console.error('Mocean habitat animation fault:',error);
+  }
+ }
+ if(!animationFault) requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
 </script>
