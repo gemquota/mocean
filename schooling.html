@@ -414,7 +414,8 @@ function drawShark(fish,whale){
     const mouthL=point(1.12,-.015,-.23),mouthR=point(1.12,-.015,.23);
     if(mouthL.depth>2.5&&mouthR.depth>2.5){ctx.beginPath();ctx.moveTo(mouthL.x,mouthL.y);ctx.lineTo(mouthR.x,mouthR.y);ctx.strokeStyle='#172e3b';ctx.lineWidth=Math.max(1.2,centre.size*.04);ctx.stroke();}
     for(let k=0;k<5;k++){
-      const a=point(.45-k*.13,.02,.315),b=point(.42-k*.13,-.12,.32);
+      const pulse=1+0.12*Math.sin((fish.filterFeedPhase??0)+k*.42);
+      const a=point(.45-k*.13,.02,.315),b=point(.42-k*.13,-.12*pulse,.32);
       if(a.depth>2.5&&b.depth>2.5){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(22,45,57,.82)';ctx.lineWidth=Math.max(.8,centre.size*.014);ctx.stroke();}
     }
     // Pale spots and short dashes across the back, characteristic of a whale shark.
@@ -425,6 +426,7 @@ function drawShark(fish,whale){
     }
     poly([[.35,.22,0],[.05,.66,0],[-.28,.22,0]],'#3d5e70',outline);
     poly([[-.48,.2,0],[-.82,.5,0],[-.78,.13,0]],'#3d5e70',outline);
+    poly([[-1.12,.02,0],[-1.68,.34,0],[-1.54,.015,0],[-1.68,-.25,0],[-1.12,-.04,0]],'#3d5e70',outline);
     for(const side of [-1,1])poly([[.42,.02,side*.22],[-.02,-.02,side*.55],[-.92,-.1,side*.82],[-.48,-.16,side*.25]],dorsal,outline);
   }else{
     poly([[1.16,.015,0],[.92,.23,.2],[.38,.27,.23],[-.48,.18,.18],[-1.08,.08,.1],[-1.22,.015,0],[-1.08,.08,-.1],[-.48,.18,-.18],[.38,.27,-.23],[.92,.23,-.2]],dorsal,outline);
@@ -494,7 +496,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 7 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray+'<br><b>SHARKS</b> '+counts.shark+'<br><b>WHALE SHARKS</b> '+counts.whaleShark;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
+ if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 9 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray+'<br><b>SHARKS</b> '+counts.shark+'<br><b>WHALE SHARKS</b> '+counts.whaleShark;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
