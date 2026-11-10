@@ -15,7 +15,7 @@ export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
-export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze({ fish:13, schoolFish:36, eel:17, crab:3, lobster:3, mantis:2, manta:2, stingray:2, shark:2, whaleShark:2, mola:1, orca:1.5, spermWhale:0.5, seal:2, starfish:3, dolphin:3, turtle:2, jellyfish:3, sandEel:2 });
+export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze({ fish:17, schoolFish:33, eel:16, crab:3, lobster:3, mantis:2, manta:2, stingray:2, shark:2, whaleShark:2, mola:1, orca:1.5, spermWhale:0.5, seal:2, starfish:3, dolphin:3, turtle:2, jellyfish:3, sandEel:2 });
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
 export const SCHOOLING_EEL_COLLISION = Object.freeze({ halfLength: 0.56, radius: 0.055 });
