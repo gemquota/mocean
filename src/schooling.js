@@ -15,21 +15,47 @@ export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
-// Approximate occupied body-volume ratios at default size settings, relative to one
-// regular fish. These are renderer-derived geometric proxies, not measured animal volumes.
-// They include each renderer's dominant body form and its model-scale multiplier;
-// appendages and articulated pose are excluded where their thickness is undefined.
+// Relative per-individual model volume, adult mass, and ecological prevalence.
+// Values are comparative proxies, not validated measurements. Ecological prevalence
+// is a temperate Australian coastal-reef suitability/encounter index (1 = uncommon,
+// 10 = very common), not a census-derived abundance estimate.
 export const SCHOOLING_SPECIES_VOLUME = Object.freeze({
   fish: 1, schoolFish: 0.015625, eel: 1.35, crab: 0.38, lobster: 0.32,
   mantis: 0.30, manta: 6.5, stingray: 3.2, shark: 5.8, whaleShark: 21,
   mola: 4.4, orca: 24, spermWhale: 70, seal: 2.2, starfish: 0.08,
   dolphin: 2.9, turtle: 1.4, jellyfish: 0.55, sandEel: 0.38
 });
-// Equal expected occupied volume per species: prevalence is inversely proportional
-// to the estimated per-individual model volume.
-const inverseVolumeTotal = Object.values(SCHOOLING_SPECIES_VOLUME).reduce((sum, volume) => sum + 1 / volume, 0);
+export const SCHOOLING_SPECIES_ADULT_MASS_KG = Object.freeze({
+  fish: 0.10, schoolFish: 0.025, eel: 15, crab: 0.30, lobster: 0.90,
+  mantis: 0.09, manta: 350, stingray: 8, shark: 13, whaleShark: 15000,
+  mola: 1000, orca: 3500, spermWhale: 36000, seal: 180, starfish: 0.06,
+  dolphin: 225, turtle: 150, jellyfish: 0.01, sandEel: 0.01
+});
+export const SCHOOLING_SPECIES_ECOLOGY = Object.freeze({
+  fish: 10, schoolFish: 9, eel: 5, crab: 8, lobster: 4,
+  mantis: 3, manta: 2, stingray: 5, shark: 3, whaleShark: 1,
+  mola: 1, orca: 1, spermWhale: 1, seal: 2, starfish: 8,
+  dolphin: 2, turtle: 3, jellyfish: 7, sandEel: 8
+});
+const geometricMean = values => Math.exp(values.reduce((sum, value) => sum + Math.log(value), 0) / values.length);
+const volumeMean = geometricMean(Object.values(SCHOOLING_SPECIES_VOLUME));
+const massMean = geometricMean(Object.values(SCHOOLING_SPECIES_ADULT_MASS_KG));
+const ecologyMean = geometricMean(Object.values(SCHOOLING_SPECIES_ECOLOGY));
+// Each measure is first normalised by its across-species geometric mean. Their
+// geometric mean gives each dimension equal influence; inverse score becomes prevalence.
+export const SCHOOLING_SPECIES_BALANCE = Object.freeze(Object.fromEntries(
+  Object.keys(SCHOOLING_SPECIES_VOLUME).map(species => {
+    const score = Math.cbrt(
+      (SCHOOLING_SPECIES_VOLUME[species] / volumeMean) *
+      (SCHOOLING_SPECIES_ADULT_MASS_KG[species] / massMean) *
+      (SCHOOLING_SPECIES_ECOLOGY[species] / ecologyMean)
+    );
+    return [species, score];
+  })
+));
+const inverseBalanceTotal = Object.values(SCHOOLING_SPECIES_BALANCE).reduce((sum, score) => sum + 1 / score, 0);
 export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze(Object.fromEntries(
-  Object.entries(SCHOOLING_SPECIES_VOLUME).map(([species, volume]) => [species, (1 / volume) / inverseVolumeTotal * 100])
+  Object.entries(SCHOOLING_SPECIES_BALANCE).map(([species, score]) => [species, (1 / score) / inverseBalanceTotal * 100])
 ));
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
@@ -218,12 +244,13 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
   const speciesOrder = Array.from({ length: size }, (_, id) => id);
   for (let i = size - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [speciesOrder[i], speciesOrder[j]] = [speciesOrder[j], speciesOrder[i]]; }
   const speciesById = new Array(size);
-  // Largest-remainder apportionment preserves the requested volume-balanced ratios.
-  // At small populations some rare, large species may correctly receive zero agents:
-  // forcing one of every species would overwhelm the equal-volume budget.
+  // Guarantee one representative of every enabled species whenever the population
+  // can accommodate them, then apportion the remaining agents by the blended weights.
+  const reserve = size >= speciesEntries.length ? 1 : 0;
+  const distributable = size - reserve * speciesEntries.length;
   const allocations = speciesEntries.map(([name, weight]) => {
-    const exact = size * weight / speciesTotal;
-    return { name, count: Math.floor(exact), remainder: exact - Math.floor(exact) };
+    const exact = distributable * weight / speciesTotal;
+    return { name, count: reserve + Math.floor(exact), remainder: exact - Math.floor(exact) };
   });
   let remaining = size - allocations.reduce((sum, entry) => sum + entry.count, 0);
   for (const entry of [...allocations].sort((a, b) => b.remainder - a.remainder).slice(0, remaining)) entry.count++;
