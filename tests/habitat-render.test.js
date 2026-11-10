@@ -53,3 +53,11 @@ test('habitat fish renderer does not depend on an undefined global size setting'
   assert.doesNotMatch(script, /configSettings/);
   assert.match(script, /SCHOOLING_FISH_SCALE\*\(fish\.bodyScale\?\?1\)/);
 });
+
+
+test('habitat animation exposes runtime faults and reports advancing simulation time', () => {
+  assert.match(script, /animationFault=null/);
+  assert.match(script, /SIMULATION FAULT/);
+  assert.match(script, /school\.time\.toFixed\(1\)/);
+  assert.match(script, /if\(!animationFault\) requestAnimationFrame\(animate\)/);
+});
