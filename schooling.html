@@ -28,7 +28,7 @@ a:hover{text-decoration:underline}
 </head>
 <body>
 <canvas id="school" aria-label="A mixed habitat of schooling fish, moray eels, crabs, lobsters, mantis shrimp and manta rays"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 6 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 113<br>EELS 23<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 2<br>MANTA RAYS 2</div>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 7 SPECIES</div></header><div class="species-counts" id="species-counts">FISH 111<br>EELS 22<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 2<br>MANTA RAYS 3<br>STINGRAYS 2</div>
 <section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures"><div class="population-scale"><span>50 CREATURES</span><span>200 CREATURES</span></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
@@ -50,7 +50,7 @@ function setPopulation(value){
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' CREATURES · 6 SPECIES';
+ status.textContent=count.toLocaleString('en-US')+' CREATURES · 7 SPECIES';
 }
 populationSlider.addEventListener('input',event=>{
  const count=Math.max(50,Math.min(200,Math.round(Number(event.target.value)/10)*10));
@@ -276,6 +276,21 @@ function drawMantaRay(fish){
  ctx.restore();
 }
 
+const planktonParticles=Array.from({length:240},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
+function drawPlankton(){
+ ctx.save();ctx.globalCompositeOperation='screen';
+ for(const particle of planktonParticles){
+  const x=((particle.x+Math.sin(school.time*.07+particle.phase)*particle.drift+41+82)%82)-41;
+  const y=particle.y+Math.sin(school.time*.19+particle.phase)*.16;
+  const z=((particle.z+school.time*(.12+(particle.phase%1)*.08)+31+62)%62)-31;
+  const p=project(vec3(x,y,z));if(p.depth<2.5)continue;
+  const pulse=.55+.35*Math.sin(school.time*.8+particle.phase);
+  ctx.globalAlpha=Math.max(.08,Math.min(.58,pulse*(1.05-p.depth*.012)));
+  ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.45,particle.size*p.size*.012),0,TAU);
+  ctx.fillStyle=particle.phase%3<1?'#a8e8d7':'#8bc8d1';ctx.fill();
+ }
+ ctx.restore();
+}
 function drawCoral(){
  const colonies=[
   [-36,-14,0],[-28,5,1],[-11,-13,2],[4,8,0],[16,-16,1],[29,10,2],[37,-5,0],[-2,17,1]
@@ -341,6 +356,7 @@ function drawFish(fish){
  if(fish.species==='crab'||fish.species==='lobster'){drawCrustacean(fish);return;}
  if(fish.species==='mantis'){drawMantisShrimp(fish);return;}
  if(fish.species==='manta'){drawMantaRay(fish);return;}
+ if(fish.species==='stingray'){drawStingray(fish);return;}
  const speed=Math.hypot(fish.v.x,fish.v.y,fish.v.z);
  const yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z));
  const q=quatFromEuler(yaw,pitch,0),centre=project(fish.p);
@@ -381,6 +397,30 @@ function drawFish(fish){
  if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.2,eye.size*.028),0,TAU);ctx.fillStyle='#f3f0d8';ctx.fill();ctx.beginPath();ctx.arc(eye.x+eye.size*.008,eye.y,Math.max(.7,eye.size*.012),0,TAU);ctx.fillStyle='#10252c';ctx.fill();}
  ctx.restore();
 }
+function drawStingray(fish){
+ const scale=fish.bodyScale??1.1,yaw=Math.atan2(-fish.forward.z,fish.forward.x),q=quatFromEuler(yaw,0,0);
+ const centre=project(fish.p),alpha=Math.max(.62,Math.min(.98,1.2-centre.depth*.018));
+ const flap=Math.sin(fish.wingPhase??0),lift=flap*.2;
+ const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
+ const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
+ ctx.save();ctx.globalAlpha=alpha;ctx.lineJoin='round';
+ // A low diamond-shaped disc with broad pectoral fins that undulate close to the sand.
+ for(const side of [-1,1]){
+  const tipLift=lift*(side>0?1:-.92);
+  poly([[.48,.035,side*.25],[.18,.07+tipLift*.35,side*.85],[-.22,tipLift,side*1.78],[-.94,tipLift*.72,side*1.34],[-.72,-.055,side*.48],[-.25,-.08,side*.2]],side>0?'#657e82':'#789093','#344e54');
+  const edge=[point(.35,.07,side*.4),point(-.08,.08+tipLift*.35,side*1.05),point(-.22,tipLift,side*1.72)];
+  if(edge.every(p=>p.depth>2.5)){ctx.beginPath();edge.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle='rgba(190,211,197,.55)';ctx.lineWidth=Math.max(.7,centre.size*.018);ctx.stroke();}
+ }
+ poly([[.68,.045,0],[.48,.13,.35],[-.12,.12,.48],[-.88,.025,.18],[-1.04,-.015,0],[-.88,.025,-.18],[-.12,.12,-.48],[.48,.13,-.35]],'#526e73','#2c4850');
+ poly([[.38,-.035,0],[.12,-.09,.34],[-.65,-.07,.2],[-.78,-.045,0],[-.65,-.07,-.2],[.12,-.09,-.34]],'#a8b8a9');
+ for(const side of [-1,1]){
+  const eye=point(.48,.13,side*.29);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1.1,centre.size*.026),0,TAU);ctx.fillStyle='#d8d7bb';ctx.fill();ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.65,centre.size*.013),0,TAU);ctx.fillStyle='#172d32';ctx.fill();}
+  const gill=point(.02,-.09,side*.25),gillEnd=point(-.38,-.09,side*.28);if(gill.depth>2.5&&gillEnd.depth>2.5){ctx.beginPath();ctx.moveTo(gill.x,gill.y);ctx.lineTo(gillEnd.x,gillEnd.y);ctx.strokeStyle='rgba(34,58,62,.8)';ctx.lineWidth=Math.max(.7,centre.size*.012);ctx.stroke();}
+ }
+ const tailA=point(-.92,.015,0),tailB=point(-2.15,-.025,0);
+ if(tailA.depth>2.5&&tailB.depth>2.5){ctx.beginPath();ctx.moveTo(tailA.x,tailA.y);ctx.quadraticCurveTo((tailA.x+tailB.x)*.5,tailA.y-centre.size*.018,tailB.x,tailB.y);ctx.strokeStyle='#71898a';ctx.lineWidth=Math.max(.7,centre.size*.016);ctx.stroke();}
+ ctx.restore();
+}
 function render(){
  const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
  const width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
@@ -390,6 +430,7 @@ function render(){
  gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
  drawSeabed();
  drawCoral();
+ drawPlankton();
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);
  drawShelterForeground();
@@ -410,7 +451,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/30){render();renderAccumulator%=1/30;}
- if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 6 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
+ if(frame++%30===0){const counts={fish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 7 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML='<b>FISH</b> '+counts.fish+'<br><b>EELS</b> '+counts.eel+'<br><b>CRABS</b> '+counts.crab+'<br><b>LOBSTERS</b> '+counts.lobster+'<br><b>MANTIS SHRIMP</b> '+counts.mantis+'<br><b>MANTA RAYS</b> '+counts.manta+'<br><b>STINGRAYS</b> '+counts.stingray;metrics.textContent='MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0);}
  requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
