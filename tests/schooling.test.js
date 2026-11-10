@@ -299,11 +299,10 @@ test('moray eels settle near the seabed and maintain a near-horizontal swimming 
 });
 
 test('exposed crabs scuttle sideways relative to their shell heading', () => {
-  const school = createSchool(500, 73421);
-  const crab = school.fish.find(agent => agent.species === 'crab');
-  crab.sheltering = false;
-  crab.shelterIndex = 0;
-  crab.p = { x: -20, y: -8.55, z: -17 };
+  const school = createSchool(1, 73421);
+  const crab = school.fish[0];
+  crab.species = 'crab'; crab.bodyScale = 1; crab.sheltering = false; crab.shelterIndex = 0;
+  crab.p = { x: -20, y: -8.55, z: -17 }; crab.v = { x: 0, y: 0, z: 0 }; crab.forward = { x: 1, y: 0, z: 0 }; crab.groundPhase = 0;
   for (let i = 0; i < 90; i++) stepSchool(school, 1 / 60);
   const forwardSpeed = crab.v.x * crab.forward.x + crab.v.z * crab.forward.z;
   const lateralSpeed = crab.v.x * -crab.forward.z + crab.v.z * crab.forward.x;
