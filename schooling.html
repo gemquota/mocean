@@ -173,6 +173,36 @@ function drawCrustacean(fish){
  for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*(lobster?.78:.68),-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle=lobster?'#c57a55':'#d19a70';ctx.lineWidth=Math.max(1,centre.size*.045*scale);ctx.stroke();}
  ctx.restore();
 }
+function drawSeabed(){
+ const top=[],front=[];
+ for(let i=0;i<=36;i++){
+  const x=-42+i*(84/36),ridge=-8.62+Math.sin(i*1.71)*.22+Math.sin(i*.43)*.18;
+  top.push(project(vec3(x,ridge,-23)));
+  front.push(project(vec3(x,-12.1+Math.sin(i*.77)*.16,28)));
+ }
+ ctx.save();ctx.globalAlpha=.96;ctx.beginPath();
+ top.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+ for(let i=front.length-1;i>=0;i--)ctx.lineTo(front[i].x,front[i].y);
+ ctx.closePath();ctx.fillStyle='#172f32';ctx.fill();ctx.strokeStyle='#45605a';ctx.lineWidth=1.2;ctx.stroke();
+ for(let shelf=0;shelf<5;shelf++){
+  const x=-34+shelf*16.5,y=-8.5+(shelf%2)*.16,z=-17+(shelf%3)*10;
+  const rock=[[-3,0,-1.2],[-2.1,.42,-.8],[-.8,.68,-1.1],[1.5,.38,-.7],[2.8,0,.2],[1.7,-.18,1.1],[-1.6,-.14,1.3]].map(([dx,dy,dz])=>project(vec3(x+dx,y+dy,z+dz)));
+  ctx.beginPath();rock.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=shelf%2?'#29413e':'#304943';ctx.strokeStyle='#60736a';ctx.lineWidth=.8;ctx.fill();ctx.stroke();
+ }
+ for(const [x,z,rx,ry] of [[-25,-8,2.5,1.15],[-4,-3,3.1,1.35],[19,-10,2.25,1.05],[32,2,1.9,.9]]){
+  const c=project(vec3(x,-8.56,z));
+  ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(4,c.size*rx),Math.max(2,c.size*ry),-.08,0,TAU);
+  ctx.fillStyle='#061014';ctx.fill();ctx.strokeStyle='rgba(117,145,128,.8)';ctx.lineWidth=Math.max(1,c.size*.035);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(c.x,c.y+Math.max(1,c.size*.12),Math.max(2,c.size*rx*.72),Math.max(1,c.size*ry*.62),-.08,Math.PI,TAU);
+  ctx.strokeStyle='rgba(2,9,12,.9)';ctx.lineWidth=Math.max(1,c.size*.055);ctx.stroke();
+ }
+ for(const [x,z,lean] of [[-17,-5,-1.2],[8,-1,.8],[27,-4,-.7],[-33,4,1.1]]){
+  const a=project(vec3(x,-8.54,z)),b=project(vec3(x+lean,-8.57,z+5.5)),c=project(vec3(x+lean*.4,-8.59,z+11));
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.strokeStyle='#071417';ctx.lineWidth=Math.max(1.5,a.size*.055);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(a.x-1,a.y-1);ctx.lineTo(b.x-1,b.y-1);ctx.strokeStyle='rgba(120,145,126,.42)';ctx.lineWidth=Math.max(.6,a.size*.012);ctx.stroke();
+ }
+ ctx.restore();
+}
 function drawFish(fish){
  if(fish.species==='eel'){drawEel(fish);return;}
  if(fish.species==='crab'||fish.species==='lobster'){drawCrustacean(fish);return;}
@@ -223,9 +253,7 @@ function render(){
  ctx.setTransform(dpr,0,0,dpr,0,0);viewWidth=rect.width;viewHeight=rect.height;
  const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
  gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
- ctx.globalAlpha=.13;ctx.strokeStyle='#8bd8c1';ctx.lineWidth=1;ctx.beginPath();
- for(let i=0;i<=72;i++){const a=i/72*TAU,p=project(vec3(41*Math.cos(a),-9.5,31*Math.sin(a)));i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}
- ctx.stroke();ctx.globalAlpha=1;
+ drawSeabed();
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
  for(const fish of ordered)drawFish(fish);
 }
