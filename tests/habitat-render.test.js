@@ -74,8 +74,8 @@ test('reef additions include five configured reef fish and animated anchored ane
 
 test('pelagic and benthic additions are represented in controls and renderers', () => {
   for (const species of ['wobbegong','marlin','tuna']) assert.match(html, new RegExp(species+':'));
-  assert.match(html, /function drawWobbegong\\(fish\\)/);
-  assert.match(html, /drawWobbegong\\(fish\\)/);
+  assert.match(html, /function drawWobbegong\(fish\)/);
+  assert.match(html, /drawWobbegong\(fish\)/);
   assert.match(src, /wobbegong: 4\\.8/);
   assert.match(src, /marlin: 5\\.2/);
   assert.match(src, /tuna: 3\\.8/);
