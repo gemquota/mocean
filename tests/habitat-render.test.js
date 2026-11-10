@@ -72,6 +72,15 @@ test('reef additions include five configured reef fish and animated anchored ane
   assert.match(src, /REEF_ANEMONE_SITES/);
 });
 
+test('pelagic and benthic additions are represented in controls and renderers', () => {
+  for (const species of ['wobbegong','marlin','tuna']) assert.match(html, new RegExp(species+':'));
+  assert.match(html, /function drawWobbegong\\(fish\\)/);
+  assert.match(html, /drawWobbegong\\(fish\\)/);
+  assert.match(src, /wobbegong: 4\\.8/);
+  assert.match(src, /marlin: 5\\.2/);
+  assert.match(src, /tuna: 3\\.8/);
+});
+
 test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
   assert.match(script, /const coralColonies=Array\.from\(\{length:320\}/);
   assert.match(script, /for\(let index=0;index<coralColonies\.length;index\+\+\)/);
