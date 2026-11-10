@@ -175,10 +175,10 @@ function drawCrustacean(fish){
    const ankle=point(x+(leg<2?.21:-.24)+stride*.13,-.265+lift,side*.86);
    const tip=point(x+(leg<2?.27:-.3)+stride*.17,-.285+lift,side*1.02);
    const width=Math.max(1.25,centre.size*.038*scale);
-   ctx.strokeStyle='#9b7652';ctx.lineWidth=width*1.18;
+   ctx.strokeStyle='#527e78';ctx.lineWidth=width*1.18;
    ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(coxa.x,coxa.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(ankle.x,ankle.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
    for(const joint of [coxa,knee,ankle]){
-    ctx.beginPath();ctx.arc(joint.x,joint.y,Math.max(.8,width*.58),0,TAU);ctx.fillStyle='#bd9368';ctx.fill();
+    ctx.beginPath();ctx.arc(joint.x,joint.y,Math.max(.8,width*.58),0,TAU);ctx.fillStyle='#79a99a';ctx.fill();
    }
    ctx.strokeStyle='rgba(45,35,27,.8)';ctx.lineWidth=Math.max(.65,width*.34);
    ctx.beginPath();ctx.moveTo(knee.x,knee.y);ctx.lineTo(ankle.x,ankle.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
@@ -190,7 +190,7 @@ function drawCrustacean(fish){
    const hip=point(x,-.035,z),coxa=point(x+stride*.035,-.13,side*(bodyWidth*.78));
    const knee=point(x+(leg<2?.18:-.18)+stride*.075,-.235+lift*.2,side*(bodyWidth+.22));
    const foot=point(x+(leg<2?.32:-.32)+stride*.14,-.39+lift,side*(bodyWidth+.56));
-   ctx.strokeStyle='#a96848';ctx.lineWidth=Math.max(1.5,centre.size*.055*scale);
+   ctx.strokeStyle='#477d79';ctx.lineWidth=Math.max(1.5,centre.size*.055*scale);
    ctx.beginPath();ctx.moveTo(hip.x,hip.y);ctx.lineTo(coxa.x,coxa.y);ctx.lineTo(knee.x,knee.y);ctx.lineTo(foot.x,foot.y);ctx.stroke();
   }
  }
@@ -199,16 +199,16 @@ function drawCrustacean(fish){
   : [[.58,0,0],[.43,.18,.48],[.08,.24,.58],[-.38,.19,.52],[-.62,.04,.29],[-.66,-.015,0],[-.62,.04,-.29],[-.38,.19,-.52],[.08,.24,-.58],[.43,.18,-.48]];
  const shell=shellLocal.map(([x,y,z])=>point(x*bodyLength,y*(lobster?2.1:2.45),z*bodyWidth));
  ctx.beginPath();shell.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();
- ctx.fillStyle=lobster?'#a84e37':'#876044';ctx.strokeStyle=lobster?'#5b3029':'#493c2d';ctx.lineWidth=Math.max(1,centre.size*.027*scale);ctx.fill();ctx.stroke();
+ ctx.fillStyle=lobster?'#286f70':'#527f70';ctx.strokeStyle=lobster?'#173f50':'#294f48';ctx.lineWidth=Math.max(1,centre.size*.027*scale);ctx.fill();ctx.stroke();
  const ridgeA=point(-bodyLength*.42,.2,0),ridgeB=point(bodyLength*.38,.2,0);
- ctx.beginPath();ctx.moveTo(ridgeA.x,ridgeA.y);ctx.lineTo(ridgeB.x,ridgeB.y);ctx.strokeStyle=lobster?'#d18a68':'#c4a17a';ctx.lineWidth=Math.max(.8,centre.size*.022*scale);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(ridgeA.x,ridgeA.y);ctx.lineTo(ridgeB.x,ridgeB.y);ctx.strokeStyle=lobster?'#79b8a6':'#9ac4a0';ctx.lineWidth=Math.max(.8,centre.size*.022*scale);ctx.stroke();
  if(!lobster){
   // A low domed carapace dominates the silhouette; legs remain short and tucked.
   for(let seam=0;seam<3;seam++){const a=point(-bodyLength*.25+seam*.2,.25,.0),b=point(-bodyLength*.25+seam*.2,.25,.28);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(52,43,31,.55)';ctx.lineWidth=Math.max(.6,centre.size*.01);ctx.stroke();}
   for(const side of [-1,1]){const eye=point(bodyLength*.43,.18,side*.24);ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(.7,centre.size*.016*scale),0,TAU);ctx.fillStyle='#27251f';ctx.fill();}
  }else{
   for(const side of [-1,1]){const eye=point(bodyLength*.34,.22,side*.2);ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.025*scale),0,TAU);ctx.fillStyle='#f0dfbb';ctx.fill();}
-  for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*.78,-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle='#c57a55';ctx.lineWidth=Math.max(1,centre.size*.045*scale);ctx.stroke();}
+  for(const side of [-1,1]){const root=point(bodyLength*.38,-.02,side*.28),claw=point(bodyLength*.78,-.1,side*.5);ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y-centre.size*.04);ctx.moveTo(claw.x,claw.y);ctx.lineTo(claw.x+centre.size*.025,claw.y+centre.size*.04);ctx.strokeStyle='#75a99a';ctx.lineWidth=Math.max(1,centre.size*.045*scale);ctx.stroke();}
  }
  ctx.restore();
 }
