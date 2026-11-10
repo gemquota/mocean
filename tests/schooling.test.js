@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGait, stepGait } from '../src/core/body.js';
-import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
+import { createSchool, stepSchool, SCHOOLING_DEFAULT_COUNT, SCHOOLING_FISH_SCALE, SCHOOLING_COLLISION, SCHOOLING_EEL_COLLISION, SCHOOLING_CRAB_COLLISION, SCHOOLING_LOBSTER_COLLISION, SCHOOLING_MANTIS_COLLISION, SCHOOLING_MANTA_COLLISION, SCHOOLING_STINGRAY_COLLISION, SCHOOLING_SHARK_COLLISION, SCHOOLING_WHALE_SHARK_COLLISION, SCHOOLING_SHOAL_COLLISION, SCHOOLING_STARFISH_COLLISION, SCHOOLING_DOLPHIN_COLLISION, SCHOOLING_LIMITS } from '../src/schooling.js';
 
 test('mixed-species habitat creates 150 independent agents by default', () => {
   const school = createSchool();
@@ -19,6 +19,9 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   assert.ok(school.fish.some(f => f.species === 'stingray'), 'stingrays should be present');
   assert.ok(school.fish.some(f => f.species === 'shark'), 'sharks should be present');
   assert.ok(school.fish.some(f => f.species === 'whaleShark'), 'whale sharks should be present');
+  assert.ok(school.fish.some(f => f.species === 'schoolFish'), 'dedicated schooling fish should be present');
+  assert.ok(school.fish.some(f => f.species === 'starfish'), 'starfish should be present');
+  assert.ok(school.fish.some(f => f.species === 'dolphin'), 'dolphins should be present');
   assert.ok(school.fish.some(f => f.species === 'lobster'));
   const eels=school.fish.filter(f => f.species === 'eel');
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
@@ -91,7 +94,7 @@ test('100-fish school remains finite and speed-bounded over sustained simulation
   assert.ok(metrics.averageNeighbours > 0);
 });
 
-test('nine species have distinct collision envelopes and benthic species spawn on the seabed', () => {
+test('twelve species have distinct collision envelopes and benthic species spawn on the seabed', () => {
   assert.equal(SCHOOLING_FISH_SCALE, 0.25);
   assert.ok(SCHOOLING_COLLISION.halfLength > 0.18 && SCHOOLING_COLLISION.halfLength < 0.23);
   assert.ok(SCHOOLING_COLLISION.radius > 0.06 && SCHOOLING_COLLISION.radius < 0.09);
@@ -106,10 +109,14 @@ test('nine species have distinct collision envelopes and benthic species spawn o
   assert.ok(SCHOOLING_SHARK_COLLISION.halfLength > SCHOOLING_STINGRAY_COLLISION.halfLength);
   assert.ok(SCHOOLING_WHALE_SHARK_COLLISION.halfLength > SCHOOLING_SHARK_COLLISION.halfLength);
   assert.ok(SCHOOLING_WHALE_SHARK_COLLISION.radius > SCHOOLING_SHARK_COLLISION.radius);
+  assert.ok(SCHOOLING_SHOAL_COLLISION.halfLength > SCHOOLING_COLLISION.halfLength);
+  assert.ok(SCHOOLING_SHOAL_COLLISION.radius < SCHOOLING_COLLISION.radius);
+  assert.ok(SCHOOLING_STARFISH_COLLISION.radius > SCHOOLING_CRAB_COLLISION.radius);
+  assert.ok(SCHOOLING_DOLPHIN_COLLISION.halfLength > SCHOOLING_STINGRAY_COLLISION.halfLength);
   const school = createSchool(150, 73421);
   const eels = school.fish.filter(agent => agent.species === 'eel');
   assert.ok(eels.length >= 15 && eels.length <= 45, 'seeded mix should contain a useful minority of eels');
-  for (const species of ['crab','lobster','mantis']) {
+  for (const species of ['crab','lobster','mantis','starfish']) {
     const ground = school.fish.filter(agent => agent.species === species);
     assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   }
@@ -143,6 +150,31 @@ test('sharks pursue and consume small fish while whale sharks remain filter-feed
   assert.equal(whaleSchool.fish.length,2,'whale sharks must not prey on fish');
   assert.ok(whale.planktonFiltered>0,'whale sharks should accumulate filter-feeding activity');
   assert.ok(Math.hypot(whale.v.x,whale.v.y,whale.v.z)<=.93);
+});
+
+test('dedicated schooling fish are one quarter scale and form persistent, separate schools', () => {
+  const school=createSchool(500,73421), regular=school.fish.filter(f=>f.species==='fish'), shoal=school.fish.filter(f=>f.species==='schoolFish');
+  assert.ok(shoal.length > regular.length * 1.8 && shoal.length < regular.length * 2.2, 'dedicated schooling fish should be about twice as numerous');
+  assert.ok(shoal.every(f=>f.bodyScale>=0.145 && f.bodyScale<=0.375));
+  assert.ok(shoal.every(f=>f.schoolAffinity>=2.4));
+  assert.ok(new Set(shoal.map(f=>f.socialGroupId)).size>=5);
+  for(let i=0;i<600;i++)stepSchool(school,1/60);
+  const groups=new Map();for(const f of shoal){const key=f.socialGroupId;let group=groups.get(key);if(!group){group=[];groups.set(key,group);}group.push(f);}
+  for(const group of groups.values())if(group.length>2){
+    const cx=group.reduce((s,f)=>s+f.p.x,0)/group.length,cy=group.reduce((s,f)=>s+f.p.y,0)/group.length,cz=group.reduce((s,f)=>s+f.p.z,0)/group.length;
+    const meanDistance=group.reduce((s,f)=>s+Math.hypot(f.p.x-cx,f.p.y-cy,f.p.z-cz),0)/group.length;
+    assert.ok(meanDistance<4.8,'members should remain cohesive around their school centroid');
+  }
+});
+
+test('starfish remain benthic and dolphins travel in social pods', () => {
+  const school=createSchool(1000,73421),stars=school.fish.filter(f=>f.species==='starfish'),dolphins=school.fish.filter(f=>f.species==='dolphin');
+  assert.ok(stars.length>20 && stars.every(f=>f.p.y===-8.55));
+  assert.ok(dolphins.length>20 && dolphins.every(f=>f.socialGroupId>=0));
+  const before=dolphins.map(f=>({...f.p}));for(let i=0;i<240;i++)stepSchool(school,1/60);
+  assert.ok(stars.every(f=>f.p.y===-8.55 && Math.hypot(f.v.x,f.v.z)<.08));
+  assert.ok(dolphins.every(f=>Math.hypot(f.v.x,f.v.y,f.v.z)<=2.21));
+  assert.ok(dolphins.some((f,i)=>Math.hypot(f.p.x-before[i].x,f.p.y-before[i].y,f.p.z-before[i].z)>1));
 });
 
 test('small fish have stronger schooling affinity than large fish', () => {
@@ -287,10 +319,10 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
   assert.ok(activeNodes >= 7, 'the lateral bend should involve much of the trunk');
 });
 
-test('species mix targets fish, eels, crustaceans, rays, sharks and whale sharks', () => {
+test('species mix targets regular and dedicated schooling fish, eels, crustaceans, rays, sharks, starfish and dolphins', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.69], ['eel', 0.15], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02]]) {
+  for (const [species, target] of [['fish', 0.21], ['schoolFish', 0.42], ['eel', 0.15], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['starfish', 0.03], ['dolphin', 0.03]]) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
