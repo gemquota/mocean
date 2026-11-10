@@ -28,3 +28,12 @@ test('each species gets controls on speed, size, min/max size and aggression tab
   assert.match(script, /speciesSettings\[species\]\.minSize/);
   assert.match(script, /speciesSettings\[species\]\.maxSize/);
 });
+
+test('reef habitat includes mola mola, irregular reef formations, seagrass, kelp and expanded coral forms', () => {
+  assert.match(html, /mola:'Mola mola'/);
+  assert.match(script, /function drawMola\(fish\)/);
+  assert.match(script, /function drawSeagrassAndKelp\(\)/);
+  assert.match(script, /reefRidges=/);
+  assert.match(script, /i%12/);
+  assert.match(script, /drawSeagrassAndKelp\(\)/);
+});

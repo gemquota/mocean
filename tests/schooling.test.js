@@ -338,7 +338,7 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
 test('species mix targets regular and dedicated schooling fish, eels, rays, sharks, reef fauna and new turtle species', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
-  for (const [species, target] of [['fish', 0.18], ['schoolFish', 0.36], ['eel', 0.17], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
+  for (const [species, target] of [['fish', 0.17], ['schoolFish', 0.36], ['eel', 0.17], ['crab', 0.03], ['lobster', 0.03], ['mantis', 0.02], ['manta', 0.02], ['stingray', 0.02], ['shark', 0.02], ['whaleShark', 0.02], ['mola', 0.01], ['starfish', 0.03], ['dolphin', 0.03], ['turtle',0.02], ['jellyfish',0.03], ['sandEel',0.02]]) {
     assert.ok(Math.abs(share(species) - target) < 0.008, `${species} share should be close to ${target * 100}%`);
   }
 });
@@ -387,4 +387,18 @@ test('crab share remains close to the new three-percent target', () => {
   const school = createSchool(5000, 73421);
   const crabShare = school.fish.filter(agent => agent.species === 'crab').length / school.fish.length;
   assert.ok(Math.abs(crabShare - 0.03) < 0.003, 'crabs should make up about three percent of the population');
+});
+
+test('mola mola are distinct slow midwater cruisers with a deep-bodied collision envelope', () => {
+  const school = createSchool(1000, 73421);
+  const mola = school.fish.filter(agent => agent.species === 'mola');
+  assert.ok(mola.length >= 8 && mola.length <= 12, 'mola mola should be a small one-percent population');
+  assert.ok(mola.every(agent => agent.bodyScale >= 1.42 && agent.bodyScale <= 1.7));
+  const before = mola.map(agent => ({ ...agent.p }));
+  for (let i = 0; i < 120; i++) stepSchool(school, 1 / 60);
+  assert.ok(mola.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
+  const meanSpeed = mola.reduce((sum,agent) => sum + Math.hypot(agent.v.x,agent.v.y,agent.v.z),0) / mola.length;
+  assert.ok(meanSpeed < 0.85, 'mola mola should retain a slow cruising pace despite occasional collision impulses');
+  assert.ok(mola.every(agent => Math.hypot(agent.v.x,agent.v.y,agent.v.z) < 1.5));
+  assert.ok(mola.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.y-before[i].y,agent.p.z-before[i].z) > 0.1));
 });
