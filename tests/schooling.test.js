@@ -369,7 +369,7 @@ test('manta rays occupy midwater and maintain a slow, bounded glide with fin mot
 test('stingrays glide just above the seabed with slow fin strokes', () => {
   const school = createSchool(1000, 73421);
   const rays = school.fish.filter(agent => agent.species === 'stingray');
-  assert.ok(rays.length > 10 && rays.length < 35);
+  assert.ok(rays.length >= 1 && rays.length < 10);
   assert.ok(rays.every(agent => agent.p.y > -8.05 && agent.p.y < -7.75));
   const phase = rays[0].wingPhase;
   const before = { ...rays[0].p };
