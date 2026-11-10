@@ -262,7 +262,7 @@ function drawMantaRay(fish){
  const centre=project(fish.p),alpha=Math.max(.58,Math.min(.98,1.18-centre.depth*.018));
  const flap=Math.sin(fish.wingPhase??0),lift=flap*.42;
  const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
- const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
+ const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();const first={x:(p[p.length-1].x+p[0].x)*.5,y:(p[p.length-1].y+p[0].y)*.5};ctx.moveTo(first.x,first.y);for(let i=0;i<p.length;i++){const current=p[i],next=p[(i+1)%p.length],mid={x:(current.x+next.x)*.5,y:(current.y+next.y)*.5};ctx.quadraticCurveTo(current.x,current.y,mid.x,mid.y);}ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
  ctx.save();ctx.globalAlpha=Math.max(.9,alpha);ctx.lineJoin='round';ctx.lineCap='round';
  // Broad pectoral fins sweep and flap as a single continuous wing on each side.
  for(const side of [-1,1]){
@@ -469,7 +469,7 @@ function drawSchoolFish(fish){
   const scale=fish.bodyScale??(whale?2.7:1.8),yaw=Math.atan2(-fish.forward.z,fish.forward.x),pitch=Math.atan2(fish.forward.y,Math.hypot(fish.forward.x,fish.forward.z)),q=quatFromEuler(yaw,pitch,0);
   const centre=project(fish.p),alpha=Math.max(.9,Math.min(1,1.12-centre.depth*.008));
   const point=(x,y,z)=>project(add3(fish.p,quatRotate(q,vec3(x*scale,y*scale,z*scale))));
-  const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
+  const poly=(vertices,fill,stroke)=>{const p=vertices.map(v=>point(...v));if(p.some(v=>v.depth<2.5))return;ctx.beginPath();const first={x:(p[p.length-1].x+p[0].x)*.5,y:(p[p.length-1].y+p[0].y)*.5};ctx.moveTo(first.x,first.y);for(let i=0;i<p.length;i++){const current=p[i],next=p[(i+1)%p.length],mid={x:(current.x+next.x)*.5,y:(current.y+next.y)*.5};ctx.quadraticCurveTo(current.x,current.y,mid.x,mid.y);}ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=Math.max(.8,centre.size*.018);ctx.stroke();}};
   ctx.save();ctx.globalAlpha=alpha;ctx.lineJoin='round';
   const dorsal=whale?'#526f83':'#526d78',belly=whale?'#a9bac1':'#c3c7b8',outline=whale?'#253f50':'#263e49';
   // Torpedo-shaped shark body versus the broad, blunt filter-feeding whale shark.
