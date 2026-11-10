@@ -1,7 +1,7 @@
 # Mocean Development Roadmap
 
-**Revision:** 13 · 9 November 2026  
-**Canonical status:** Phase 0 and Phase 1 approved. Phases 2–5 are authorised and in implementation/review. Phase 6 remains deferred.  
+**Revision:** 14 · 10 November 2026  
+**Canonical status:** Phase 0 and Phase 1 approved. Phases 2–5 are provisionally tagged *candidate complete* at the user's request; visual acceptance, integration checks and/or user confirmation remain outstanding. Phase 6 remains deferred.  
 **Current work branch:** `phase-5-autonomy` · awaiting integration and live visual review.
 
 ## Objective
@@ -77,7 +77,7 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 ## Phase 2 · Elementary movement primitives
 
-**Status:** Implementation integrated. Visual acceptance and user confirmation remain open.
+**Status:** PROVISIONAL · candidate complete (user-requested working label). Implementation is integrated and automated coverage exists; task-level assistant completion and live visual acceptance are not yet established. User confirmation and the phase gate remain open.
 
 - [x] P2-1 Straight acceleration, coasting and braking. Assistant evidence recorded; user confirmation remains open.
 - [ ] P2-2 Isolated nose-up and nose-down pitch.
@@ -89,7 +89,7 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 ## Phase 3 · Basic composite motions
 
-**Status:** Sequence implementation integrated; kinematic tests pass. Live visual review remains open.
+**Status:** PROVISIONAL · candidate complete (user-requested working label). Sequence implementation is integrated and kinematic tests pass; live visual review, regression comparison and user confirmation remain open.
 
 - [ ] P3-1 Dive: orient nose-down, then propel along the new heading.
 - [ ] P3-2 Climb: orient nose-up, then propel along the new heading.
@@ -101,7 +101,7 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 ## Phase 4 · Complex manoeuvre arrangements
 
-**Status:** Compound sequence implementation integrated; kinematic tests pass. Live visual review remains open.
+**Status:** PROVISIONAL · candidate complete (user-requested working label). Compound sequence implementation is integrated and kinematic tests pass; live visual review, regression comparison and user confirmation remain open.
 
 - [ ] P4-1 Backwards drift with head direction opposed to retained world momentum.
 - [ ] P4-2 Momentum-led curved reversal and controlled loop-the-loop.
@@ -112,7 +112,7 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 ## Phase 5 · Autonomous natural behaviour
 
-**Status:** Prototype integrated on `phase-5-autonomy`. **68 automated tests pass (0 fail) at commit `8aae7739a248c7f1d15b698dd0664cd9d9804c28`. Live visual review and user confirmation remain open.**
+**Status:** PROVISIONAL · candidate complete (user-requested working label). Prototype remains on `phase-5-autonomy`, not yet integrated into `main`. **68 automated tests pass (0 fail) at commit `8aae7739a248c7f1d15b698dd0664cd9d9804c28`.** Live visual review, integration/regression checks and user confirmation remain open.
 
 - [ ] P5-1 Persistent behavioural intent, state transitions and burst cooldown.
 - [ ] P5-2 Blend cruise, explore, dart, glide, turn and recovery according to energy and context.
@@ -177,11 +177,13 @@ First establish a reproducible single-fish baseline, then profile 10, 25, 50 and
 |---|---|---|
 | 0 · Architecture | Complete | Confirmed · gate approved 8 Nov 2026 |
 | 1 · 3D foundation | Complete | Confirmed · gate approved 8 Nov 2026 |
-| 2 · Primitives | P2-1 complete; remaining visual checks open | Pending |
-| 3 · Basic composites | Prototype and kinematic tests integrated | Pending visual review |
-| 4 · Complex arrangements | Prototype and kinematic tests integrated | Pending visual review |
-| 5 · Autonomous behaviour | Prototype integrated; 67 tests pass | Pending visual review |
+| 2 · Primitives | **Provisional candidate complete**; task evidence/visual checks incomplete | Pending · not approved |
+| 3 · Basic composites | **Provisional candidate complete**; implementation and kinematic checks integrated | Pending visual review · not approved |
+| 4 · Complex arrangements | **Provisional candidate complete**; implementation and kinematic checks integrated | Pending visual review · not approved |
+| 5 · Autonomous behaviour | **Provisional candidate complete**; prototype on feature branch, 68 tests pass | Pending integration, visual review · not approved |
 | 6 · Environment | Deferred | Not started |
 | 7 · Integration and polish | Queued | Not started |
+
+**Status-label note (10 November 2026):** At the user's request, Phases 2–5 are labelled *provisional / candidate complete*. This is a planning label only. It does not change task checkboxes, assistant-complete evidence, user-confirmation marks or phase-gate approvals. In particular, Phase 5 remains on its feature branch and must be integrated and regression-checked before acceptance.
 
 **Authorisation:** On 9 November 2026 the user explicitly authorised the work through Phase 5 and the subsequent isolated 100-fish schooling experiment. This authorises implementation work; it does not imply task completion, user confirmation or phase-gate approval.
