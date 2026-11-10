@@ -9,7 +9,10 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   assert.ok(school.fish.every(f => f.p !== f.v && Number.isFinite(f.phase)));
   assert.ok(school.fish.some(f => f.species === 'eel'));
   assert.ok(school.fish.some(f => f.species === 'fish'));
-  assert.ok(school.fish.some(f => f.species === 'crab'));
+  const sizedFish = school.fish.filter(f => f.species === 'fish');
+  assert.ok(sizedFish.every(f => f.bodyScale >= 0.58 && f.bodyScale <= 1.5));
+  assert.ok(new Set(sizedFish.map(f => f.bodyScale)).size > 20, 'fish should have a continuous range of body sizes');
+  assert.ok(school.fish.filter(f => f.species === 'crab').length < 12, 'crabs should be a small minority of the habitat');
   assert.ok(school.fish.some(f => f.species === 'lobster'));
   assert.equal('target' in school, false, 'the school must not have a shared target');
 });
@@ -91,6 +94,27 @@ test('four species have distinct collision envelopes and crustaceans spawn on th
     assert.ok(ground.length >= 10, `${species} should be represented in the seeded population`);
     assert.ok(ground.every(agent => agent.p.y === -8.55 && agent.v.y === 0));
   }
+});
+
+test('large fish consume sufficiently small fish at close range', () => {
+  const school = createSchool(2, 71);
+  const [predator, prey] = school.fish;
+  predator.species='fish'; predator.bodyScale=1.45; predator.schoolAffinity=0.5;
+  predator.p={x:0,y:0,z:0}; predator.v={x:0.5,y:0,z:0}; predator.forward={x:1,y:0,z:0}; predator.feedingCooldown=0;
+  prey.species='fish'; prey.bodyScale=0.62; prey.schoolAffinity=1.1;
+  prey.p={x:0.2,y:0,z:0}; prey.v={x:0.5,y:0,z:0}; prey.forward={x:1,y:0,z:0};
+  stepSchool(school,1/60);
+  assert.equal(school.fish.length,1,'the smaller fish should be removed after a close capture');
+  assert.equal(school.metrics.eaten,1);
+  assert.ok(school.fish[0].bodyScale>1.45,'feeding should produce a small growth response');
+});
+
+test('small fish have stronger schooling affinity than large fish', () => {
+  const school=createSchool(150,73421), fish=school.fish.filter(f=>f.species==='fish');
+  const small=fish.filter(f=>f.bodyScale<0.8), large=fish.filter(f=>f.bodyScale>1.3);
+  assert.ok(small.length>0 && large.length>0);
+  assert.ok(small.every(f=>f.schoolAffinity>0.9));
+  assert.ok(large.every(f=>f.schoolAffinity<0.8));
 });
 
 test('crabs and lobsters use bounded grounded locomotion without fish schooling', () => {
