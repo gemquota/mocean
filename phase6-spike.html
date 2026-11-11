@@ -17,7 +17,7 @@ canvas{display:block;width:100%;height:100%}
 </style>
 </head>
 <body>
-<div id="status"><b>MOCEAN / PHASE 6 · TERRAIN STUDY</b><small>Building the seabed…</small></div>
+<div id="status" role="status" aria-live="polite"><b>MOCEAN / PHASE 6 · TERRAIN STUDY</b><small>Building the seabed…</small></div>
 <div id="legend"><strong>IRREGULAR REEF · CUT CHANNELS · ERODED SHELVES</strong><br>PROCEDURAL GEOMETRY · FIXED OBSERVER</div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
@@ -44,6 +44,18 @@ let view,composer,raf=0,disposed=false;
 const disposableGeometries=[],disposableMaterials=[],disposableTextures=[];
 const rng=(seed)=>{let s=seed>>>0;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;}};
 const rand=rng(930117);
+const deviceCores=navigator.hardwareConcurrency||4;
+const lowPower=deviceCores<=4||(navigator.deviceMemory&&navigator.deviceMemory<=4)||innerWidth*innerHeight>2600000;
+const quality={
+ pixelRatio:Math.min(devicePixelRatio||1,lowPower?1:1.25),
+ segmentsX:lowPower?168:220,
+ segmentsZ:lowPower?120:156,
+ particles:lowPower?420:720,
+ shadowSize:lowPower?1024:2048,
+ shafts:lowPower?3:5,
+ frameInterval:lowPower?1000/24:1000/30,
+ bloom:lowPower?.18:.28
+};
 const range=(a,b)=>a+rand()*(b-a);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
@@ -118,7 +130,7 @@ function makeArchGeometry(radius,tube,depth){
 }
 
 try{
- view=createPhase6Renderer({THREE,canvas,pixelRatio:Math.min(devicePixelRatio||1,1.35)});
+ view=createPhase6Renderer({THREE,canvas,pixelRatio:quality.pixelRatio});
  const {scene,camera,renderer}=view;
  camera.position.set(0,18,76);
  camera.lookAt(0,-4.8,0);
@@ -128,7 +140,7 @@ try{
  const hemi=new THREE.HemisphereLight('#b8e8e6','#182a28',1.35);scene.add(hemi);
  const sun=new THREE.DirectionalLight('#c7eaff',3.1);
  sun.position.set(-27,34,21);sun.castShadow=true;
- sun.shadow.mapSize.set(2048,2048);
+ sun.shadow.mapSize.set(quality.shadowSize,quality.shadowSize);
  sun.shadow.camera.left=-48;sun.shadow.camera.right=48;sun.shadow.camera.top=36;sun.shadow.camera.bottom=-30;
  sun.shadow.camera.near=1;sun.shadow.camera.far=100;
  sun.shadow.bias=-.00025;sun.shadow.normalBias=.035;sun.shadow.radius=4;scene.add(sun);
@@ -139,8 +151,9 @@ try{
   seed:6102026,bounds:{minX:-41,maxX:41,minZ:-29,maxZ:29},
   rockCount:42,archCount:7,shelfCount:9,crevasseCount:6,floorAt:seabedHeight
  });
- const featureFloor=createTerrainFloor(seabedHeight,features);\n const floor=(x,z)=>sampleSeabedHeight(x,z,featureFloor);
- const grid=buildSeabedGrid({width:84,depth:60,segmentsX:240,segmentsZ:172,floorAt:floor});
+ const featureFloor=createTerrainFloor(seabedHeight,features);
+ const floor=(x,z)=>sampleSeabedHeight(x,z,featureFloor);
+ const grid=buildSeabedGrid({width:84,depth:60,segmentsX:quality.segmentsX,segmentsZ:quality.segmentsZ,floorAt:floor});
  const terrainGeometry=new THREE.BufferGeometry();
  terrainGeometry.setAttribute('position',new THREE.BufferAttribute(grid.positions,3));
  terrainGeometry.setAttribute('color',new THREE.BufferAttribute(grid.colours,3));
@@ -181,7 +194,8 @@ try{
  const shelfGeometries=Array.from({length:4},(_,i)=>makeShelfGeometry(i*2.2));
  features.shelves.forEach((shelf,i)=>{
   const mesh=new THREE.Mesh(shelfGeometries[i%shelfGeometries.length],shelfMaterials[i%shelfMaterials.length]);
-  const shelfOffset=shelf.y-featureFloor(shelf.x,shelf.z);\n  mesh.position.set(shelf.x,floor(shelf.x,shelf.z)+shelfOffset,shelf.z);
+  const shelfOffset=shelf.y-featureFloor(shelf.x,shelf.z);
+  mesh.position.set(shelf.x,floor(shelf.x,shelf.z)+shelfOffset,shelf.z);
   mesh.scale.set(shelf.width*.58,shelf.depth*.58,shelf.height*1.1);
   mesh.rotation.y=shelf.rotation;mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
  });
@@ -205,7 +219,7 @@ try{
  }
 
  // Water-column particles use one dynamic point buffer, not hundreds of scene objects.
- const particles=generateWaterParticles({seed:610211,count:720});
+ const particles=generateWaterParticles({seed:610211,count:quality.particles});
  const particlePositions=new Float32Array(particles.length*3);
  particles.forEach((p,i)=>particlePositions.set([p.x,p.y,p.z],i*3));
  const particleGeometry=new THREE.BufferGeometry();
@@ -219,29 +233,41 @@ try{
  // Broad, soft shafts suggest light filtering through water without hiding silhouettes.
  const shaftMaterial=new THREE.MeshBasicMaterial({color:'#8ad9d2',transparent:true,opacity:.045,depthWrite:false,side:THREE.DoubleSide});
  disposableMaterials.push(shaftMaterial);
- for(let i=0;i<5;i++){
+ for(let i=0;i<quality.shafts;i++){
   const shaft=new THREE.Mesh(new THREE.ConeGeometry(range(4.5,7),range(27,35),24,1,true),shaftMaterial);
   disposableGeometries.push(shaft.geometry);
   shaft.position.set(-29+i*14,9,range(-16,15));shaft.rotation.z=Math.PI+range(-.12,.12);shaft.rotation.x=range(-.18,.18);scene.add(shaft);
  }
 
- const composerTarget=new THREE.WebGLRenderTarget(Math.floor(innerWidth*Math.min(devicePixelRatio||1,1.35)),Math.floor(innerHeight*Math.min(devicePixelRatio||1,1.35)),{type:THREE.HalfFloatType,depthBuffer:true});
+ const composerTarget=new THREE.WebGLRenderTarget(innerWidth,innerHeight,{type:THREE.HalfFloatType,depthBuffer:true});
  composer=new EffectComposer(renderer,composerTarget);
  composer.addPass(new RenderPass(scene,camera));
- const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.28,.35,.88);
+ const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),quality.bloom,.35,.88);
  composer.addPass(bloom);composer.addPass(new OutputPass());
 
  const resize=()=>{
-  const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,1.35);
-  view.resize(w,h);composer.setSize(w,h);composer.setPixelRatio(dpr);
+  const w=innerWidth,h=innerHeight,dpr=quality.pixelRatio;
+  view.resize(w,h);composer.setPixelRatio(dpr);composer.setSize(w,h);
  };
  addEventListener('resize',resize,{passive:true});resize();
 
  let last=0;
+ let paused=document.hidden;
+ const onVisibilityChange=()=>{
+  paused=document.hidden;
+  if(paused){cancelAnimationFrame(raf);return;}
+  last=0;raf=requestAnimationFrame(animate);
+ };
+ document.addEventListener('visibilitychange',onVisibilityChange);
+ const onContextLost=(event)=>{
+  event.preventDefault();disposed=true;cancelAnimationFrame(raf);
+  status.textContent='MOCEAN / WEBGL CONTEXT LOST · RELOAD TO RESTORE';
+ };
+ canvas.addEventListener('webglcontextlost',onContextLost,false);
  const animate=(now)=>{
-  if(disposed)return;
+  if(disposed||paused)return;
   raf=requestAnimationFrame(animate);
-  if(now-last<30)return;last=now;
+  if(now-last<quality.frameInterval)return;last=now;
   const time=now*.001;
   for(let i=0;i<particles.length;i++){
    const p=particles[i],o=i*3;
@@ -254,13 +280,13 @@ try{
   composer.render();
  };
  raf=requestAnimationFrame(animate);
- status.innerHTML='<b>PHASE 6 / TERRAIN REWORK</b><small>Multi-scale relief · fractured boulders · eroded ledges · hollow arches</small><small>240 × 172 seabed grid · 720 suspended particles · restrained bloom</small>';
+ status.innerHTML='<b>PHASE 6 / TERRAIN REWORK</b><small>Multi-scale relief · fractured boulders · eroded ledges · hollow arches</small><small>${quality.segmentsX} × ${quality.segmentsZ} seabed grid · ${quality.particles} suspended particles · adaptive quality</small>';
  addEventListener('pagehide',()=>{
-  disposed=true;cancelAnimationFrame(raf);composer?.dispose();view?.dispose();
+  disposed=true;cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',onVisibilityChange);canvas.removeEventListener('webglcontextlost',onContextLost);composer?.dispose();view?.dispose();
   disposableGeometries.forEach(g=>g.dispose());disposableMaterials.forEach(m=>m.dispose());disposableTextures.forEach(t=>t.dispose());
  },{once:true});
 }catch(error){
- status.innerHTML='<b>RENDERER INITIALISATION FAILED</b><small>'+String(error?.message??error)+'</small>';
+ status.textContent='RENDERER INITIALISATION FAILED · '+String(error?.message??error);
  throw error;
 }
 </script>
