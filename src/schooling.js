@@ -59,7 +59,7 @@ export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze(Object.fromEntries(
   Object.entries(SCHOOLING_SPECIES_BALANCE).map(([species, score]) => [species, (1 / score) / inverseBalanceTotal * 100])
 ));
 export const REEF_ANEMONE_SITES = Object.freeze([
-  Object.freeze({ x: -34.2, z: -14.8 }), Object.freeze({ x: -27.4, z: 7.2 }), Object.freeze({ x: -10.8, z: -12.6 }), Object.freeze({ x: 3.8, z: 8.4 }), Object.freeze({ x: 16.6, z: -16.8 }), Object.freeze({ x: 29.4, z: 9.6 }), Object.freeze({ x: 36.4, z: -6.2 }), Object.freeze({ x: -2.4, z: 19.6 }), Object.freeze({ x: -18.6, z: 17.4 }), Object.freeze({ x: 21.4, z: 22.2 })
+  Object.freeze({ x: -17.2, z: -13.2 }), Object.freeze({ x: -12.0, z: 5.2 }), Object.freeze({ x: -7.2, z: -14.0 }), Object.freeze({ x: 1.2, z: 8.2 }), Object.freeze({ x: 14.0, z: -13.1 }), Object.freeze({ x: 17.1, z: 9.2 }), Object.freeze({ x: 18.0, z: -5.1 }), Object.freeze({ x: -1.2, z: 15.0 }), Object.freeze({ x: -15.0, z: 13.0 }), Object.freeze({ x: 8.0, z: 14.0 })
 ]);
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
