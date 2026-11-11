@@ -47,7 +47,8 @@ try{
   const x=-width/2+ix/nx*width,z=-depth/2+iz/nz*depth,y=terrainFloor(x,z);
   positions.push(x,y,z);
   const sand=.5+.5*Math.sin(x*.19+z*.13)*Math.cos(z*.17-x*.08);
-  colours.push(.13+sand*.10,.22+sand*.09,.19+sand*.06);
+  const channel=Math.max(0,Math.min(1,(seabedHeight(x,z)-y)/2.8));
+  colours.push(.13+sand*.10-channel*.035,.22+sand*.09-channel*.045,.19+sand*.06-channel*.03);
   if(ix<nx&&iz<nz){const a=iz*(nx+1)+ix,b=a+1,c=a+(nx+1),d=c+1;indices.push(a,c,b,b,c,d);}
  }
  const terrainGeometry=new THREE.BufferGeometry();
