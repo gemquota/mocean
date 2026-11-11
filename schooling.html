@@ -453,7 +453,15 @@ function drawCoral(){
   ctx.restore();
  }
 }
-function drawSeabed(){voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize);}
+function drawSeabed(){
+ try{voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize);voxelTerrainError=null;}
+ catch(error){
+  voxelTerrainError=String(error?.message??error).slice(0,100);
+  if(!voxelFallbackWarned){voxelFallbackWarned=true;console.warn('Voxel seabed failed; using safe heightfield fallback.',error);}
+  const hx=school.worldSize.x*.5+4,hz=school.worldSize.z*.5+4,points=[project(vec3(-hx,-8.65,-hz)),project(vec3(hx,-8.65,-hz)),project(vec3(hx,-8.65,hz)),project(vec3(-hx,-8.65,hz))];
+  ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.closePath();ctx.fillStyle='#263d37';ctx.fill();
+ }
+}
 /* Low-poly volumetric primitive shared by the species renderers. Geometry is
    transformed in creature-local 3D space before perspective projection. */
 function drawVolume(fish,q,centre,radii,colour,alpha=1,segments=9,rings=5){
@@ -730,7 +738,7 @@ function render(){
  if(modelRenderer&&!modelLayerLost){try{updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}}
 }
 const renderFaults=new Map();
-let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null,voxelTerrainStats=null;
+let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null,voxelTerrainStats=null,voxelTerrainError=null,voxelFallbackWarned=false;
 function animate(now){
  try {
  const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;
@@ -748,7 +756,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/24){render();renderAccumulator%=1/24;}
- if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 30 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+' · VOXEL '+(voxelTerrainStats?.triangles??0)+' TRI · 3D MODELS '+marineModelEntries.size+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
+ if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 30 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+' · VOXEL '+(voxelTerrainError?'FALLBACK '+voxelTerrainError:(voxelTerrainStats?.triangles??0)+' TRI')+' · 3D MODELS '+marineModelEntries.size+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
  } catch(error) {
   if(!animationFault) {
    animationFault=error;
