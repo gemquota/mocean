@@ -38,7 +38,7 @@ function sampleWallCrossing(field,start,end,y,fixed,axis){
  for(let i=1;i<=steps;i++){
   const current=start+(end-start)*i/steps;
   const value=field(axis==='x'?current:fixed,y,axis==='x'?fixed:current);
-  if(previousValue<=0&&value>0){
+  if((previousValue<=0&&value>0)||(previousValue>0&&value<=0)){
    let low=previous,high=current;
    for(let n=0;n<6;n++){const mid=(low+high)*.5,probe=field(axis==='x'?mid:fixed,y,axis==='x'?fixed:mid);if(probe<=0)low=mid;else high=mid;}
    const coordinate=(low+high)*.5;
