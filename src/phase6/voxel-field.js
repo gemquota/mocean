@@ -84,10 +84,10 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
 
   // Embedded boulders and talus. Spatial bounds avoid evaluating every primitive
   // for every voxel sample.
-  for(const [rx,ry,rz] of ROCKS){
-   const cx=rx*sx,cz=rz*sz,ax=2.6*sx,az=2.3*sz;
-   if(Math.abs(x-cx)>ax||Math.abs(z-cz)>az||Math.abs(y-ry)>2.0)continue;
-   solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx,ry,cz,Math.abs(ry===-8.0?2.35:rx===-16.0?1.45:rx===-20.2?1.15:rx===-7.2?2.1:rx===-4.9?1.25:rx===-9.4?1:rx===12.4?2.5:rx===15.1?1.45:rx===9.6?1.25:rx===20.2?1.85:rx===22?1.05:rx===-25?2:rx===-22.8?1.15:rx===3?1.75:rx===5.1?1:rx===28?1.45:1.25)*sx,1.5,Math.abs(rz===-12.1?2:rz===-10.5?1.3:rz===-9.1?1:rz===11.4?1.7:rz===13.1?1.15:rz===13.2?1:rz===-12.8?2:rz===-10.8?1.25:rz===-10.4?1.05:rz===6.5?1.55:rz===8.7?.95:rz===4.8?1.65:rz===6.7?1:rz===-16?1.55:rz===-14.2?.95:rz===-8.5?1.2:1.05)*sz,0),.38);
+  for(const [rockX,cy,rockZ,radiusX,radiusY,radiusZ,angle] of ROCKS){
+   const cx=rockX*sx,cz=rockZ*sz;
+   if(Math.abs(x-cx)>radiusX*sx+1||Math.abs(z-cz)>radiusZ*sz+1||Math.abs(y-cy)>radiusY+1)continue;
+   solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx,cy,cz,radiusX*sx,radiusY,radiusZ*sz,angle),.38);
   }
 
   // Multi-frequency weathering is confined to a narrow band around the solid
