@@ -138,7 +138,7 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 ### Integrated volumetric terrain
 
-- Added `src/phase6/dual-contouring.js` with QEF-constrained cell vertices, gradient normals and shared-edge quads. Corrected winding on the X/Z edge families and added outward-normal plus watertight-sphere tests.
+- Added `src/phase6/dual-contouring.js` with multi-component QEF-constrained cell vertices, gradient normals and shared-edge quads. Ambiguous face crossings are separated into distinct surface patches; winding is corrected per triangle. Sphere and integrated terrain tests check watertight/manifold topology, outward normals and boundary-only open edges.
 - Added `src/phase6/voxel-field.js` as the common signed-distance source for the visible terrain and live creature contact. It combines the base seabed, connected limestone masses, two tunnel runs and a cave chamber.
 - Added `src/phase6/habitat-voxel-terrain.js`; the live `schooling.html` now projects the extracted volumetric mesh into its fixed-camera habitat canvas and caches the static raster between camera/viewport changes.
 - The same density field is attached to each school and queried after each simulation step. Fish and benthic creatures are pushed out of solid terrain with inward normal velocity removed; sand eels remain exempt so their existing burrowing behaviour survives.
