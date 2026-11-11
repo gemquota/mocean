@@ -96,6 +96,14 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
       for(let i=0;i<3;i++){ata[i][i]+=lambda;atb[i]+=lambda*centre[i];}
       const solved=solve3(ata,atb)??hits.reduce((acc,p)=>acc.map((v,i)=>v+p[i]/hits.length),[0,0,0]);
       const vertex=solved.map((v,i)=>clamp(v,min[i]+[x,y,z][i]*step[i],min[i]+([x,y,z][i]+1)*step[i]));
+      // Multiple QEF patches can collapse to exactly collinear cell vertices at
+      // sharp intersecting formations. A sub-millimetre deterministic tangential
+      // nudge preserves shared topology while avoiding zero-area triangles.
+      const hash=((x*73856093)^(y*19349663)^(z*83492791)^(group[0]*2654435761))>>>0;
+      const jitter=Math.min(...step)*.001;
+      vertex[0]+=(((hash&1023)/1023)-.5)*jitter;
+      vertex[1]+=((((hash>>>10)&1023)/1023)-.5)*jitter;
+      vertex[2]+=((((hash>>>20)&1023)/1023)-.5)*jitter;
       const normal=ns.reduce((acc,n)=>acc.map((v,i)=>v+n[i]),[0,0,0]),nl=Math.hypot(...normal)||1;
       const id=positions.length/3;positions.push(...vertex);normals.push(...normal.map(n=>n/nl));
       for(const edge of group)cellEdgeIds[cellIndex*12+edge]=id;

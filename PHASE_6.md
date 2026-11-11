@@ -114,6 +114,16 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - [ ] Capture before/after visual evidence and inspect it at desktop and mobile aspect ratios.
 - [ ] User independently reviews the deployed feature branch before any merge or phase completion claim.
 
+## Terrain geology iteration · 12 November 2026
+
+**Implementation branch:** `terrain-geology-upgrade` · pending CI and visual review.
+
+- Expanded the shared signed-distance field with six connected ridge spines, four rotated finite shelf formations, sixteen embedded boulders/talus elements, and a branched cave network with side galleries.
+- Added bounded multi-frequency surface weathering around the solid boundary. The perturbation is deliberately low amplitude and affects the same field used by both mesh extraction and creature contact.
+- Increased the integrated voxel extraction resolution from 66 × 26 × 51 to at least 82 × 32 × 64. Static geological feature descriptors are hoisted out of the per-sample path.
+- Added deterministic field assertions for ridge, boulder, shelf and cave-gallery samples. Existing topology checks continue to enforce outward-facing triangles, no non-manifold edges and boundary-only open edges.
+- This is a geometry pass, not a material/lighting pass. It does not introduce new renderer architecture, alter the simulation update pathway, or claim visual acceptance. Mesh generation cost and contact stability must be checked in CI and then profiled in the browser.
+
 ## Acceptance criteria
 
 Phase 6 is not complete until the environment has visibly real 3D depth and irregular terrain, including overhangs/caves; lighting and water effects improve realism without obscuring creatures; existing species remain visible and animated by the simulation; benthic movement agrees with visible ground; performance remains acceptable; tests pass; documentation/evidence are updated; and the user confirms after review.
