@@ -34,7 +34,7 @@ test('reef habitat includes mola mola, irregular reef formations, seagrass, kelp
   assert.match(html, /mola:'Mola mola'/);
   assert.match(script, /function drawMola\(fish\)/);
   assert.match(script, /function drawSeagrassAndKelp\(\)/);
-  assert.match(script, /reefRidges=/);
+  assert.match(script, /drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize\)/);
   assert.match(script, /i%12/);
   assert.match(script, /drawSeagrassAndKelp\(\)/);
 });
@@ -125,7 +125,7 @@ test('every habitat range slider supports long-press min/max editing persisted i
 
 test('live habitat integrates a real voxel surface and animated Osmocean GLB models',()=>{
   assert.match(html,/three@0\.180\.0\/build\/three\.module\.js/);
-  assert.match(script,/drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,worldSize\)/);
+  assert.match(script,/drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize\)/);
   assert.match(script,/await Promise\.all\(\[import\('three'\),import\('\.\/src\/phase6\/osmocean-marine-models\.js'\)\]\)/);
   assert.match(script,/new adapter\.OsmoceanMarineModels\(THREE/);
   assert.match(script,/function syncMarineModels\(ordered,dt\)/);
