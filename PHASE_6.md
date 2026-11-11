@@ -116,13 +116,14 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ## Terrain geology iteration · 12 November 2026
 
-**Implementation branch:** `terrain-geology-upgrade` · pending CI and visual review.
+**Merged:** PR #49, commit `696d0bf790db1505142387c20b4647cd822f8904` from `terrain-geology-upgrade`.
 
 - Expanded the shared signed-distance field with six connected ridge spines, four rotated finite shelf formations, sixteen embedded boulders/talus elements, and a branched cave network with side galleries.
-- Added bounded multi-frequency surface weathering around the solid boundary. The perturbation is deliberately low amplitude and affects the same field used by both mesh extraction and creature contact.
+- Kept terrain contact smooth at creature scale; fine breakup comes from nested geological forms rather than high-frequency collision noise.
 - Increased the integrated voxel extraction resolution from 66 × 26 × 51 to at least 82 × 32 × 64. Static geological feature descriptors are hoisted out of the per-sample path.
-- Added deterministic field assertions for ridge, boulder, shelf and cave-gallery samples. Existing topology checks continue to enforce outward-facing triangles, no non-manifold edges and boundary-only open edges.
-- This is a geometry pass, not a material/lighting pass. It does not introduce new renderer architecture, alter the simulation update pathway, or claim visual acceptance. Mesh generation cost and contact stability must be checked in CI and then profiled in the browser.
+- Stabilised QEF vertices at sharp feature junctions with a deterministic sub-millimetre perturbation, preserving shared topology without emitting degenerate faces.
+- Added deterministic field assertions for ridge, boulder, shelf and cave-gallery samples. The existing topology checks enforce outward-facing triangles, no non-manifold edges and boundary-only open edges.
+- PR validation passed 160/160 tests; the production Pages build and deployment for the merge commit succeeded. Browser visual inspection and ordinary-hardware startup/frame-time/memory profiling remain outstanding. This is a geometry pass, not a material/lighting pass, and Phase 6 remains in progress.
 
 ## Acceptance criteria
 
