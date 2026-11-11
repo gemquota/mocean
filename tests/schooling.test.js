@@ -446,3 +446,17 @@ test('species prevalence blends model volume, adult mass and ecological prevalen
   for (const key of species) assert.ok(Math.abs(SCHOOLING_SPECIES_PERCENTAGES[key] - expected[species.indexOf(key)] / total * 100) < 1e-10);
   assert.ok(Math.abs(Object.values(SCHOOLING_SPECIES_PERCENTAGES).reduce((sum, value) => sum + value, 0) - 100) < 1e-9);
 });
+
+test('live agents collide against the same voxel density field used by the seabed mesh',()=>{
+ const school=createSchool(1,12345,{speciesPercentages:{fish:100},worldSize:{...SCHOOLING_LIMITS}});
+ const fish=school.fish[0];
+ assert.equal(typeof school.terrainField,'function');
+ fish.p={x:16,y:-8.35,z:-7};fish.v={x:0,y:-.2,z:0};fish.forward={x:1,y:0,z:0};
+ stepSchool(school,1/60);
+ assert.equal(fish.terrainContact,true);
+ assert.ok(school.terrainField(fish.p.x,fish.p.y,fish.p.z)>.02,'fish centre must be pushed out of solid rock');
+ const previousField=school.terrainField;
+ school.worldSize={x:60,y:20,z:45};
+ stepSchool(school,1/60);
+ assert.notEqual(school.terrainField,previousField,'terrain field must follow world dimension changes');
+});
