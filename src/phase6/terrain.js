@@ -14,10 +14,41 @@ function seededRandom(seed) {
   };
 }
 
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const smoothstep = (edge0, edge1, value) => {
+  const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
 
 /**
- * Produce repeatable rock and arch placements inside the habitat bounds.
+ * Compose a base seabed height with smooth, finite-length depressed channels.
+ * The same function must be used for terrain mesh vertices and feature placement.
+ */
+export function createTerrainFloor(baseFloor, features = {}) {
+  if (typeof baseFloor !== 'function') throw new TypeError('baseFloor must be a function.');
+  const channels = features.crevasses || [];
+  return (x, z) => {
+    const base = baseFloor(x, z);
+    if (!Number.isFinite(base)) throw new TypeError('baseFloor must return a finite height.');
+    let depression = 0;
+    for (const channel of channels) {
+      const cosine = Math.cos(channel.rotation || 0);
+      const sine = Math.sin(channel.rotation || 0);
+      const dx = x - channel.x;
+      const dz = z - channel.z;
+      const along = cosine * dx - sine * dz;
+      const across = sine * dx + cosine * dz;
+      const halfLength = channel.length * 0.5;
+      const halfWidth = channel.width * 0.5;
+      const endFade = 1 - smoothstep(halfLength * 0.72, halfLength, Math.abs(along));
+      const crossProfile = Math.exp(-2.2 * Math.pow(across / halfWidth, 4));
+      depression = Math.max(depression, channel.depth * endFade * crossProfile);
+    }
+    return base - depression;
+  };
+}
+
+/**
+ * Produce repeatable rock, arch, shelf and crevasse placements inside bounds.
  * floorAt is supplied by the caller so this module has no simulation dependency.
  */
 export function generateTerrainFeatures({
@@ -25,9 +56,12 @@ export function generateTerrainFeatures({
   bounds = { minX: -40, maxX: 40, minZ: -28, maxZ: 28 },
   rockCount = 24,
   archCount = 5,
+  shelfCount = 7,
+  crevasseCount = 4,
   floorAt = () => -8.65
 } = {}) {
-  if (!Number.isInteger(rockCount) || rockCount < 0 || !Number.isInteger(archCount) || archCount < 0) {
+  const counts = [rockCount, archCount, shelfCount, crevasseCount];
+  if (counts.some(count => !Number.isInteger(count) || count < 0)) {
     throw new RangeError('Terrain feature counts must be non-negative integers.');
   }
   if (!(bounds.maxX > bounds.minX) || !(bounds.maxZ > bounds.minZ)) {
@@ -39,6 +73,29 @@ export function generateTerrainFeatures({
   const range = (min, max) => min + random() * (max - min);
   const rocks = [];
   const arches = [];
+  const shelves = [];
+  const crevasses = [];
+
+  for (let i = 0; i < crevasseCount; i++) {
+    const length = range(12, 23);
+    const width = range(2.8, 5.2);
+    const rotation = range(-Math.PI, Math.PI);
+    const extentX = Math.abs(Math.cos(rotation)) * length * 0.5
+      + Math.abs(Math.sin(rotation)) * width * 0.5;
+    const extentZ = Math.abs(Math.sin(rotation)) * length * 0.5
+      + Math.abs(Math.cos(rotation)) * width * 0.5;
+    crevasses.push(Object.freeze({
+      id: 'crevasse-' + i,
+      x: range(bounds.minX + extentX, bounds.maxX - extentX),
+      z: range(bounds.minZ + extentZ, bounds.maxZ - extentZ),
+      length,
+      width,
+      depth: range(1.2, 2.8),
+      rotation
+    }));
+  }
+
+  const terrainFloor = createTerrainFloor(floorAt, { crevasses });
 
   for (let i = 0; i < rockCount; i++) {
     const radius = range(1.1, 3.8);
@@ -48,7 +105,7 @@ export function generateTerrainFeatures({
     rocks.push(Object.freeze({
       id: 'rock-' + i,
       x, z,
-      y: floorAt(x, z) + height * 0.82,
+      y: terrainFloor(x, z) + height * 0.82,
       radius,
       height,
       depth: radius * range(0.62, 1.12),
@@ -64,7 +121,7 @@ export function generateTerrainFeatures({
     arches.push(Object.freeze({
       id: 'arch-' + i,
       x, z,
-      floor: floorAt(x, z),
+      floor: terrainFloor(x, z),
       radius,
       tube: range(0.55, 1.05),
       depth: range(1.4, 2.8),
@@ -72,11 +129,35 @@ export function generateTerrainFeatures({
     }));
   }
 
+  for (let i = 0; i < shelfCount; i++) {
+    const width = range(5.5, 10);
+    const depth = range(3.5, 7);
+    const height = range(0.8, 1.5);
+    const rotation = range(-0.42, 0.42);
+    const extentX = Math.abs(Math.cos(rotation)) * width * 0.5
+      + Math.abs(Math.sin(rotation)) * depth * 0.5;
+    const extentZ = Math.abs(Math.sin(rotation)) * width * 0.5
+      + Math.abs(Math.cos(rotation)) * depth * 0.5;
+    const x = range(bounds.minX + extentX, bounds.maxX - extentX);
+    const z = range(bounds.minZ + extentZ, bounds.maxZ - extentZ);
+    shelves.push(Object.freeze({
+      id: 'shelf-' + i,
+      x, z,
+      y: terrainFloor(x, z) + range(2.2, 4.8) + height * 0.5,
+      width,
+      height,
+      depth,
+      rotation
+    }));
+  }
+
   return Object.freeze({
     seed: seed >>> 0,
     bounds: Object.freeze({ ...bounds }),
     rocks: Object.freeze(rocks),
-    arches: Object.freeze(arches)
+    arches: Object.freeze(arches),
+    shelves: Object.freeze(shelves),
+    crevasses: Object.freeze(crevasses)
   });
 }
 
@@ -92,12 +173,26 @@ export function isInsideArchPassage(x, z, arch, clearance = 0) {
 
 export function terrainFeatureBounds(features) {
   const points = [];
-  for (const rock of features.rocks) {
+  for (const rock of features.rocks || []) {
     points.push([rock.x - rock.radius, rock.z - rock.depth], [rock.x + rock.radius, rock.z + rock.depth]);
   }
-  for (const arch of features.arches) {
+  for (const arch of features.arches || []) {
     points.push([arch.x - arch.radius - arch.tube, arch.z - arch.depth * .5 - arch.tube]);
     points.push([arch.x + arch.radius + arch.tube, arch.z + arch.depth * .5 + arch.tube]);
+  }
+  for (const shelf of features.shelves || []) {
+    const ex = Math.abs(Math.cos(shelf.rotation || 0)) * shelf.width * .5
+      + Math.abs(Math.sin(shelf.rotation || 0)) * shelf.depth * .5;
+    const ez = Math.abs(Math.sin(shelf.rotation || 0)) * shelf.width * .5
+      + Math.abs(Math.cos(shelf.rotation || 0)) * shelf.depth * .5;
+    points.push([shelf.x - ex, shelf.z - ez], [shelf.x + ex, shelf.z + ez]);
+  }
+  for (const channel of features.crevasses || []) {
+    const ex = Math.abs(Math.cos(channel.rotation || 0)) * channel.length * .5
+      + Math.abs(Math.sin(channel.rotation || 0)) * channel.width * .5;
+    const ez = Math.abs(Math.sin(channel.rotation || 0)) * channel.length * .5
+      + Math.abs(Math.cos(channel.rotation || 0)) * channel.width * .5;
+    points.push([channel.x - ex, channel.z - ez], [channel.x + ex, channel.z + ez]);
   }
   if (!points.length) return null;
   return {
