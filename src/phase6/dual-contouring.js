@@ -102,7 +102,20 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
     }
   }
   const indices=[];
-  const quad=(a,b,c,d,flip)=>{if([a,b,c,d].some(v=>v<0))return;if(flip)indices.push(a,c,b,a,d,c);else indices.push(a,b,c,a,c,d);};
+  const pushTriangle=(a,b,c)=>{
+    if(a<0||b<0||c<0)return;
+    const ia=a*3,ib=b*3,ic=c*3;
+    const ux=positions[ib]-positions[ia],uy=positions[ib+1]-positions[ia+1],uz=positions[ib+2]-positions[ia+2];
+    const vx=positions[ic]-positions[ia],vy=positions[ic+1]-positions[ia+1],vz=positions[ic+2]-positions[ia+2];
+    const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+    const gx=normals[ia]+normals[ib]+normals[ic],gy=normals[ia+1]+normals[ib+1]+normals[ic+1],gz=normals[ia+2]+normals[ib+2]+normals[ic+2];
+    if(nx*gx+ny*gy+nz*gz<0)indices.push(a,c,b);else indices.push(a,b,c);
+  };
+  const quad=(a,b,c,d,flip)=>{
+    if([a,b,c,d].some(v=>v<0))return;
+    if(flip){pushTriangle(a,c,b);pushTriangle(a,d,c);}
+    else{pushTriangle(a,b,c);pushTriangle(a,c,d);}
+  };
   // Each sign-changing lattice edge owns one quad between its four incident
   // cell-component vertices. Edge IDs are local to each incident cell.
   for(let z=1;z<nz;z++)for(let y=1;y<ny;y++)for(let x=0;x<nx;x++){
