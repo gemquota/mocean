@@ -2,7 +2,29 @@ import { buildDualContourSurface } from './dual-contouring.js';
 import { createHabitatVoxelField } from './voxel-field.js';
 import { seabedHeight } from '../schooling.js';
 
-/** Draw the true volumetric seabed into the habitat's existing fixed-camera canvas. */
+export function createHabitatVoxelTerrain(worldSize={x:41,y:15.5,z:31}){
+ const halfX=worldSize.x*.5+4,halfZ=worldSize.z*.5+4;
+ const minY=-8.9-worldSize.y*.42,maxY=-8.9+worldSize.y*.28;
+ const field=createHabitatVoxelField(worldSize,seabedHeight);
+ const nx=Math.max(64,Math.round(worldSize.x*1.6)),nz=Math.max(48,Math.round(worldSize.z*1.65)),ny=26;
+ const mesh=buildDualContourSurface({
+  min:[-halfX,minY,-halfZ],max:[halfX,maxY,halfZ],
+  cells:[nx,ny,nz],sampleDistance:field
+ });
+ return {mesh,field,worldSize:{...worldSize},stats:{vertices:mesh.vertexCount,triangles:mesh.triangleCount,cells:mesh.cells}};
+}
+
+let terrainCache=null,projectionCache=null;
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function shade(normal,position){
+ const up=clamp(normal[1],0,1),light=Math.max(0,normal[0]*-.28+normal[1]*.82+normal[2]*.49);
+ const sediment=clamp((up-.68)*2.6,0,1),height=clamp((position[1]+11.5)/5,0,1);
+ const rock=[42,65,58],sand=[126,119,91],deep=[24,39,38];
+ const base=rock.map((v,i)=>v*(1-sediment)+sand[i]*sediment);
+ return 'rgb('+base.map((v,i)=>Math.round((v*(.68+light*.38)+deep[i]*.12)*(0.92+height*.08))).join(',')+')';
+}
+
+/** Draw the volumetric seabed into the habitat's fixed-camera canvas. */
 export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize){
  const key=[worldSize.x,worldSize.y,worldSize.z,width,height,zoom].join(':');
  if(!terrainCache||terrainCache.worldSize.x!==worldSize.x||terrainCache.worldSize.y!==worldSize.y||terrainCache.worldSize.z!==worldSize.z){
@@ -22,7 +44,6 @@ export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize)
   triangles.push({a:sa,b:sb,c:sc,depth:(sa.depth+sb.depth+sc.depth)/3,fill:shade(n,centre)});
  }
  triangles.sort((a,b)=>b.depth-a.depth);
- out.lineJoin='round';
  for(const tri of triangles){
   if([tri.a,tri.b,tri.c].some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))continue;
   out.beginPath();out.moveTo(tri.a.x,tri.a.y);out.lineTo(tri.b.x,tri.b.y);out.lineTo(tri.c.x,tri.c.y);out.closePath();
