@@ -280,7 +280,7 @@ try{
   composer.render();
  };
  raf=requestAnimationFrame(animate);
- status.innerHTML='<b>PHASE 6 / TERRAIN REWORK</b><small>Multi-scale relief · fractured boulders · eroded ledges · hollow arches</small><small>${quality.segmentsX} × ${quality.segmentsZ} seabed grid · ${quality.particles} suspended particles · adaptive quality</small>';
+ status.innerHTML=`<b>PHASE 6 / TERRAIN REWORK</b><small>Multi-scale relief · fractured boulders · eroded ledges · hollow arches</small><small>${quality.segmentsX} × ${quality.segmentsZ} seabed grid · ${quality.particles} suspended particles · adaptive quality</small>`;
  addEventListener('pagehide',()=>{
   disposed=true;cancelAnimationFrame(raf);document.removeEventListener('visibilitychange',onVisibilityChange);canvas.removeEventListener('webglcontextlost',onContextLost);composer?.dispose();view?.dispose();
   disposableGeometries.forEach(g=>g.dispose());disposableMaterials.forEach(m=>m.dispose());disposableTextures.forEach(t=>t.dispose());
