@@ -743,8 +743,13 @@ export function stepSchool(school, dt) {
   for (const agent of survivors) {
     agent.terrainContact = false;
     if (agent.species !== 'sandEel') {
+      const grounded = agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish';
+      if (grounded && school.terrainField(agent.p.x,agent.p.y,agent.p.z) > 0.18) {
+        const surface = sampleVoxelSurfaceHeight(agent.p.x,agent.p.z,agent.p.y,school.terrainField,{range:2.5});
+        if (surface !== null) agent.p.y = surface;
+      }
       resolveVoxelTerrainContact(agent, school.terrainField);
-      if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish') agent.v.y = 0;
+      if (grounded) agent.v.y = 0;
     }
   }
   school.time += step;
