@@ -143,6 +143,16 @@ let modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null;
 const marineModelEntries=new Map(),marinePending=new WeakSet();
 const MODELLED_SPECIES=new Set(['fish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','wobbegong','marlin','tuna','shark','whaleShark','mola']);
 let modelViewportWidth=0,modelViewportHeight=0;
+let modelLayerLost=false;
+function disableMarineModelLayer(error){
+ modelLayerLost=true;
+ for(const entry of marineModelEntries.values()){modelScene?.remove(entry.root);entry.dispose();}
+ marineModelEntries.clear();
+ if(error)console.warn('Animated GLB layer disabled; procedural species renderers remain active.',error);
+}
+modelCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();disableMarineModelLayer(new Error('WebGL context lost'));});
+modelCanvas.addEventListener('webglcontextrestored',()=>{modelLayerLost=false;});
+
 try{
  modelRenderer=new THREE.WebGLRenderer({canvas:modelCanvas,alpha:true,antialias:true,powerPreference:'low-power'});
  modelRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));modelRenderer.setClearColor(0x000000,0);modelRenderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -170,7 +180,7 @@ function ensureMarineModel(fish){
  }).catch(error=>{marinePending.delete(fish);console.warn('Marine model load failed for '+fish.species+':',error);});
 }
 function syncMarineModels(ordered,dt){
- if(!modelRenderer||!marineModels)return;
+ if(!modelRenderer||!marineModels||modelLayerLost)return;
  const active=new Set();
  for(const fish of ordered){
   if(!MODELLED_SPECIES.has(fish.species)||!MARINE_MODEL_BY_SPECIES[fish.species])continue;
@@ -726,7 +736,7 @@ function render(){
   }
  }
  drawShelterForeground();
- if(modelRenderer){updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}
+ if(modelRenderer&&!modelLayerLost){try{updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}}
 }
 const renderFaults=new Map();
 let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null,voxelTerrainStats=null;
