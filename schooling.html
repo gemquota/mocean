@@ -141,7 +141,7 @@ const cameraUp=normalize3(cross3(cameraRight,cameraForward));
 const modelCanvas=document.createElement('canvas');modelCanvas.id='school-models';modelCanvas.setAttribute('aria-hidden','true');canvas.after(modelCanvas);
 let modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null;
 const marineModelEntries=new Map(),marinePending=new WeakSet();
-const MODELLED_SPECIES=new Set(['fish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','wobbegong','marlin','tuna','shark','whaleShark','mola']);
+const MODELLED_SPECIES=new Set(['fish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','marlin','tuna','shark','mola']);
 let modelViewportWidth=0,modelViewportHeight=0;
 let modelLayerLost=false;
 function disableMarineModelLayer(error){
