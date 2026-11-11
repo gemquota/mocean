@@ -11,8 +11,8 @@ export const MARINE_MODEL_BY_SPECIES = Object.freeze({
   fish:'blue_goldfish', schoolFish:'tetra', clownfish:'clownfish',
   parrotfish:'parrot_fish', blueTang:'blue_tang', angelfish:'butterfly_fish',
   butterflyfish:'butterfly_fish', grouper:'coral_grouper', moorishIdol:'moorish_idol',
-  barracuda:'red_snapper', marlin:'swordfish', tuna:'tuna', wobbegong:'shark',
-  shark:'shark', whaleShark:'shark', mola:'sunfish'
+  barracuda:'tuna', marlin:'swordfish', tuna:'tuna',
+  shark:'shark', mola:'sunfish'
 });
 export const MARINE_MODEL_IDS = Object.freeze([...new Set(Object.values(MARINE_MODEL_BY_SPECIES))]);
 
