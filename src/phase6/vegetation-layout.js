@@ -22,17 +22,17 @@ export function sampleTerrainTop(field,x,z,{minY=-14.2,maxY=-5.2,step=.34}={}){
  return best;
 }
 
-function sampleWallCrossing(field,start,end,y,z,axis){
- let previous=start,previousValue=field(axis==='x'?previous:y,y,axis==='x'?z:previous);
+function sampleWallCrossing(field,start,end,y,fixed,axis){
+ let previous=start,previousValue=field(axis==='x'?previous:fixed,y,axis==='x'?fixed:previous);
  const steps=Math.ceil((end-start)/.65);
  for(let i=1;i<=steps;i++){
   const current=start+(end-start)*i/steps;
-  const value=field(axis==='x'?current:y,y,axis==='x'?z:current);
+  const value=field(axis==='x'?current:fixed,y,axis==='x'?fixed:current);
   if(previousValue<=0&&value>0){
    let low=previous,high=current;
-   for(let n=0;n<6;n++){const mid=(low+high)*.5,probe=field(axis==='x'?mid:y,y,axis==='x'?z:mid);if(probe<=0)low=mid;else high=mid;}
+   for(let n=0;n<6;n++){const mid=(low+high)*.5,probe=field(axis==='x'?mid:fixed,y,axis==='x'?fixed:mid);if(probe<=0)low=mid;else high=mid;}
    const coordinate=(low+high)*.5;
-   const px=axis==='x'?coordinate:z,pz=axis==='x'?z:coordinate;
+   const px=axis==='x'?coordinate:fixed,pz=axis==='x'?fixed:coordinate;
    const normal=normalAt(field,px,y,pz);
    if(normal.y>=-.12&&normal.y<.68)return {x:px,y,z:pz,normal};
   }
@@ -63,7 +63,7 @@ export function createVegetationLayout(field,worldSize={x:41,z:31},seed=73421){
    for(let x=-halfX+1;x<halfX-1;x+=step){
     if(hash(x+y,z,seed+19)<.42)continue;
     for(const axis of ['x','z']){
-     const candidate=sampleWallCrossing(field,axis==='x'?-halfX: -halfZ,axis==='x'?halfX:halfZ,y,z,axis);
+     const candidate=sampleWallCrossing(field,axis==='x'?-halfX:-halfZ,axis==='x'?halfX:halfZ,y,axis==='x'?z:x,axis);
      if(!candidate||candidate.normal.y<-.08||candidate.normal.y>=.68)continue;
      const key=[Math.round(candidate.x*1.25),Math.round(candidate.y*1.25),Math.round(candidate.z*1.25)].join(':');
      if(seen.has(key))continue;seen.add(key);
