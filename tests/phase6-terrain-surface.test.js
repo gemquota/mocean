@@ -57,3 +57,13 @@ test('terrain study browser module parses before deployment', () => {
   const withoutImports = match[1].replace(/^import .*;\s*$/gm, '');
   assert.doesNotThrow(() => new vm.Script(withoutImports, { filename: 'phase6-spike.html' }));
 });
+
+
+test('Three.js addon imports have an import map', () => {
+  const html = readFileSync(new URL('../phase6-spike.html', import.meta.url), 'utf8');
+  const map = html.match(/<script type="importmap">([\\s\\S]*?)<\\/script>/);
+  assert.ok(map, 'browser import map exists before module execution');
+  const imports = JSON.parse(map[1]).imports;
+  assert.equal(imports.three, 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
+  assert.match(html, /from ['"]three['"]/);
+});
