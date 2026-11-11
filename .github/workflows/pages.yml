@@ -2,6 +2,7 @@ name: Deploy Mocean to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,6 +17,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Checkout pinned Quaternius animated fish assets
+        uses: actions/checkout@v4
+        with:
+          repository: Vitexus/ishtaria-client
+          ref: f42095c120c29a892c0c221bdc8357ac982ccfca
+          path: _upstream/fish-assets
+          sparse-checkout: |
+            assets/quaternius/animated-fish-bundle/Models
+            assets/quaternius/animated-fish-bundle/License.txt
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Stage selected CC0 animated marine models
+        run: |
+          mkdir -p assets/models/osmocean/species
+          cp _upstream/fish-assets/assets/quaternius/animated-fish-bundle/Models/*.glb assets/models/osmocean/species/
+          cp _upstream/fish-assets/assets/quaternius/animated-fish-bundle/License.txt assets/models/osmocean/species/QUATERNIUS-CC0-LICENSE.txt
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site
@@ -23,6 +40,7 @@ jobs:
         with:
           path: .
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

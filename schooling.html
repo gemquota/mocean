@@ -10,7 +10,7 @@
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06141b;overscroll-behavior:none;touch-action:none}
 body{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9eee5}
-canvas{display:block;width:100%;height:100%;touch-action:none}
+canvas{display:block;width:100%;height:100%;touch-action:none}#school-models{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}header,footer,.species-counts,.population-control{z-index:3}
 header,footer{position:fixed;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;gap:14px;pointer-events:none}
 .population-control{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);width:min(360px,calc(100vw - 40px));padding:10px 13px 9px;border:1px solid rgba(155,231,200,.18);border-radius:8px;background:rgba(4,18,26,.78);backdrop-filter:blur(8px);pointer-events:auto;touch-action:pan-x}
 .population-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:9px;letter-spacing:.12em;color:var(--muted)}
@@ -26,6 +26,7 @@ a:hover{text-decoration:underline}
 @media(max-width:600px){header,footer{left:14px;right:14px}header{top:14px}.species-counts{top:42px;right:14px;font-size:8px;line-height:1.65}.brand{font-size:8px;gap:7px}.mark{width:21px;height:21px}.status{font-size:8px}footer{font-size:8px;bottom:13px}.population-control{bottom:43px;width:min(320px,calc(100vw - 32px));padding:8px 11px}.population-heading{font-size:8px}}
  .config-toggle{position:fixed;z-index:5;left:24px;top:52px;padding:7px 10px;border:1px solid rgba(155,231,200,.28);border-radius:5px;background:rgba(4,18,26,.88);color:var(--mint);font:9px ui-monospace;letter-spacing:.12em}.config-panel{position:fixed;z-index:6;left:20px;top:16px;bottom:118px;width:min(340px,calc(100vw - 32px));overflow:auto;padding:14px;border:1px solid rgba(155,231,200,.28);border-radius:8px;background:rgba(4,18,26,.96);backdrop-filter:blur(10px);touch-action:pan-y;font-size:10px}.config-head{display:flex;justify-content:space-between;align-items:center;color:var(--mint)}.config-head button{background:none;border:0;color:var(--mint);font-size:20px}.config-panel p{color:var(--muted)}.config-tabs{display:flex;gap:4px;flex-wrap:wrap;margin:12px 0;border-bottom:1px solid #315052;padding-bottom:8px}.config-tabs button{background:#102a31;border:1px solid #345b5c;border-radius:4px;color:#c5ded5;padding:7px 9px;font:9px ui-monospace}.config-tabs button.active{background:#24524f;color:#c5ffe0;border-color:#79c7a5}.config-page{display:none}.config-page.active{display:block}.mix-row{display:grid;grid-template-columns:minmax(105px,1fr) minmax(80px,1.2fr) 34px;gap:7px;align-items:center;margin:9px 0;color:#c5ded5}.mix-row input{width:100%;accent-color:var(--mint)}.mix-row output,.setting-row output{color:var(--mint);text-align:right;font:10px ui-monospace}.setting-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:18px 0;color:#c5ded5}.setting-row input{grid-column:1/-1;width:100%;accent-color:var(--mint)}.species-setting{display:grid;grid-template-columns:minmax(105px,1fr) minmax(80px,1.2fr) 38px;gap:7px;align-items:center;margin:9px 0;color:#c5ded5}.species-setting input{width:100%;accent-color:var(--mint)}.species-setting output{color:var(--mint);text-align:right;font:10px ui-monospace}.species-range{display:grid;grid-template-columns:78px minmax(60px,1fr) 32px minmax(60px,1fr) 32px;gap:5px;align-items:center;margin:10px 0;color:#c5ded5;font:9px ui-monospace}.species-range input{width:100%;min-width:0;accent-color:var(--mint)}.species-range output{color:var(--mint);text-align:right}.world-controls{margin-top:14px;border-top:1px solid #315052;padding-top:10px}.world-controls label{display:grid;grid-template-columns:18px 36px 1fr;gap:8px;align-items:center;margin:8px 0}.world-controls input{width:100%;accent-color:var(--mint)}.slider-bounds-hint{margin:7px 0 0;color:rgba(190,220,215,.48);font-size:8px;line-height:1.5}.population-scale button{background:none;border:0;padding:0;color:rgba(190,220,215,.55);font:8px ui-monospace;touch-action:pan-x}@media(max-width:600px){.config-toggle{left:14px;top:42px}.config-panel{left:10px;top:10px;bottom:105px;width:calc(100vw - 20px)}}
 </style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 </head>
 <body>
 <canvas id="school" aria-label="A mixed habitat of regular and dedicated schooling fish, moray eels, crabs, lobsters, mantis shrimp, manta rays, stingrays, reef sharks, whale sharks, ocean sunfish, starfish, dolphins, sea turtles, jellyfish, burrowing sand eels, coral reefs and plankton"></canvas>
@@ -36,6 +37,7 @@ a:hover{text-decoration:underline}
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE, SCHOOLING_SPECIES_PERCENTAGES, REEF_ANEMONE_SITES, seabedHeight } from './src/schooling.js';
 import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/core/body.js';
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
+import { drawHabitatVoxelTerrain } from './src/phase6/habitat-voxel-terrain.js';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
@@ -52,7 +54,7 @@ function updateMix(changed,value){value=Math.max(0,Math.min(100,Number(value)||0
 for(const [key,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='mix-row';row.dataset.species=key;row.innerHTML=`<span>${label}</span><input type="range" min="0" max="100" step="0.01" value="${speciesMix[key]??0}" aria-label="${label} percentage"><output>${Number(speciesMix[key]??0).toFixed(2)}%</output>`;row.querySelector('input').addEventListener('input',event=>updateMix(key,event.target.value));mixRoot.append(row);}
 for(const tab of configPanel.querySelectorAll('[data-tab]'))tab.addEventListener('click',()=>{for(const el of configPanel.querySelectorAll('[data-tab]'))el.classList.toggle('active',el===tab);for(const page of configPanel.querySelectorAll('[data-page]'))page.classList.toggle('active',page.dataset.page===tab.dataset.tab);});
 configToggle.addEventListener('click',()=>{configPanel.hidden=!configPanel.hidden;configToggle.setAttribute('aria-expanded',String(!configPanel.hidden));});document.getElementById('config-close').addEventListener('click',()=>{configPanel.hidden=true;configToggle.setAttribute('aria-expanded','false');});
-for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+axis),output=document.getElementById('world-'+axis+'-value');slider.addEventListener('input',()=>{worldSize[axis]=Number(slider.value);output.value=slider.value;output.textContent=slider.value;school.worldSize={...worldSize};});}
+for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+axis),output=document.getElementById('world-'+axis+'-value');slider.addEventListener('input',()=>{worldSize[axis]=Number(slider.value);output.value=slider.value;output.textContent=slider.value;});slider.addEventListener('change',()=>{school.worldSize={...worldSize};});}
 function addSpeciesSlider(containerId,key,min,max,initial){const root=document.getElementById(containerId);for(const [species,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='species-setting';row.innerHTML=`<span>${label}</span><input type="range" min="${min}" max="${max}" step="1" value="${initial}" aria-label="${label} ${key}"><output>${initial}%</output>`;const slider=row.querySelector('input'),output=row.querySelector('output');slider.addEventListener('input',()=>{const value=Number(slider.value)/100;output.textContent=slider.value+'%';applySpeciesSetting(species,key,value);});root.append(row);}}
 addSpeciesSlider('species-speed','speed',25,200,100);
 addSpeciesSlider('species-size','size',40,200,100);
@@ -134,6 +136,67 @@ const sub=(a,b)=>add3(a,scale3(b,-1));
 const cameraForward=normalize3(sub(camera.target,camera.p));
 const cameraRight=normalize3(cross3(cameraForward,worldUp));
 const cameraUp=normalize3(cross3(cameraRight,cameraForward));
+const modelCanvas=document.createElement('canvas');modelCanvas.id='school-models';modelCanvas.setAttribute('aria-hidden','true');canvas.after(modelCanvas);
+let THREE=null,modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null,MARINE_MODEL_BY_SPECIES={};
+const marineModelEntries=new Map(),marinePending=new WeakSet(),marineFailedSpecies=new Set();
+const MODELLED_SPECIES=new Set(['fish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','marlin','tuna','shark','mola']);
+let modelViewportWidth=0,modelViewportHeight=0,modelLayerLost=false;
+function disableMarineModelLayer(error){
+ modelLayerLost=true;
+ for(const entry of marineModelEntries.values()){modelScene?.remove(entry.root);entry.dispose();}
+ marineModelEntries.clear();
+ if(error)console.warn('Animated GLB layer disabled; procedural species renderers remain active.',error);
+}
+modelCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();disableMarineModelLayer(new Error('WebGL context lost'));});
+modelCanvas.addEventListener('webglcontextrestored',()=>{modelLayerLost=false;if(!modelRenderer)initialiseMarineModelLayer();});
+async function initialiseMarineModelLayer(){
+ try{
+  const loaded=await Promise.all([import('three'),import('./src/phase6/osmocean-marine-models.js')]);
+  if(modelLayerLost)return;
+  THREE=loaded[0];const adapter=loaded[1];MARINE_MODEL_BY_SPECIES=adapter.MARINE_MODEL_BY_SPECIES;
+  modelRenderer=new THREE.WebGLRenderer({canvas:modelCanvas,alpha:true,antialias:true,powerPreference:'low-power'});
+  modelRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));modelRenderer.setClearColor(0x000000,0);modelRenderer.outputColorSpace=THREE.SRGBColorSpace;
+  modelScene=new THREE.Scene();modelScene.add(new THREE.HemisphereLight(0xc8e8e4,0x263b3a,1.45));
+  const modelKey=new THREE.DirectionalLight(0xffedcf,2.0);modelKey.position.set(-18,25,20);modelScene.add(modelKey);
+  const modelFill=new THREE.DirectionalLight(0x5aa6b3,.65);modelFill.position.set(15,3,-18);modelScene.add(modelFill);
+  modelCamera=new THREE.PerspectiveCamera(48,1,.1,220);modelCamera.up.set(0,1,0);
+  marineModels=new adapter.OsmoceanMarineModels(THREE,{baseUrl:'./assets/models/osmocean/species/'});
+ }catch(error){modelRenderer=null;marineModels=null;console.warn('Mocean animated model layer unavailable; retaining procedural renderers.',error);}
+}
+initialiseMarineModelLayer();
+function updateMarineCamera(){
+ if(!modelRenderer||!modelCamera)return;
+ if(modelViewportWidth!==viewWidth||modelViewportHeight!==viewHeight){modelViewportWidth=viewWidth;modelViewportHeight=viewHeight;modelRenderer.setSize(viewWidth,viewHeight,false);modelCamera.aspect=viewWidth/Math.max(1,viewHeight);}
+ const focal=Math.min(viewWidth,viewHeight)*1.08;modelCamera.fov=2*Math.atan(viewHeight/(2*focal))*180/Math.PI;
+ modelCamera.position.set(camera.p.x,camera.p.y,camera.p.z);modelCamera.lookAt(camera.target.x,camera.target.y,camera.target.z);modelCamera.updateProjectionMatrix();
+}
+function ensureMarineModel(fish){
+ if(!marineModels||modelLayerLost||marineFailedSpecies.has(fish.species)||!MODELLED_SPECIES.has(fish.species)||marineModelEntries.has(fish)||marinePending.has(fish))return;
+ marinePending.add(fish);
+ marineModels.createInstance(fish.species,{targetLength:.78*(fish.bodyScale??1)}).then(instance=>{
+  marinePending.delete(fish);
+  if(!instance)return;
+  if(modelLayerLost||!school.fish.includes(fish)){instance.dispose();return;}
+  const root=new THREE.Group();root.add(instance.visual);modelScene.add(root);
+  marineModelEntries.set(fish,{...instance,root,baseScale:instance.visual.scale.x,initialBodyScale:fish.bodyScale??1});
+ }).catch(error=>{marinePending.delete(fish);const firstFailure=!marineFailedSpecies.has(fish.species);marineFailedSpecies.add(fish.species);if(firstFailure)console.warn('Marine model load failed for '+fish.species+':',error);});
+}
+function syncMarineModels(ordered,dt){
+ if(!modelRenderer||!marineModels||modelLayerLost)return;
+ const active=new Set();
+ for(const fish of ordered){
+  if(!MODELLED_SPECIES.has(fish.species)||!MARINE_MODEL_BY_SPECIES[fish.species])continue;
+  active.add(fish);ensureMarineModel(fish);
+  const entry=marineModelEntries.get(fish);if(!entry)continue;
+  entry.root.position.set(fish.p.x,fish.p.y,fish.p.z);
+  const direction=new THREE.Vector3(fish.forward.x,fish.forward.y,fish.forward.z).normalize();
+  entry.root.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),direction);
+  const bodyScale=fish.bodyScale??1;entry.visual.scale.setScalar(entry.baseScale*bodyScale/Math.max(.001,entry.initialBodyScale));
+  if(entry.mixer)entry.mixer.timeScale=Math.max(.65,Math.min(1.45,Math.hypot(fish.v.x,fish.v.y,fish.v.z)/.35));
+  entry.update(dt);
+ }
+ for(const [fish,entry] of marineModelEntries){if(active.has(fish))continue;modelScene.remove(entry.root);entry.dispose();marineModelEntries.delete(fish);}
+}
 let viewWidth=1,viewHeight=1;
 initialiseFishVisualState(school);
 function project(point){
@@ -391,48 +454,14 @@ function drawCoral(){
  }
 }
 function drawSeabed(){
- const top=[],front=[];
- for(let i=0;i<=36;i++){
-  const x=-42+i*(84/36),ridge=seabedHeight(x,-23);
-  top.push(project(vec3(x,ridge,-23)));
-  front.push(project(vec3(x,-12.1+Math.sin(i*.77)*.16,28)));
- }
- ctx.save();ctx.globalAlpha=.96;ctx.beginPath();
- top.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
- for(let i=front.length-1;i>=0;i--)ctx.lineTo(front[i].x,front[i].y);
- ctx.closePath();ctx.fillStyle='#172f32';ctx.fill();ctx.strokeStyle='#45605a';ctx.lineWidth=1.2;ctx.stroke();
- // Jagged reef ridges and buttresses create connected, non-circular habitat structures.
- const reefRidges=[[-34,-13,6.8,4.2],[-25,8,5.2,6.1],[-9,-12,6.1,4.1],[4,8,7.6,4.8],[18,-16,6.4,4.5],[30,10,6.8,5.4],[37,-7,4.1,5.8],[-2,20,5.1,3.8]];
- for(let r=0;r<reefRidges.length;r++){const [cx,cz,rx,rz]=reefRidges[r],outline=[];for(let k=0;k<13;k++){const a=k/13*TAU,warp=1+.2*Math.sin(a*3+r)+.12*Math.cos(a*5-r*.7),x=cx+Math.cos(a)*rx*warp,z=cz+Math.sin(a)*rz*warp;outline.push(project(vec3(x,seabedHeight(x,z)+.48+(k%3)*.08,z)));}ctx.beginPath();outline.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=r%2?'#304a43':'#38534a';ctx.strokeStyle='#65796b';ctx.lineWidth=1.1;ctx.fill();ctx.stroke();for(let spur=0;spur<3;spur++){const a=spur*2.1+r*.6,x=cx+Math.cos(a)*rx*.72,z=cz+Math.sin(a)*rz*.72,p=project(vec3(x,seabedHeight(x,z)+.9,z));ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(2,p.size*.23),Math.max(1,p.size*.12),a,0,TAU);ctx.fillStyle='#496257';ctx.fill();}}
- for(let shelf=0;shelf<5;shelf++){
-  const x=-34+shelf*16.5,y=-8.5+(shelf%2)*.16,z=-17+(shelf%3)*10;
-  const rock=[[-3,0,-1.2],[-2.1,.42,-.8],[-.8,.68,-1.1],[1.5,.38,-.7],[2.8,0,.2],[1.7,-.18,1.1],[-1.6,-.14,1.3]].map(([dx,dy,dz])=>project(vec3(x+dx,y+dy,z+dz)));
-  ctx.beginPath();rock.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=shelf%2?'#29413e':'#304943';ctx.strokeStyle='#60736a';ctx.lineWidth=.8;ctx.fill();ctx.stroke();
- }
- for(const [x,z,rx,ry] of [[-25,-8,2.5,1.15],[-4,-3,3.1,1.35],[19,-10,2.25,1.05],[32,2,1.9,.9]]){
-  const c=project(vec3(x,-8.56,z));
-  ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(4,c.size*rx),Math.max(2,c.size*ry),-.08,0,TAU);
-  ctx.fillStyle='#061014';ctx.fill();ctx.strokeStyle='rgba(117,145,128,.8)';ctx.lineWidth=Math.max(1,c.size*.035);ctx.stroke();
-  ctx.beginPath();ctx.ellipse(c.x,c.y+Math.max(1,c.size*.12),Math.max(2,c.size*rx*.72),Math.max(1,c.size*ry*.62),-.08,Math.PI,TAU);
-  ctx.strokeStyle='rgba(2,9,12,.9)';ctx.lineWidth=Math.max(1,c.size*.055);ctx.stroke();
- }
- for(const [x,z,lean] of [[-17,-5,-1.2],[8,-1,.8],[27,-4,-.7],[-33,4,1.1]]){
-  const a=project(vec3(x,-8.54,z)),b=project(vec3(x+lean,-8.57,z+5.5)),c=project(vec3(x+lean*.4,-8.59,z+11));
-  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.strokeStyle='#071417';ctx.lineWidth=Math.max(1.5,a.size*.055);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(a.x-1,a.y-1);ctx.lineTo(b.x-1,b.y-1);ctx.strokeStyle='rgba(120,145,126,.42)';ctx.lineWidth=Math.max(.6,a.size*.012);ctx.stroke();
- }
- ctx.restore();
-}
-function drawShelterForeground(){
- for(const [x,z,rx,ry] of [[-25,-8,2.5,1.15],[-4,-3,3.1,1.35],[19,-10,2.25,1.05],[32,2,1.9,.9]]){
-  const c=project(vec3(x,-8.56,z));
-  ctx.save();ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(4,c.size*rx),Math.max(2,c.size*ry),-.08,Math.PI,TAU);
-  ctx.strokeStyle='#52665a';ctx.lineWidth=Math.max(2,c.size*.14);ctx.stroke();
-  ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(4,c.size*rx*.92),Math.max(2,c.size*ry*.72),-.08,Math.PI,TAU);
-  ctx.strokeStyle='rgba(14,27,25,.95)';ctx.lineWidth=Math.max(1,c.size*.045);ctx.stroke();ctx.restore();
+ try{voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize);voxelTerrainError=null;}
+ catch(error){
+  voxelTerrainError=String(error?.message??error).slice(0,100);
+  if(!voxelFallbackWarned){voxelFallbackWarned=true;console.warn('Voxel seabed failed; using safe heightfield fallback.',error);}
+  const hx=school.worldSize.x*.5+4,hz=school.worldSize.z*.5+4,points=[project(vec3(-hx,-8.65,-hz)),project(vec3(hx,-8.65,-hz)),project(vec3(hx,-8.65,hz)),project(vec3(-hx,-8.65,hz))];
+  ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.closePath();ctx.fillStyle='#263d37';ctx.fill();
  }
 }
-
 /* Low-poly volumetric primitive shared by the species renderers. Geometry is
    transformed in creature-local 3D space before perspective projection. */
 function drawVolume(fish,q,centre,radii,colour,alpha=1,segments=9,rings=5){
@@ -537,6 +566,7 @@ function drawWobbegong(fish){
  const eye=point(.72,.12,.16);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.02),0,TAU);ctx.fillStyle='#171a16';ctx.fill();}ctx.restore();
 }
 function drawFish(fish){
+ if(marineModelEntries.has(fish))return;
  if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
  if(['clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','marlin','tuna'].includes(fish.species)){drawReefFish(fish);return;}
  if(fish.species==='wobbegong'){drawWobbegong(fish);return;}
@@ -697,6 +727,7 @@ function render(){
  drawSeagrassAndKelp();
  drawPlankton();
  const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
+ updateMarineCamera();syncMarineModels(ordered,1/24);
  for(const fish of ordered){
   try { drawFish(fish); }
   catch(error) {
@@ -704,10 +735,10 @@ function render(){
    if(!renderFaults.has(species))renderFaults.set(species,String(error?.message??error).slice(0,100));
   }
  }
- drawShelterForeground();
+ if(modelRenderer&&!modelLayerLost){try{updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}}
 }
 const renderFaults=new Map();
-let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null;
+let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null,voxelTerrainStats=null,voxelTerrainError=null,voxelFallbackWarned=false;
 function animate(now){
  try {
  const elapsed=Math.min(.05,(now-previous)/1000);previous=now;accumulator+=elapsed;
@@ -725,7 +756,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/24){render();renderAccumulator%=1/24;}
- if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 30 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
+ if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 30 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+' · VOXEL '+(voxelTerrainError?'FALLBACK '+voxelTerrainError:(voxelTerrainStats?.triangles??0)+' TRI')+' · 3D MODELS '+marineModelEntries.size+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
  } catch(error) {
   if(!animationFault) {
    animationFault=error;

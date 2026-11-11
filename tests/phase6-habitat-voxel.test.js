@@ -1,0 +1,27 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createHabitatVoxelTerrain } from '../src/phase6/habitat-voxel-terrain.js';
+
+test('habitat voxel field contains solid seabed, open water and connected cave voids',()=>{
+ const terrain=createHabitatVoxelTerrain();
+ assert.ok(terrain.stats.vertices>1000);
+ assert.ok(terrain.stats.triangles>1000);
+ assert.ok(terrain.mesh.positions.every(Number.isFinite));
+ assert.ok([...terrain.mesh.indices].every(index=>index<terrain.stats.vertices));
+ const edgeUse=new Map();
+ for(let i=0;i<terrain.mesh.indices.length;i+=3){
+  const ids=[terrain.mesh.indices[i],terrain.mesh.indices[i+1],terrain.mesh.indices[i+2]],a=ids[0]*3,b=ids[1]*3,c=ids[2]*3;
+  const ux=terrain.mesh.positions[b]-terrain.mesh.positions[a],uy=terrain.mesh.positions[b+1]-terrain.mesh.positions[a+1],uz=terrain.mesh.positions[b+2]-terrain.mesh.positions[a+2];
+  const vx=terrain.mesh.positions[c]-terrain.mesh.positions[a],vy=terrain.mesh.positions[c+1]-terrain.mesh.positions[a+1],vz=terrain.mesh.positions[c+2]-terrain.mesh.positions[a+2];
+  const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+  const gx=terrain.mesh.normals[a]+terrain.mesh.normals[b]+terrain.mesh.normals[c],gy=terrain.mesh.normals[a+1]+terrain.mesh.normals[b+1]+terrain.mesh.normals[c+1],gz=terrain.mesh.normals[a+2]+terrain.mesh.normals[b+2]+terrain.mesh.normals[c+2];
+  assert.ok(nx*gx+ny*gy+nz*gz>0,'terrain triangles must face outward');
+  for(const [u,v] of [[ids[0],ids[1]],[ids[1],ids[2]],[ids[2],ids[0]]]){const key=u<v?u+':'+v:v+':'+u;edgeUse.set(key,(edgeUse.get(key)||0)+1);}
+ }
+ assert.ok([...edgeUse.values()].every(count=>count<=2),'terrain must not contain non-manifold edges');
+ for(const [key,count] of edgeUse){if(count!==1)continue;const [a,b]=key.split(':').map(Number);for(const id of [a,b]){const x=terrain.mesh.positions[id*3],z=terrain.mesh.positions[id*3+2];assert.ok(Math.abs(Math.abs(x)-24.5)<.8||Math.abs(Math.abs(z)-19.5)<.8,'open edges are allowed only at the outer voxel volume boundary');}}
+ assert.ok(terrain.field(0,0,0)>0,'water above the seabed is empty');
+ assert.ok(terrain.field(0,-13,0)<0,'deep seabed volume remains solid');
+ assert.ok(terrain.field(-13,-9.05,-5)>0,'the carved tunnel is open');
+ assert.ok(terrain.field(-13,-12,-5)<0,'rock remains below the tunnel');
+});
