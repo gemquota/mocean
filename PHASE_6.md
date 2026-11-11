@@ -1,7 +1,7 @@
 # Phase 6 · 3D Environment, Seabed and Water
 
 **Status:** In progress · authorised 11 November 2026.  
-**Branch:** `phase-6-environment`  
+**Active branch:** `phase-6-spatial-terrain`  
 **Scope authority:** The user explicitly authorised Phase 6 after requesting open-source 3D assets, complex seabed geometry (elevations, rocks, ledges, overhangs and crevasses), realistic underwater water effects and lighting/bloom.
 
 ## Goal
@@ -45,7 +45,7 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - [ ] Establish a reproducible baseline for startup time, frame time, memory/geometry budget and creature counts.
 - [x] Keep all work isolated on this branch; the existing live habitat entry point remains unchanged.
 
-**Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield, irregular rock clusters and half-ring arch formations with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `src/phase6/terrain.js` generates seeded, bounded rock/arch placements and exposes a preliminary arch-aperture query. `tests/phase6-renderer.test.js` and `tests/phase6-terrain.test.js` cover camera projection, capability detection, renderer lifecycle, deterministic layout and feature bounds. GitHub Actions passed the core test suite on commits `23b5289` and the latest rock-placement correction at `3ed7293`. The latest GitHub Actions core-test run passed. Browser visual verification and performance profiling have not yet been performed.
+**Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield, irregular rock clusters and half-ring arch formations with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `src/phase6/terrain.js` generates seeded, bounded rock/arch placements and exposes a preliminary arch-aperture query. `tests/phase6-renderer.test.js` and `tests/phase6-terrain.test.js` cover camera projection, capability detection, renderer lifecycle, deterministic layout and feature bounds. PR #44 was merged to main as `6f755e7`; its core-test and GitHub Pages deployment workflows both succeeded. Browser visual verification and performance profiling have not yet been performed.
 
 ### P6-2 · Spatial seabed and terrain
 
@@ -53,9 +53,13 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 - [ ] Replace the simple analytic floor presentation with irregular 3D terrain at multiple elevations.
 - [ ] Extend the prototype to coherent shelves, overhangs, crevasses, caves and sand channels.
-- [ ] Design a spatial surface/obstacle query that agrees with visible terrain. A visual cave must not be solid floor in the simulation, and vice versa.
+- [x] Add an initial renderer-independent signed-distance query for the seabed, ellipsoidal boulders and finite-depth hollow arch ribs (`src/phase6/spatial-query.js`).
+- [x] Return outward surface normals and feature identity; add a sphere-clearance helper for future contact checks.
+- [ ] Validate query distances against the exact rendered mesh geometry, including faceted boulder geometry and arch transforms.
 - [x] Use deterministic generation/seeds for initial rock and arch placement (`src/phase6/terrain.js`).
-- [ ] Ensure benthic species, eels and sheltering creatures still interact plausibly with the new terrain.
+- [ ] Integrate spatial contact/navigation with benthic species, eels and sheltering creatures only after visual/query agreement is demonstrated.
+
+**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The current query uses an analytic seabed, ellipsoid approximations for rocks and a finite-depth half-torus approximation for arches. It is not yet used by the live simulation. The current rendered dodecahedron boulders are not identical to the ellipsoid query primitive; this mismatch must be resolved before collision integration.
 
 ### P6-3 · Open-source asset integration
 
