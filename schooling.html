@@ -148,7 +148,7 @@ function disableMarineModelLayer(error){
  if(error)console.warn('Animated GLB layer disabled; procedural species renderers remain active.',error);
 }
 modelCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();disableMarineModelLayer(new Error('WebGL context lost'));});
-modelCanvas.addEventListener('webglcontextrestored',()=>{modelLayerLost=false;});
+modelCanvas.addEventListener('webglcontextrestored',()=>{modelLayerLost=false;if(!modelRenderer)initialiseMarineModelLayer();});
 async function initialiseMarineModelLayer(){
  try{
   const loaded=await Promise.all([import('three'),import('./src/phase6/osmocean-marine-models.js')]);
