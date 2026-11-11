@@ -1,8 +1,8 @@
 # Mocean Development Roadmap
 
-**Revision:** 14 · 10 November 2026  
-**Canonical status:** Phase 0 and Phase 1 approved. Phases 2–5 are provisionally tagged *candidate complete* at the user's request; visual acceptance, integration checks and/or user confirmation remain outstanding. Phase 6 remains deferred.  
-**Current work branch:** `phase-5-autonomy` · awaiting integration and live visual review.
+**Revision:** 15 · 11 November 2026  
+**Canonical status:** Phase 0 and Phase 1 approved. Phases 2–5 are provisionally tagged *candidate complete* at the user's request; visual acceptance, integration checks and/or user confirmation remain outstanding. Phase 6 is authorised and in progress.  
+**Current production branch:** `main` · latest production integration includes Phase 6 spatial-terrain work. The Phase 5 autonomy increment remains subject to its own integration and review gates.
 
 ## Objective
 
@@ -146,7 +146,7 @@ First establish a reproducible single-fish baseline, then profile 10, 25, 50 and
 
 ## Phase 6 · 3D environment, seabed and water
 
-**Status:** Authorised · in progress on `phase-6-environment` (11 November 2026). The user expanded the original environment/water scope to include open-source 3D assets, complex spatial terrain, underwater lighting and post-processing. See [PHASE_6.md](PHASE_6.md) for the implementation plan, audit evidence and acceptance criteria.
+**Status:** Authorised · in progress; the spatial-terrain increment is integrated into `main` (11 November 2026). The user expanded the original environment/water scope to include open-source 3D assets, complex spatial terrain, underwater lighting and post-processing. See [PHASE_6.md](PHASE_6.md) for the implementation plan, audit evidence and acceptance criteria.
 
 - [x] P6-0 Audit current renderer, simulation/terrain coupling and delivery constraints. (Assistant complete; evidence in `PHASE_6.md`.)
 - [ ] P6-1 Renderer architecture and compatibility spike.
