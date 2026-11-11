@@ -127,13 +127,14 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ## Habitat terrain and vegetation pass · 12 November 2026
 
-**Implementation branch:** `habitat-ravines-vegetation` · pending CI and review.
+**Merged:** PR #50, commit `a9cdc43a137aa83b435b74d1ec786c845acdbd9d`.
 
-- Population control defaults to 10–200 creatures in steps of ten. Any previous population override is cleared once so the requested range takes effect; later long-press custom bounds are saved and restored normally, as are other sliders.
+- Population control defaults to 10–200 creatures in steps of ten. A one-time local migration clears any older population override; subsequent long-press custom bounds remain saved and are restored on this device.
 - Terrain adds angular superellipsoid outcrops, three deep open ravines with steep walls and solid lower floors, and three enlarged cave chambers with stepped connectors and side galleries. All geometry remains in the shared voxel signed-distance field used for rendering and collision.
-- Added a deterministic terrain-aware vegetation layout. Seagrass is sampled onto near-horizontal sediment, kelp onto sloping reef shoulders and ledges, and attached macroalgae onto exposed vertical faces including ravine/cave walls.
-- Increased kelp presence while reducing the previous scattered, circular bed placement. Coral colonies and anemones have been moved inside the terrain footprint and their root heights are sampled from the voxel surface.
-- Added field assertions for ravines, angular rock, cave chambers and connectors, plus vegetation normal/clearance/determinism tests. Browser visual review and startup/frame-time profiling remain required before acceptance.
+- Added deterministic terrain-aware vegetation placement. Seagrass is sampled onto near-horizontal sediment, kelp onto sloping reef shoulders and ledges, and attached macroalgae onto exposed vertical faces including ravine/cave walls.
+- Increased kelp presence while removing the previous scattered, circular bed placement. Coral colonies and anemones are inside the terrain footprint and their root heights are sampled from the voxel surface.
+- Validation: 163/163 Node tests pass, including terrain topology, ravine/cave feature, deterministic vegetation and root-clearance checks. GitHub Pages build and production deployment for the merge commit succeeded.
+- Browser visual review and ordinary-hardware startup/frame-time/memory profiling remain outstanding. Phase 6 remains in progress and is not marked complete.
 
 ## Acceptance criteria
 
