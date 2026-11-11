@@ -108,7 +108,7 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
   for(let z=1;z<nz;z++)for(let y=1;y<ny;y++)for(let x=0;x<nx;x++){
     const a=values[key(x,y,z,sx,sy)],b=values[key(x+1,y,z,sx,sy)];if((a<0)===(b<0))continue;
     quad(
-      cellEdgeIds[key(x,y-1,z-1,nx,ny)*12+7],
+      cellEdgeIds[key(x,y-1,z-1,nx,ny)*12+6],
       cellEdgeIds[key(x,y,z-1,nx,ny)*12+4],
       cellEdgeIds[key(x,y,z,nx,ny)*12+0],
       cellEdgeIds[key(x,y-1,z,nx,ny)*12+2],a>=0
