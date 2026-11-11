@@ -49,11 +49,11 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ### P6-2 · Spatial seabed and terrain
 
-**Prototype started:** the isolated renderer spike now contains a seeded heightfield, irregular rock clusters and arch meshes. The arches are genuine 3D geometry with an open aperture, not painted cave symbols. This is scene-prototype geometry only; the live habitat's ground-contact model is unchanged.
+**Prototype extended:** the isolated renderer spike now contains a seeded heightfield, irregular rock clusters, arch meshes, raised shelf slabs and smooth depressed sand channels. The channels are part of the generated heightfield, with sediment shading and a matching floor query. Shelf undersides remain open water and are represented as solid oriented boxes in the spatial query. This is scene-prototype geometry only; the live habitat's ground-contact model is unchanged.
 
 - [ ] Replace the simple analytic floor presentation with irregular 3D terrain at multiple elevations.
-- [x] Add seeded raised rock shelves with finite solid volume and queryable undersides.
-- [x] Add smooth, rotated, finite-length depressed sand channels and use the composed floor for the terrain mesh and feature placement.
+- [x] Add seeded raised rock shelves with finite solid volume and queryable top/underside normals.
+- [x] Add smooth, rotated, finite-length depressed sand channels, sediment colour cues, and use the composed floor for the terrain mesh, spatial queries and feature placement.
 - [ ] Extend the prototype to coherent overhangs, crevasses with steeper walls, and larger connected cave systems.
 - [x] Add an initial renderer-independent signed-distance query for the seabed, ellipsoidal boulders and finite-depth hollow arch ribs (`src/phase6/spatial-query.js`).
 - [x] Return outward surface normals and feature identity; add a sphere-clearance helper for future contact checks.
