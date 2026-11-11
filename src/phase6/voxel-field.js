@@ -58,3 +58,23 @@ export function resolveVoxelTerrainContact(agent,field,{clearance=null,step=.075
  }
  return contact;
 }
+
+/** Find the nearest upward-facing voxel surface beneath/around a grounded agent. */
+export function sampleVoxelSurfaceHeight(x,z,referenceY,field,{clearance=.055,range=5,spacing=.25}={}){
+ if(typeof field!=='function'||!Number.isFinite(referenceY))return null;
+ let previousY=referenceY-range,previous=field(x,previousY,z)-clearance,best=null,bestDistance=Infinity;
+ for(let y=previousY+spacing;y<=referenceY+range+spacing*.5;y+=spacing){
+  const currentY=Math.min(y,referenceY+range),current=field(x,currentY,z)-clearance;
+  // Solid-to-air while moving upward is the walkable top surface. The opposite
+  // crossing is an overhang underside and must not become the seabed.
+  if(previous<=0&&current>0){
+   let low=previousY,high=currentY;
+   for(let i=0;i<7;i++){const mid=(low+high)*.5;if(field(x,mid,z)<=clearance)low=mid;else high=mid;}
+   const surface=(low+high)*.5,distance=Math.abs(surface-referenceY);
+   if(distance<bestDistance){best=surface;bestDistance=distance;}
+  }
+  previousY=currentY;previous=current;
+  if(currentY>=referenceY+range)break;
+ }
+ return best;
+}
