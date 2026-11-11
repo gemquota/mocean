@@ -62,11 +62,15 @@ test('raised shelf has a solid top and underside with open water beneath it', ()
   const below = sampleSpatialTerrain({ x: 0, y: -8, z: 0 }, { features, floorAt });
   const solid = sampleSpatialTerrain({ x: 0, y: -6, z: 0 }, { features, floorAt });
   const above = sampleSpatialTerrain({ x: 0, y: -4, z: 0 }, { features, floorAt });
+  const topSurface = sampleSpatialTerrain({ x: 0, y: -5.5, z: 0 }, { features, floorAt });
+  const underside = sampleSpatialTerrain({ x: 0, y: -6.5, z: 0 }, { features, floorAt });
   assert.ok(below.distance > 0);
   assert.equal(solid.featureId, 'shelf-a');
   assert.equal(solid.featureType, 'shelf');
   assert.ok(solid.distance < 0);
   assert.ok(above.distance > 0);
+  assert.ok(topSurface.normal.y > 0.95);
+  assert.ok(underside.normal.y < -0.95);
   assert.ok(hasTerrainClearance({ x: 0, y: -8, z: 0 }, 1, { features, floorAt }));
 });
 
