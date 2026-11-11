@@ -31,8 +31,8 @@ function sampleWallCrossing(field,start,end,y,z,axis){
   if(previousValue<=0&&value>0){
    let low=previous,high=current;
    for(let n=0;n<6;n++){const mid=(low+high)*.5,probe=field(axis==='x'?mid:y,y,axis==='x'?z:mid);if(probe<=0)low=mid;else high=mid;}
-   const coordinate=(low+high)*.5,x=axis==='x'?coordinate:y===y?y:y,zp=axis==='x'?z:coordinate;
-   const px=axis==='x'?coordinate:y,pz=axis==='x'?z:coordinate;
+   const coordinate=(low+high)*.5;
+   const px=axis==='x'?coordinate:z,pz=axis==='x'?z:coordinate;
    const normal=normalAt(field,px,y,pz);
    if(normal.y>=-.12&&normal.y<.68)return {x:px,y,z:pz,normal};
   }
