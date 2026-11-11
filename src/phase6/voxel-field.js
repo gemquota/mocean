@@ -28,6 +28,21 @@ const ROCKS=[
  [3.0,-8.35,-16.0,1.75,1.15,1.55,-.4],[5.1,-8.5,-14.2,1.0,.8,.95,.25],
  [28.0,-8.6,-8.5,1.45,1.0,1.2,.3],[-30.0,-8.55,-13.0,1.25,.85,1.05,-.2]
 ];
+const SHELVES=[
+ [-25,-7.55,-2.5,5.6,1.05,2.15,-.24],
+ [4,-7.45,-6.5,5.2,1.15,2.0,.32],
+ [25,-7.8,12.0,4.6,.95,2.2,-.42],
+ [-5,-7.7,18.0,4.0,.9,1.7,.18]
+];
+const CAVE_TUNNELS=[
+ [[-19,-9.05,-5],[-8,-9.25,-5],1.35],
+ [[-14,-9.1,-5],[-14,-9.25,1.2],.92],
+ [[-14,-9.25,1.2],[-8,-9.3,2.0],.82],
+ [[2,-9.25,7],[14,-9.35,7],1.25],
+ [[7,-9.25,7],[7,-9.0,12],.88],
+ [[7,-9.0,12],[12,-9.05,14],.78],
+ [[-4,-9.5,1],[-1,-9.35,4],.85]
+];
 const RIDGES=[
  // Long, broken reef spines with irregular shoulders and sloping flanks.
  [[-22,-8.25,-3],[-10,-7.95,-1.8],1.65],
@@ -70,13 +85,7 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
 
   // Irregular, rotated shelf slabs. Their undersides remain open water, while
   // the finite ellipsoid volumes give contact queries real overhang geometry.
-  const shelves=[
-   [-25,-7.55,-2.5,5.6,1.05,2.15,-.24],
-   [4,-7.45,-6.5,5.2,1.15,2.0,.32],
-   [25,-7.8,12.0,4.6,.95,2.2,-.42],
-   [-5,-7.7,18.0,4.0,.9,1.7,.18]
-  ];
-  for(const [cx,cy,cz,rx,ry,rz,angle] of shelves){
+  for(const [cx,cy,cz,rx,ry,rz,angle] of SHELVES){
    const dx=x-cx*sx,dz=z-cz*sz;
    if(Math.abs(dx)>rx*sx+1||Math.abs(dz)>rz*sz+1||Math.abs(y-cy)>ry+1.2)continue;
    solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx*sx,cy,cz*sz,rx*sx,ry,rz*sz,angle),.42);
@@ -101,16 +110,8 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
   // A branched cave network: two main passages, side galleries and a chamber.
   // All voids are carved from the same rock field used for rendering/contact.
   let cave=Infinity;
-  const tunnels=[
-   [[-19*sx,-9.05,-5*sz],[-8*sx,-9.25,-5*sz],1.35],
-   [[-14*sx,-9.1,-5*sz],[-14*sx,-9.25,1.2*sz],.92],
-   [[-14*sx,-9.25,1.2*sz],[-8*sx,-9.3,2.0*sz],.82],
-   [[2*sx,-9.25,7*sz],[14*sx,-9.35,7*sz],1.25],
-   [[7*sx,-9.25,7*sz],[7*sx,-9.0,12*sz],.88],
-   [[7*sx,-9.0,12*sz],[12*sx,-9.05,14*sz],.78],
-   [[-4*sx,-9.5,1*sz],[-1*sx,-9.35,4*sz],.85]
-  ];
-  for(const [a,b,r] of tunnels){
+  for(const [rawA,rawB,r] of CAVE_TUNNELS){
+   const a=scaledPoint(rawA),b=scaledPoint(rawB);
    const mx=(a[0]+b[0])*.5,mz=(a[2]+b[2])*.5;
    if(Math.abs(x-mx)>Math.abs(b[0]-a[0])*.5+r+1||Math.abs(z-mz)>Math.abs(b[2]-a[2])*.5+r+1||Math.abs(y-(a[1]+b[1])*.5)>r+1)continue;
    cave=Math.min(cave,capsule(x,y,z,a,b,r));
