@@ -5,6 +5,10 @@ const ellipsoid=(x,y,z,cx,cy,cz,rx,ry,rz)=>{
  const k1=Math.hypot((x-cx)/(rx*rx),(y-cy)/(ry*ry),(z-cz)/(rz*rz));
  return k0*(k0-1)/k1;
 };
+const rotatedEllipsoid=(x,y,z,cx,cy,cz,rx,ry,rz,angle)=>{
+ const c=Math.cos(angle),s=Math.sin(angle),dx=x-cx,dz=z-cz;
+ return ellipsoid(dx*c-dz*s,y-cy,dx*s+dz*c,0,0,0,rx,ry,rz);
+};
 const capsule=(x,y,z,a,b,r)=>{
  const pax=x-a[0],pay=y-a[1],paz=z-a[2],bax=b[0]-a[0],bay=b[1]-a[1],baz=b[2]-a[2];
  const h=clamp((pax*bax+pay*bay+paz*baz)/(bax*bax+bay*bay+baz*baz||1),0,1);
@@ -14,10 +18,30 @@ const smoothMin=(a,b,k)=>{
  const h=clamp(.5+.5*(b-a)/k,0,1);
  return b*(1-h)+a*h-k*h*(1-h);
 };
+const ROCKS=[
+ // Rounded boulder clusters embedded into the reef rather than perched on top.
+ [-18.8,-8.0,-12.1,2.35,1.45,2.0,-.28],[-16.0,-8.35,-10.5,1.45,1.05,1.3,.4],[-20.2,-8.45,-9.1,1.15,.9,1.0,0],
+ [-7.2,-8.0,11.4,2.1,1.4,1.7,.55],[-4.9,-8.35,13.1,1.25,.95,1.15,-.2],[-9.4,-8.45,13.2,1.0,.8,1.0,.3],
+ [12.4,-8.15,-12.8,2.5,1.65,2.0,.2],[15.1,-8.4,-10.8,1.45,1.0,1.25,-.5],[9.6,-8.5,-10.4,1.25,.9,1.05,.4],
+ [20.2,-8.35,6.5,1.85,1.25,1.55,-.35],[22.0,-8.55,8.7,1.05,.8,.95,.2],
+ [-25.0,-8.25,4.8,2.0,1.35,1.65,.35],[-22.8,-8.5,6.7,1.15,.9,1.0,-.3],
+ [3.0,-8.35,-16.0,1.75,1.15,1.55,-.4],[5.1,-8.5,-14.2,1.0,.8,.95,.25],
+ [28.0,-8.6,-8.5,1.45,1.0,1.2,.3],[-30.0,-8.55,-13.0,1.25,.85,1.05,-.2]
+];
+const RIDGES=[
+ // Long, broken reef spines with irregular shoulders and sloping flanks.
+ [[-22,-8.25,-3],[-10,-7.95,-1.8],1.65],
+ [[-3,-8.05,4],[10,-7.85,1.8],1.8],
+ [[13,-8.2,-5],[25,-8.0,-1.5],1.45],
+ [[-17,-8.4,14],[-5,-8.1,16],1.35],
+ [[8,-8.3,15],[21,-8.15,13],1.55],
+ [[-29,-8.35,-16],[-19,-8.1,-14],1.3]
+];
 
 /** Shared signed-distance field used by both mesh extraction and creature contact. */
 export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,z)=>-8.65){
  const sx=worldSize.x/41,sz=worldSize.z/31;
+ const scaledPoint=(p)=>[p[0]*sx,p[1],p[2]*sz];
  return (x,y,z)=>{
   const base=y-floorAt(x,z);
   // No geological solid reaches above this conservative ceiling. Most fish
@@ -32,11 +56,68 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
   if(Math.abs(x-cx3)<6.1*sx&&Math.abs(y+8.35)<3.1&&Math.abs(z-cz3)<6.5*sz)solid=smoothMin(solid,ellipsoid(x,y,z,cx3,-8.35,cz3,4.8*sx,1.8,5.2*sz),.95);
   const cx4=-2*sx,cz4=-13*sz;
   if(Math.abs(x-cx4)<6.4*sx&&Math.abs(y+8.25)<3.1&&Math.abs(z-cz4)<4.2*sz)solid=smoothMin(solid,ellipsoid(x,y,z,cx4,-8.25,cz4,5.2*sx,1.9,3*sz),.9);
+
+  // Broken ridge spines. Capsule unions form continuous rock ribs with rounded,
+  // weathered shoulders and deliberately irregular heights.
+  for(const ridge of RIDGES){
+   const a=scaledPoint(ridge[0]),b=scaledPoint(ridge[1]),r=ridge[2];
+   const midY=(a[1]+b[1])*.5;
+   if(Math.abs(x-(a[0]+b[0])*.5)>Math.abs(b[0]-a[0])*.5+r+1.5||
+      Math.abs(z-(a[2]+b[2])*.5)>Math.abs(b[2]-a[2])*.5+r+1.5||
+      Math.abs(y-midY)>r+1.8)continue;
+   solid=smoothMin(solid,capsule(x,y,z,a,b,r),.7);
+  }
+
+  // Irregular, rotated shelf slabs. Their undersides remain open water, while
+  // the finite ellipsoid volumes give contact queries real overhang geometry.
+  const shelves=[
+   [-25,-7.55,-2.5,5.6,1.05,2.15,-.24],
+   [4,-7.45,-6.5,5.2,1.15,2.0,.32],
+   [25,-7.8,12.0,4.6,.95,2.2,-.42],
+   [-5,-7.7,18.0,4.0,.9,1.7,.18]
+  ];
+  for(const [cx,cy,cz,rx,ry,rz,angle] of shelves){
+   const dx=x-cx*sx,dz=z-cz*sz;
+   if(Math.abs(dx)>rx*sx+1||Math.abs(dz)>rz*sz+1||Math.abs(y-cy)>ry+1.2)continue;
+   solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx*sx,cy,cz*sz,rx*sx,ry,rz*sz,angle),.42);
+  }
+
+  // Embedded boulders and talus. Spatial bounds avoid evaluating every primitive
+  // for every voxel sample.
+  for(const [rx,ry,rz] of ROCKS){
+   const cx=rx*sx,cz=rz*sz,ax=2.6*sx,az=2.3*sz;
+   if(Math.abs(x-cx)>ax||Math.abs(z-cz)>az||Math.abs(y-ry)>2.0)continue;
+   solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx,ry,cz,Math.abs(ry===-8.0?2.35:rx===-16.0?1.45:rx===-20.2?1.15:rx===-7.2?2.1:rx===-4.9?1.25:rx===-9.4?1:rx===12.4?2.5:rx===15.1?1.45:rx===9.6?1.25:rx===20.2?1.85:rx===22?1.05:rx===-25?2:rx===-22.8?1.15:rx===3?1.75:rx===5.1?1:rx===28?1.45:1.25)*sx,1.5,Math.abs(rz===-12.1?2:rz===-10.5?1.3:rz===-9.1?1:rz===11.4?1.7:rz===13.1?1.15:rz===13.2?1:rz===-12.8?2:rz===-10.8?1.25:rz===-10.4?1.05:rz===6.5?1.55:rz===8.7?.95:rz===4.8?1.65:rz===6.7?1:rz===-16?1.55:rz===-14.2?.95:rz===-8.5?1.2:1.05)*sz,0),.38);
+  }
+
+  // Multi-frequency weathering is confined to a narrow band around the solid
+  // boundary. This adds chipped, naturally irregular surfaces without turning
+  // the whole rock volume into noisy collision geometry.
+  const nearSurface=Math.exp(-Math.abs(solid)*.72);
+  const weather=(Math.sin(x*1.17+Math.sin(z*.71)*.8)*Math.sin(z*1.31+y*.43)+
+    .42*Math.sin(x*2.43+z*1.87+y*.9)+.22*Math.sin(x*4.1-z*3.2+y*1.6))*.105;
+  solid+=weather*nearSurface;
+
+  // A branched cave network: two main passages, side galleries and a chamber.
+  // All voids are carved from the same rock field used for rendering/contact.
   let cave=Infinity;
-  if(x>-21*sx&&x<-6*sx&&Math.abs(y+9.15)<1.9&&Math.abs(z+5*sz)<2.0)cave=Math.min(cave,capsule(x,y,z,[-19*sx,-9.05,-5*sz],[-8*sx,-9.25,-5*sz],1.35));
-  if(x>0&&x<16*sx&&Math.abs(y+9.3)<1.8&&Math.abs(z-7*sz)<1.9)cave=Math.min(cave,capsule(x,y,z,[2*sx,-9.25,7*sz],[14*sx,-9.35,7*sz],1.25));
-  if(Math.abs(x+4*sx)<3.0*sx&&Math.abs(y+9.5)<2.5&&Math.abs(z-1*sz)<3.1*sz)cave=Math.min(cave,ellipsoid(x,y,z,-4*sx,-9.5,1*sz,2.15*sx,1.65,2.25*sz));
-  return cave===Infinity?solid:Math.max(solid,-cave);
+  const tunnels=[
+   [[-19*sx,-9.05,-5*sz],[-8*sx,-9.25,-5*sz],1.35],
+   [[-14*sx,-9.1,-5*sz],[-14*sx,-9.25,1.2*sz],.92],
+   [[-14*sx,-9.25,1.2*sz],[-8*sx,-9.3,2.0*sz],.82],
+   [[2*sx,-9.25,7*sz],[14*sx,-9.35,7*sz],1.25],
+   [[7*sx,-9.25,7*sz],[7*sx,-9.0,12*sz],.88],
+   [[7*sx,-9.0,12*sz],[12*sx,-9.05,14*sz],.78],
+   [[-4*sx,-9.5,1*sz],[-1*sx,-9.35,4*sz],.85]
+  ];
+  for(const [a,b,r] of tunnels){
+   const mx=(a[0]+b[0])*.5,mz=(a[2]+b[2])*.5;
+   if(Math.abs(x-mx)>Math.abs(b[0]-a[0])*.5+r+1||Math.abs(z-mz)>Math.abs(b[2]-a[2])*.5+r+1||Math.abs(y-(a[1]+b[1])*.5)>r+1)continue;
+   cave=Math.min(cave,capsule(x,y,z,a,b,r));
+  }
+  if(Math.abs(x+4*sx)<3.2*sx&&Math.abs(y+9.5)<2.5&&Math.abs(z-1*sz)<3.2*sz)cave=Math.min(cave,ellipsoid(x,y,z,-4*sx,-9.5,1*sz,2.15*sx,1.65,2.25*sz));
+  if(cave===Infinity)return solid;
+  return Math.max(solid,-cave);
  }
 }
 
@@ -45,8 +126,6 @@ export function resolveVoxelTerrainContact(agent,field,{clearance=null,step=.075
  const grounded=['crab','lobster','mantis','starfish','stingray','wobbegong'].includes(agent.species);
  const radius=clearance??(grounded ? 0.055 : Math.min(.42,.085+(agent.bodyScale??1)*.085));
  let contact=false,nx=0,ny=1,nz=0;
- // Smooth unions are distance-like but not exact SDFs at blend regions. Iterate
- // projection so a deep initial overlap cannot leave the animal inside a ledge.
  for(let iteration=0;iteration<4;iteration++){
   const d=field(agent.p.x,agent.p.y,agent.p.z);
   if(!Number.isFinite(d)||d>=radius)break;
@@ -68,14 +147,11 @@ export function resolveVoxelTerrainContact(agent,field,{clearance=null,step=.075
  return contact;
 }
 
-/** Find the nearest upward-facing voxel surface beneath/around a grounded agent. */
 export function sampleVoxelSurfaceHeight(x,z,referenceY,field,{clearance=.055,range=5,spacing=.25}={}){
  if(typeof field!=='function'||!Number.isFinite(referenceY))return null;
  let previousY=referenceY-range,previous=field(x,previousY,z)-clearance,best=null,bestDistance=Infinity;
  for(let y=previousY+spacing;y<=referenceY+range+spacing*.5;y+=spacing){
   const currentY=Math.min(y,referenceY+range),current=field(x,currentY,z)-clearance;
-  // Solid-to-air while moving upward is the walkable top surface. The opposite
-  // crossing is an overhang underside and must not become the seabed.
   if(previous<=0&&current>0){
    let low=previousY,high=currentY;
    for(let i=0;i<7;i++){const mid=(low+high)*.5;if(field(x,mid,z)<=clearance)low=mid;else high=mid;}
