@@ -74,7 +74,7 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
   // Each sign-changing lattice edge owns one quad between its four incident cells.
   for(let z=1;z<nz;z++)for(let y=1;y<ny;y++)for(let x=0;x<nx;x++){
     const a=values[key(x,y,z,sx,sy)],b=values[key(x+1,y,z,sx,sy)];if((a<0)===(b<0))continue;
-    quad(cellIds[key(x,y-1,z-1,nx,ny)],cellIds[key(x,y,z-1,nx,ny)],cellIds[key(x,y,z,nx,ny)],cellIds[key(x,y-1,z,nx,ny)],a<0);
+    quad(cellIds[key(x,y-1,z-1,nx,ny)],cellIds[key(x,y,z-1,nx,ny)],cellIds[key(x,y,z,nx,ny)],cellIds[key(x,y-1,z,nx,ny)],a>=0);
   }
   for(let z=1;z<nz;z++)for(let y=0;y<ny;y++)for(let x=1;x<nx;x++){
     const a=values[key(x,y,z,sx,sy)],b=values[key(x,y+1,z,sx,sy)];if((a<0)===(b<0))continue;
@@ -82,7 +82,7 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
   }
   for(let z=0;z<nz;z++)for(let y=1;y<ny;y++)for(let x=1;x<nx;x++){
     const a=values[key(x,y,z,sx,sy)],b=values[key(x,y,z+1,sx,sy)];if((a<0)===(b<0))continue;
-    quad(cellIds[key(x-1,y-1,z,nx,ny)],cellIds[key(x,y-1,z,nx,ny)],cellIds[key(x,y,z,nx,ny)],cellIds[key(x-1,y,z,nx,ny)],a<0);
+    quad(cellIds[key(x-1,y-1,z,nx,ny)],cellIds[key(x,y-1,z,nx,ny)],cellIds[key(x,y,z,nx,ny)],cellIds[key(x-1,y,z,nx,ny)],a>=0);
   }
   return {positions:new Float32Array(positions),normals:new Float32Array(normals),indices:new Uint32Array(indices),vertexCount:positions.length/3,triangleCount:indices.length/3,bounds:{min:[...min],max:[...max]},cells:[nx,ny,nz]};
 }
