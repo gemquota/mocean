@@ -18,6 +18,15 @@ test('habitat browser module parses and initializes every fish before rendering'
   assert.match(script, /function initialiseFishVisualState\(nextSchool\)[\s\S]*?fish\.gait=createGait\(\)/);
 });
 
+test('population control defaults to 10–200 while retaining saved bounds for other sliders',()=>{
+ assert.match(html,/id="population" type="range" min="10" max="200" step="10" value="150"/);
+ assert.match(html,/id="population-min">10 CREATURES/);
+ assert.match(script,/const POPULATION_RANGE_VERSION_KEY='mocean\.populationRange\.v1'/);
+ assert.match(script,/if\(populationRangeVersion!=='10-200'\)/);
+ assert.match(script,/localStorage\.setItem\(POPULATION_RANGE_VERSION_KEY,'10-200'\)/);
+ assert.match(script,/setPopulation\(populationSlider\.value\)/);
+});
+
 test('each species gets controls on speed, size, min/max size and aggression tabs', () => {
   for (const id of ['species-speed', 'species-size', 'species-size-range', 'species-aggression']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing species control group: ' + id);
@@ -86,13 +95,13 @@ test('one creature renderer fault cannot stop the habitat frame or hide every la
   assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\)\+' CREATURES · 30 SPECIES/);
 });
 
-test('coral renderer reads from its precomputed colony collection', () => {
-  assert.match(script, /function drawCoral\(\)[\s\S]*?const \[x,z,type\]=coralColonies\[index\]/);
+test('coral renderer reads terrain-height anchors from its precomputed colony collection', () => {
+  assert.match(script, /function drawCoral\(\)[\s\S]*?const \[x,z,type,floor\]=coralColonies\[index\]/);
   assert.doesNotMatch(script, /const \[x,z,type\]=colonies\[index\]/);
 });
 
 test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
-  assert.match(script, /const coralColonies=Array\.from\(\{length:320\}/);
+  assert.match(script, /coralColonies=Array\.from\(\{length:320\}/);
   assert.match(script, /for\(let index=0;index<coralColonies\.length;index\+\+\)/);
   assert.doesNotMatch(script, /function drawCoral\(\)[\s\S]{0,500}Array\.from/);
   assert.match(script, /planktonParticles=Array\.from\(\{length:480\}/);
