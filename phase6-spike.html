@@ -57,9 +57,10 @@ try{
   archCount:6,
   floorAt:seabedHeight
  });
+ const rockGeometry=new THREE.SphereGeometry(1,14,10);
  const rockMaterials=['#465b50','#526458','#3c514d','#5a6254'].map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
  features.rocks.forEach((rock,i)=>{
-  const mesh=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),rockMaterials[i%rockMaterials.length]);
+  const mesh=new THREE.Mesh(rockGeometry,rockMaterials[i%rockMaterials.length]);
   mesh.position.set(rock.x,rock.y,rock.z);
   mesh.scale.set(rock.radius,rock.height,rock.depth);
   mesh.rotation.set(rock.tilt,rock.rotation,rock.tilt*.6);scene.add(mesh);
@@ -79,7 +80,7 @@ try{
  addEventListener('resize',resize,{passive:true});resize();
  let raf=0;const animate=()=>{view.render();raf=requestAnimationFrame(animate);};animate();
  status.innerHTML='<b>WEBGL2 / THREE.JS r180</b><br>3D heightfield + low-poly rock formations<br>Simulation untouched · renderer spike only';
- window.addEventListener('pagehide',()=>{cancelAnimationFrame(raf);view.dispose();terrainGeometry.dispose();rockMaterials.forEach(material=>material.dispose());archMaterial.dispose();sandBed.geometry.dispose();sandBed.material.dispose();});
+ window.addEventListener('pagehide',()=>{cancelAnimationFrame(raf);view.dispose();terrainGeometry.dispose();rockGeometry.dispose();rockMaterials.forEach(material=>material.dispose());archMaterial.dispose();sandBed.geometry.dispose();sandBed.material.dispose();});
 }catch(error){
  status.innerHTML='<b>RENDERER INITIALISATION FAILED</b><br>'+String(error?.message??error);
  throw error;
