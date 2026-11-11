@@ -1,7 +1,7 @@
 # Phase 6 · 3D Environment, Seabed and Water
 
 **Status:** In progress · authorised 11 November 2026.  
-**Branch:** `phase-6-environment`  
+**Active branch:** `phase-6-spatial-terrain`  
 **Scope authority:** The user explicitly authorised Phase 6 after requesting open-source 3D assets, complex seabed geometry (elevations, rocks, ledges, overhangs and crevasses), realistic underwater water effects and lighting/bloom.
 
 ## Goal
@@ -45,20 +45,31 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - [ ] Establish a reproducible baseline for startup time, frame time, memory/geometry budget and creature counts.
 - [x] Keep all work isolated on this branch; the existing live habitat entry point remains unchanged.
 
-**Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield, irregular rock clusters and half-ring arch formations with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `src/phase6/terrain.js` generates seeded, bounded rock/arch placements and exposes a preliminary arch-aperture query. `tests/phase6-renderer.test.js` and `tests/phase6-terrain.test.js` cover camera projection, capability detection, renderer lifecycle, deterministic layout and feature bounds. GitHub Actions passed the core test suite on commits `23b5289` and the latest rock-placement correction at `3ed7293`. The latest GitHub Actions core-test run passed. Browser visual verification and performance profiling have not yet been performed.
+**Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield, irregular rock clusters and half-ring arch formations with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `src/phase6/terrain.js` generates seeded, bounded rock/arch placements and exposes a preliminary arch-aperture query. `tests/phase6-renderer.test.js` and `tests/phase6-terrain.test.js` cover camera projection, capability detection, renderer lifecycle, deterministic layout and feature bounds. PR #44 was merged to main as `6f755e7`; its core-test and GitHub Pages deployment workflows both succeeded. Browser visual verification and performance profiling have not yet been performed.
 
 ### P6-2 · Spatial seabed and terrain
 
-**Prototype started:** the isolated renderer spike now contains a seeded heightfield, irregular rock clusters and arch meshes. The arches are genuine 3D geometry with an open aperture, not painted cave symbols. This is scene-prototype geometry only; the live habitat's ground-contact model is unchanged.
+**Prototype extended:** the isolated renderer spike now contains a seeded heightfield, irregular rock clusters, arch meshes, raised shelf slabs and smooth depressed sand channels. The channels are part of the generated heightfield, with sediment shading and a matching floor query. Shelf undersides remain open water and are represented as solid oriented boxes in the spatial query. This is scene-prototype geometry only; the live habitat's ground-contact model is unchanged.
 
 - [ ] Replace the simple analytic floor presentation with irregular 3D terrain at multiple elevations.
-- [ ] Extend the prototype to coherent shelves, overhangs, crevasses, caves and sand channels.
-- [ ] Design a spatial surface/obstacle query that agrees with visible terrain. A visual cave must not be solid floor in the simulation, and vice versa.
+- [x] Add seeded raised rock shelves with finite solid volume and queryable top/underside normals.
+- [x] Add smooth, rotated, finite-length depressed sand channels, sediment colour cues, and use the composed floor for the terrain mesh, spatial queries and feature placement.
+- [ ] Extend the prototype to coherent overhangs, crevasses with steeper walls, and larger connected cave systems.
+- [x] Add an initial renderer-independent signed-distance query for the seabed, ellipsoidal boulders and finite-depth hollow arch ribs (`src/phase6/spatial-query.js`).
+- [x] Return outward surface normals and feature identity; add a sphere-clearance helper for future contact checks.
+- [x] Add oriented box signed-distance queries for raised shelves, including top and underside clearance.
+- [ ] Validate query distances against the exact rendered mesh geometry, including faceted boulder geometry and arch transforms.
 - [x] Use deterministic generation/seeds for initial rock and arch placement (`src/phase6/terrain.js`).
-- [ ] Ensure benthic species, eels and sheltering creatures still interact plausibly with the new terrain.
+- [ ] Integrate spatial contact/navigation with benthic species, eels and sheltering creatures only after visual/query agreement is demonstrated.
+
+**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The current query uses the same composed analytic floor as the rendered heightfield, ellipsoid approximations for rocks, oriented box volumes for shelves and a finite-depth half-torus approximation for arches. It is not yet used by the live simulation. The prototype now renders faceted sphere-based boulders using the same ellipsoidal scale parameters as the query. Raised shelves are rendered as instanced-shape box geometry (shared geometry/materials) and use matching oriented-box distance queries. The seabed heightfield and generated rock/arch placement both use the same smoothed crevasse depression function. The query remains a smooth signed-distance approximation to the triangulated mesh, so final collision integration still requires a measured surface-error tolerance.
 
 ### P6-3 · Open-source asset integration
 
+**Source shortlist started:** `ASSET_SOURCES.md` records Poly Haven's CC0 licence and four reviewed rock/cliff candidates, including triangle counts and download-size concerns. No binary asset has been downloaded or integrated yet.
+
+- [x] Identify a preferred CC0 source and verify its redistribution terms (`https://polyhaven.com/license`).
+- [x] Record initial model/texture candidates and reject raw assets that exceed a sensible browser budget (`ASSET_SOURCES.md`).
 - [ ] Source suitable rocks, seabed materials, coral/environment props and other useful models from repositories with verified redistribution terms.
 - [ ] Prefer CC0 assets where quality is appropriate; document each asset's origin and licence.
 - [ ] Optimise meshes, textures, material variants and texture sizes for browser delivery.
@@ -66,8 +77,13 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ### P6-4 · Water and suspended matter
 
-- [ ] Add depth-dependent colour absorption, haze and distance attenuation.
-- [ ] Add restrained volumetric-looking light shafts, drifting particulate/plankton and occasional bubbles.
+**Prototype started:** `src/phase6/water.js` provides per-channel Beer-Lambert transmittance and a scattering-colour blend; the spike uses the resulting blue-green attenuation colour for distance fog. A seeded 260-point suspended-particle field drifts slowly without reading or modifying simulation state. This is an approximation, not volumetric light transport or depth-correct per-fragment absorption.
+
+- [x] Add a deterministic per-channel absorption function and water-scattering colour blend (`src/phase6/water.js`).
+- [x] Apply a restrained depth-attenuation fog colour in the isolated WebGL spike.
+- [x] Add a bounded, seeded suspended-particle field with subtle drift and no simulation coupling.
+- [ ] Add true depth-aware per-fragment absorption and distance attenuation.
+- [ ] Add restrained volumetric-looking light shafts and occasional bubbles.
 - [ ] Add surface ripples/swell and intermittent chop where visible in the fixed camera.
 - [ ] Preserve the existing plankton layer's movement character while integrating it into the new depth model.
 

@@ -16,7 +16,8 @@ canvas{display:block;width:100%;height:100%}#status{position:fixed;left:18px;top
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import { createPhase6Renderer, detectWebGL2 } from './src/phase6/renderer.js';
 import { seabedHeight } from './src/schooling.js';
-import { generateTerrainFeatures } from './src/phase6/terrain.js';
+import { createTerrainFloor, generateTerrainFeatures } from './src/phase6/terrain.js';
+import { generateWaterParticles, waterColorAtDistance } from './src/phase6/water.js';
 
 const status=document.getElementById('status');
 if(!detectWebGL2()){
@@ -30,17 +31,35 @@ try{
  const view=createPhase6Renderer({THREE,canvas,pixelRatio:Math.min(devicePixelRatio||1,1.5)});
  const {scene,camera}=view;
  scene.background=new THREE.Color('#08232c');
- scene.fog=new THREE.FogExp2('#0b3540',.012);
+ const fogColour=waterColorAtDistance(36);
+ scene.fog=new THREE.FogExp2(new THREE.Color(fogColour.red,fogColour.green,fogColour.blue),.012);
  const ambient=new THREE.HemisphereLight('#b7e8e4','#172b29',2.0);scene.add(ambient);
  const sun=new THREE.DirectionalLight('#b9e8ff',2.2);sun.position.set(-24,34,18);scene.add(sun);
  const fill=new THREE.DirectionalLight('#4b9da9',.75);fill.position.set(22,7,-24);scene.add(fill);
 
- const nx=100,nz=72,width=84,depth=60,positions=[],indices=[],colours=[];
+ const particles=generateWaterParticles({seed:610211,count:260});
+ const particlePositions=new Float32Array(particles.length*3);
+ particles.forEach((p,i)=>particlePositions.set([p.x,p.y,p.z],i*3));
+ const particleGeometry=new THREE.BufferGeometry();
+ particleGeometry.setAttribute('position',new THREE.BufferAttribute(particlePositions,3));
+ particleGeometry.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,8,0),72);
+ const particleMaterial=new THREE.PointsMaterial({color:'#a9d9d0',size:.13,sizeAttenuation:true,transparent:true,opacity:.32,depthWrite:false,blending:THREE.AdditiveBlending});
+ const particleCloud=new THREE.Points(particleGeometry,particleMaterial);scene.add(particleCloud);
+
+ const features=generateTerrainFeatures({
+  seed:6102026,
+  bounds:{minX:-40,maxX:40,minZ:-28,maxZ:28},
+  rockCount:34,archCount:6,shelfCount:8,crevasseCount:5,
+  floorAt:seabedHeight
+ });
+ const terrainFloor=createTerrainFloor(seabedHeight,features);
+ const nx=120,nz=84,width=84,depth=60,positions=[],indices=[],colours=[];
  for(let iz=0;iz<=nz;iz++)for(let ix=0;ix<=nx;ix++){
-  const x=-width/2+ix/nx*width,z=-depth/2+iz/nz*depth,y=seabedHeight(x,z);
+  const x=-width/2+ix/nx*width,z=-depth/2+iz/nz*depth,y=terrainFloor(x,z);
   positions.push(x,y,z);
   const sand=.5+.5*Math.sin(x*.19+z*.13)*Math.cos(z*.17-x*.08);
-  colours.push(.13+sand*.10,.22+sand*.09,.19+sand*.06);
+  const channel=Math.max(0,Math.min(1,(seabedHeight(x,z)-y)/2.8));
+  colours.push(.13+sand*.10-channel*.035,.22+sand*.09-channel*.045,.19+sand*.06-channel*.03);
   if(ix<nx&&iz<nz){const a=iz*(nx+1)+ix,b=a+1,c=a+(nx+1),d=c+1;indices.push(a,c,b,b,c,d);}
  }
  const terrainGeometry=new THREE.BufferGeometry();
@@ -50,19 +69,21 @@ try{
  const terrain=new THREE.Mesh(terrainGeometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.96,metalness:0,side:THREE.DoubleSide}));
  scene.add(terrain);
 
- const features=generateTerrainFeatures({
-  seed:6102026,
-  bounds:{minX:-40,maxX:40,minZ:-28,maxZ:28},
-  rockCount:34,
-  archCount:6,
-  floorAt:seabedHeight
- });
+ const rockGeometry=new THREE.SphereGeometry(1,14,10);
  const rockMaterials=['#465b50','#526458','#3c514d','#5a6254'].map(color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true}));
  features.rocks.forEach((rock,i)=>{
-  const mesh=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),rockMaterials[i%rockMaterials.length]);
+  const mesh=new THREE.Mesh(rockGeometry,rockMaterials[i%rockMaterials.length]);
   mesh.position.set(rock.x,rock.y,rock.z);
   mesh.scale.set(rock.radius,rock.height,rock.depth);
   mesh.rotation.set(rock.tilt,rock.rotation,rock.tilt*.6);scene.add(mesh);
+ });
+ const shelfGeometry=new THREE.BoxGeometry(1,1,1);
+ const shelfMaterials=['#53675f','#617269','#465c55'].map(color=>new THREE.MeshStandardMaterial({color,roughness:.98,flatShading:true}));
+ features.shelves.forEach((shelf,i)=>{
+  const mesh=new THREE.Mesh(shelfGeometry,shelfMaterials[i%shelfMaterials.length]);
+  mesh.position.set(shelf.x,shelf.y,shelf.z);
+  mesh.scale.set(shelf.width,shelf.height,shelf.depth);
+  mesh.rotation.y=shelf.rotation;scene.add(mesh);
  });
  const archMaterial=new THREE.MeshStandardMaterial({color:'#52645a',roughness:1,flatShading:true,side:THREE.DoubleSide});
  features.arches.forEach(arch=>{
@@ -73,13 +94,23 @@ try{
   mesh.rotation.y=arch.rotation;scene.add(mesh);
  });
  const sandBed=new THREE.Mesh(new THREE.PlaneGeometry(180,140),new THREE.MeshStandardMaterial({color:'#183b3b',roughness:1,side:THREE.DoubleSide}));
- sandBed.rotation.x=-Math.PI/2;sandBed.position.y=-9.8;sandBed.position.z=-5;scene.add(sandBed);
+ sandBed.rotation.x=-Math.PI/2;sandBed.position.y=-15;sandBed.position.z=-5;scene.add(sandBed);
 
  const resize=()=>view.resize(innerWidth,innerHeight);
  addEventListener('resize',resize,{passive:true});resize();
- let raf=0;const animate=()=>{view.render();raf=requestAnimationFrame(animate);};animate();
- status.innerHTML='<b>WEBGL2 / THREE.JS r180</b><br>3D heightfield + low-poly rock formations<br>Simulation untouched · renderer spike only';
- window.addEventListener('pagehide',()=>{cancelAnimationFrame(raf);view.dispose();terrainGeometry.dispose();rockMaterials.forEach(material=>material.dispose());archMaterial.dispose();sandBed.geometry.dispose();sandBed.material.dispose();});
+ let raf=0;const animate=()=>{
+  const time=performance.now()*.001;
+  for(let i=0;i<particles.length;i++){
+   const p=particles[i],offset=i*3;
+   particlePositions[offset]=p.x+Math.sin(time*p.speed*.35+p.phase)*.055;
+   particlePositions[offset+1]=p.y+Math.sin(time*p.speed+p.phase)*p.amplitude;
+   particlePositions[offset+2]=p.z+Math.cos(time*p.speed*.28+p.phase)*.045;
+  }
+  particleGeometry.attributes.position.needsUpdate=true;
+  view.render();raf=requestAnimationFrame(animate);
+ };animate();
+ status.innerHTML='<b>WEBGL2 / THREE.JS r180</b><br>Raised shelves · eroded channels · depth attenuation · suspended particles<br>Simulation untouched · renderer spike only';
+ window.addEventListener('pagehide',()=>{cancelAnimationFrame(raf);view.dispose();terrainGeometry.dispose();particleGeometry.dispose();particleMaterial.dispose();rockGeometry.dispose();rockMaterials.forEach(material=>material.dispose());shelfGeometry.dispose();shelfMaterials.forEach(material=>material.dispose());archMaterial.dispose();sandBed.geometry.dispose();sandBed.material.dispose();});
 }catch(error){
  status.innerHTML='<b>RENDERER INITIALISATION FAILED</b><br>'+String(error?.message??error);
  throw error;
