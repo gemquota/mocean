@@ -122,3 +122,21 @@ test('every habitat range slider supports long-press min/max editing persisted i
   assert.match(script, /slider\.dataset\.rangeKey=key/);
   assert.match(script, /savedSliderBounds\[slider\.dataset\.rangeKey\]/);
 });
+
+test('live habitat integrates a real voxel surface and animated Osmocean GLB models',()=>{
+  assert.match(html,/three@0\.180\.0\/build\/three\.module\.js/);
+  assert.match(script,/drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,worldSize\)/);
+  assert.match(script,/new OsmoceanMarineModels\(THREE/);
+  assert.match(script,/function syncMarineModels\(ordered,dt\)/);
+  assert.match(script,/entry\.mixer\.timeScale=/);
+  assert.match(script,/entry\.root\.quaternion\.setFromUnitVectors/);
+  assert.match(script,/if\(marineModelEntries\.has\(fish\)\)return/);
+  assert.match(script,/modelRenderer\.render\(modelScene,modelCamera\)/);
+  assert.match(script,/catch\(error\)\{console\.warn\('Mocean animated model layer unavailable/);
+});
+test('habitat preserves procedural species fallbacks for animals without matching fish rigs',()=>{
+  assert.match(script,/if\(fish\.species==='eel'\)\{drawEel\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='crab'\|\|fish\.species==='lobster'\)\{drawCrustacean\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='manta'\)\{drawMantaRay\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='orca'\)\{drawOrca\(fish\);return;\}/);
+});
