@@ -83,7 +83,7 @@ test('composed channel floor is the same surface used by spatial queries', () =>
     }]
   };
   const channelFloor = createTerrainFloor(floorAt, features);
-  const centre = sampleSpatialTerrain({ x: 0, y: -11, z: 0 }, {
+  const centre = sampleSpatialTerrain({ x: 0, y: -13, z: 0 }, {
     features, floorAt: channelFloor
   });
   const shoulder = sampleSpatialTerrain({ x: 0, y: -9, z: 2.5 }, {
