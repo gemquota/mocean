@@ -1,10 +1,9 @@
 /**
  * Signed-distance queries for the Phase 6 spatial seabed prototype.
  *
- * The query treats the seabed, ellipsoidal boulders and hollow arch ribs as
- * a union of solids. Positive distance is open water; negative distance is
- * inside terrain. This is a renderer-independent geometry query and is not
- * yet wired into creature movement or benthic collision response.
+ * Positive distance is open water; negative distance is inside terrain.
+ * This is a renderer-independent geometry query and is not wired into the
+ * live creature movement or benthic collision response.
  */
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -16,6 +15,20 @@ function ellipsoidDistance(x, y, z, rx, ry, rz) {
   return k0 * (k0 - 1) / k1;
 }
 
+function roundedBoxDistance(x, y, z, shelf) {
+  const cosine = Math.cos(shelf.rotation || 0);
+  const sine = Math.sin(shelf.rotation || 0);
+  const dx = x - shelf.x;
+  const dz = z - shelf.z;
+  const localX = cosine * dx - sine * dz;
+  const localZ = sine * dx + cosine * dz;
+  const qx = Math.abs(localX) - shelf.width * 0.5;
+  const qy = Math.abs(y - shelf.y) - shelf.height * 0.5;
+  const qz = Math.abs(localZ) - shelf.depth * 0.5;
+  const outside = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0));
+  return outside + Math.min(Math.max(qx, qy, qz), 0);
+}
+
 function archRibDistance(x, y, z, arch) {
   const cosine = Math.cos(arch.rotation || 0);
   const sine = Math.sin(arch.rotation || 0);
@@ -23,17 +36,12 @@ function archRibDistance(x, y, z, arch) {
   const dz = z - arch.z;
   const localX = cosine * dx - sine * dz;
   const localZ = sine * dx + cosine * dz;
-  const centerY = arch.floor + arch.tube;
-  const localY = y - centerY;
-
-  // Closest point on the upper half of a circular arch in its local XY plane.
+  const localY = y - (arch.floor + arch.tube);
   const angle = clamp(Math.atan2(localY, localX), 0, Math.PI);
   const ringDistance = Math.hypot(
     localX - arch.radius * Math.cos(angle),
     localY - arch.radius * Math.sin(angle)
   ) - arch.tube;
-
-  // Extrude the arch rib by its finite depth, leaving the passage open.
   const depthDistance = Math.abs(localZ) - arch.depth * 0.5;
   const outside = Math.hypot(Math.max(ringDistance, 0), Math.max(depthDistance, 0));
   return outside + Math.min(Math.max(ringDistance, depthDistance), 0);
@@ -48,12 +56,8 @@ function evaluateDistance(x, y, z, features, floorAt) {
   for (const rock of features.rocks || []) {
     if (!(rock.radius > 0 && rock.height > 0 && rock.depth > 0)) continue;
     const distance = ellipsoidDistance(
-      x - rock.x,
-      y - rock.y,
-      z - rock.z,
-      rock.radius,
-      rock.height,
-      rock.depth
+      x - rock.x, y - rock.y, z - rock.z,
+      rock.radius, rock.height, rock.depth
     );
     if (distance < best.distance) {
       best = { distance, featureId: rock.id ?? null, featureType: 'rock' };
@@ -68,15 +72,20 @@ function evaluateDistance(x, y, z, features, floorAt) {
     }
   }
 
+  for (const shelf of features.shelves || []) {
+    if (!(shelf.width > 0 && shelf.height > 0 && shelf.depth > 0)) continue;
+    const distance = roundedBoxDistance(x, y, z, shelf);
+    if (distance < best.distance) {
+      best = { distance, featureId: shelf.id ?? null, featureType: 'shelf' };
+    }
+  }
+
   return best;
 }
 
 /**
  * Sample signed distance and outward surface normal at a world-space point.
- *
  * @param {{x:number,y:number,z:number}} point World-space coordinates.
- * @param {object} options Terrain features, floor function and normal step.
- * @returns {{distance:number, normal:{x:number,y:number,z:number}, featureId:string|null, featureType:string}}
  */
 export function sampleSpatialTerrain(
   point,
