@@ -1,3 +1,4 @@
+import { createHabitatVoxelField, resolveVoxelTerrainContact } from './phase6/voxel-field.js';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const length = v => Math.hypot(v.x, v.y, v.z);
 const normalize = v => {
@@ -336,7 +337,8 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
     };
   });
   for (const agent of fish) if (['crab','lobster','mantis','starfish','sandEel'].includes(agent.species)) agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
-  return { fish, time: 0, worldSize: { ...(options.worldSize ?? SCHOOLING_LIMITS) }, speciesPercentages: { ...mix }, metrics: { averageSpeed: 0, averageNeighbours: 0, collisions: 0, candidateChecks: 0 } };
+  const worldSize = { ...(options.worldSize ?? SCHOOLING_LIMITS) };
+  return { fish, time: 0, worldSize, terrainField: createHabitatVoxelField(worldSize, seabedHeight), terrainFieldWorldSize: { ...worldSize }, speciesPercentages: { ...mix }, metrics: { averageSpeed: 0, averageNeighbours: 0, collisions: 0, candidateChecks: 0 } };
 }
 
 /**
@@ -345,6 +347,11 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
  * A spatial hash bounds local interactions and capsules handle body contact.
  */
 export function stepSchool(school, dt) {
+  const limits = school.worldSize ?? SCHOOLING_LIMITS;
+  if (!school.terrainField || school.terrainFieldWorldSize?.x !== limits.x || school.terrainFieldWorldSize?.y !== limits.y || school.terrainFieldWorldSize?.z !== limits.z) {
+    school.terrainField = createHabitatVoxelField(limits, seabedHeight);
+    school.terrainFieldWorldSize = { ...limits };
+  }
   const step = clamp(dt, 0, 0.05);
   if (step === 0) return school.metrics;
   const fish = school.fish, grid = buildGrid(fish);
@@ -708,6 +715,12 @@ export function stepSchool(school, dt) {
       agent.v.y = 0;
       agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.82);
     }
+  }
+  // The same signed-distance field that generates the visible voxel mesh also
+  // prevents creatures entering solid rock. Burrowing sand eels are exempt.
+  for (const agent of survivors) {
+    agent.terrainContact = false;
+    if (agent.species !== 'sandEel') resolveVoxelTerrainContact(agent, school.terrainField);
   }
   school.time += step;
   school.metrics = {
