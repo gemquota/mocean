@@ -63,7 +63,7 @@ export function createVegetationLayout(field,worldSize={x:41,z:31},seed=73421){
    for(let x=-halfX+1;x<halfX-1;x+=step){
     if(hash(x+y,z,seed+19)<.42)continue;
     for(const axis of ['x','z']){
-     const candidate=sampleWallCrossing(field,axis==='x'?-halfX:-halfZ,axis==='x'?halfX:halfZ,y,axis==='x'?z:x,axis);
+     const candidate=sampleWallCrossing(field,axis==='x'?x-.95:z-.95,axis==='x'?x+.95:z+.95,y,axis==='x'?z:x,axis);
      if(!candidate||candidate.normal.y<-.08||candidate.normal.y>=.68)continue;
      const key=[Math.round(candidate.x*1.25),Math.round(candidate.y*1.25),Math.round(candidate.z*1.25)].join(':');
      if(seen.has(key))continue;seen.add(key);
