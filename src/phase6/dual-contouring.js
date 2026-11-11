@@ -39,50 +39,98 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
     if(!Number.isFinite(d))throw new TypeError('sampleDistance returned a non-finite value');
     values[key(x,y,z,sx,sy)]=d;
   }
-  const cellIds=new Int32Array(nx*ny*nz);cellIds.fill(-1);
+  // Multi-component dual contouring: a cell may contain more than one
+  // disconnected surface patch (for example, a cave roof and floor). Keep a
+  // separate QEF vertex for each connected patch instead of welding them.
+  const cellEdgeIds=new Int32Array(nx*ny*nz*12);cellEdgeIds.fill(-1);
   const positions=[],normals=[];
   const gradient=(p)=>{
     const e=Math.min(...step)*.35;
     const dx=sampleDistance(p[0]+e,p[1],p[2])-sampleDistance(p[0]-e,p[1],p[2]);
     const dy=sampleDistance(p[0],p[1]+e,p[2])-sampleDistance(p[0],p[1]-e,p[2]);
     const dz=sampleDistance(p[0],p[1],p[2]+e)-sampleDistance(p[0],p[1],p[2]-e);
-    const l=Math.hypot(dx,dy,dz)||1; return [dx/l,dy/l,dz/l];
+    const l=Math.hypot(dx,dy,dz)||1;return [dx/l,dy/l,dz/l];
   };
+  const faces=[
+    {corners:[0,1,2,3],edges:[0,1,2,3]},
+    {corners:[4,5,6,7],edges:[4,5,6,7]},
+    {corners:[0,1,5,4],edges:[0,9,4,8]},
+    {corners:[3,2,6,7],edges:[2,10,6,11]},
+    {corners:[0,3,7,4],edges:[3,11,7,8]},
+    {corners:[1,2,6,5],edges:[1,10,5,9]}
+  ];
   for(let z=0;z<nz;z++)for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){
     const ps=CORNERS.map(([a,b,c])=>point(x+a,y+b,z+c));
     const ds=CORNERS.map(([a,b,c])=>values[key(x+a,y+b,z+c,sx,sy)]);
     if(ds.every(v=>v<0)||ds.every(v=>v>=0))continue;
-    const ata=[[0,0,0],[0,0,0],[0,0,0]],atb=[0,0,0],hits=[],ns=[];
-    for(const [ia,ib] of EDGES){
-      const da=ds[ia],db=ds[ib]; if((da<0)===(db<0))continue;
-      const t=clamp(da/(da-db),0,1),p=ps[ia].map((v,i)=>v+(ps[ib][i]-v)*t),n=gradient(p);
-      hits.push(p);ns.push(n);
-      const q=n[0]*p[0]+n[1]*p[1]+n[2]*p[2];
-      for(let r=0;r<3;r++){atb[r]+=n[r]*q;for(let c=0;c<3;c++)ata[r][c]+=n[r]*n[c];}
+    const crossing=EDGES.map(([ia,ib])=>(ds[ia]<0)!==(ds[ib]<0));
+    const parent=Int8Array.from({length:12},(_,i)=>i);
+    const find=v=>{while(parent[v]!==v){parent[v]=parent[parent[v]];v=parent[v];}return v;};
+    const union=(u,v)=>{const ru=find(u),rv=find(v);if(ru!==rv)parent[rv]=ru;};
+    for(const face of faces){
+      const crossed=face.edges.filter(edge=>crossing[edge]);
+      if(crossed.length===2)union(crossed[0],crossed[1]);
+      else if(crossed.length===4){
+        const centre=face.corners.reduce((sum,index)=>sum+ds[index],0)*.25;
+        const centreInside=centre<0,cornerInside=ds[face.corners[0]]<0;
+        if(centreInside===cornerInside){union(face.edges[0],face.edges[1]);union(face.edges[2],face.edges[3]);}
+        else{union(face.edges[3],face.edges[0]);union(face.edges[1],face.edges[2]);}
+      }
     }
-    if(!hits.length)continue;
-    const centre=point(x+.5,y+.5,z+.5),lambda=1e-5;
-    for(let i=0;i<3;i++){ata[i][i]+=lambda;atb[i]+=lambda*centre[i];}
-    const solved=solve3(ata,atb)??hits.reduce((a,p)=>a.map((v,i)=>v+p[i]/hits.length),[0,0,0]);
-    const v=solved.map((n,i)=>clamp(n,min[i]+([x,y,z][i])*step[i],min[i]+([x,y,z][i]+1)*step[i]));
-    const normal=ns.reduce((a,n)=>a.map((v,i)=>v+n[i]),[0,0,0]),nl=Math.hypot(...normal)||1;
-    const id=positions.length/3;positions.push(...v);normals.push(...normal.map(n=>n/nl));
-    cellIds[key(x,y,z,nx,ny)]=id;
+    const groups=new Map();
+    for(let edge=0;edge<12;edge++)if(crossing[edge]){
+      const root=find(edge);if(!groups.has(root))groups.set(root,[]);groups.get(root).push(edge);
+    }
+    const cellIndex=key(x,y,z,nx,ny);
+    for(const group of groups.values()){
+      const ata=[[0,0,0],[0,0,0],[0,0,0]],atb=[0,0,0],hits=[],ns=[];
+      for(const edge of group){
+        const [ia,ib]=EDGES[edge],da=ds[ia],db=ds[ib];
+        const t=clamp(da/(da-db),0,1),p=ps[ia].map((v,i)=>v+(ps[ib][i]-v)*t),n=gradient(p);
+        hits.push(p);ns.push(n);
+        const q=n[0]*p[0]+n[1]*p[1]+n[2]*p[2];
+        for(let r=0;r<3;r++){atb[r]+=n[r]*q;for(let c=0;c<3;c++)ata[r][c]+=n[r]*n[c];}
+      }
+      if(!hits.length)continue;
+      const centre=point(x+.5,y+.5,z+.5),lambda=1e-5;
+      for(let i=0;i<3;i++){ata[i][i]+=lambda;atb[i]+=lambda*centre[i];}
+      const solved=solve3(ata,atb)??hits.reduce((acc,p)=>acc.map((v,i)=>v+p[i]/hits.length),[0,0,0]);
+      const vertex=solved.map((v,i)=>clamp(v,min[i]+[x,y,z][i]*step[i],min[i]+([x,y,z][i]+1)*step[i]));
+      const normal=ns.reduce((acc,n)=>acc.map((v,i)=>v+n[i]),[0,0,0]),nl=Math.hypot(...normal)||1;
+      const id=positions.length/3;positions.push(...vertex);normals.push(...normal.map(n=>n/nl));
+      for(const edge of group)cellEdgeIds[cellIndex*12+edge]=id;
+    }
   }
   const indices=[];
   const quad=(a,b,c,d,flip)=>{if([a,b,c,d].some(v=>v<0))return;if(flip)indices.push(a,c,b,a,d,c);else indices.push(a,b,c,a,c,d);};
-  // Each sign-changing lattice edge owns one quad between its four incident cells.
+  // Each sign-changing lattice edge owns one quad between its four incident
+  // cell-component vertices. Edge IDs are local to each incident cell.
   for(let z=1;z<nz;z++)for(let y=1;y<ny;y++)for(let x=0;x<nx;x++){
     const a=values[key(x,y,z,sx,sy)],b=values[key(x+1,y,z,sx,sy)];if((a<0)===(b<0))continue;
-    quad(cellIds[key(x,y-1,z-1,nx,ny)],cellIds[key(x,y,z-1,nx,ny)],cellIds[key(x,y,z,nx,ny)],cellIds[key(x,y-1,z,nx,ny)],a>=0);
+    quad(
+      cellEdgeIds[key(x,y-1,z-1,nx,ny)*12+7],
+      cellEdgeIds[key(x,y,z-1,nx,ny)*12+4],
+      cellEdgeIds[key(x,y,z,nx,ny)*12+0],
+      cellEdgeIds[key(x,y-1,z,nx,ny)*12+2],a>=0
+    );
   }
   for(let z=1;z<nz;z++)for(let y=0;y<ny;y++)for(let x=1;x<nx;x++){
     const a=values[key(x,y,z,sx,sy)],b=values[key(x,y+1,z,sx,sy)];if((a<0)===(b<0))continue;
-    quad(cellIds[key(x-1,y,z-1,nx,ny)],cellIds[key(x-1,y,z,nx,ny)],cellIds[key(x,y,z,nx,ny)],cellIds[key(x,y,z-1,nx,ny)],a>=0);
+    quad(
+      cellEdgeIds[key(x-1,y,z-1,nx,ny)*12+5],
+      cellEdgeIds[key(x-1,y,z,nx,ny)*12+1],
+      cellEdgeIds[key(x,y,z,nx,ny)*12+3],
+      cellEdgeIds[key(x,y,z-1,nx,ny)*12+7],a>=0
+    );
   }
   for(let z=0;z<nz;z++)for(let y=1;y<ny;y++)for(let x=1;x<nx;x++){
     const a=values[key(x,y,z,sx,sy)],b=values[key(x,y,z+1,sx,sy)];if((a<0)===(b<0))continue;
-    quad(cellIds[key(x-1,y-1,z,nx,ny)],cellIds[key(x,y-1,z,nx,ny)],cellIds[key(x,y,z,nx,ny)],cellIds[key(x-1,y,z,nx,ny)],a>=0);
+    quad(
+      cellEdgeIds[key(x-1,y-1,z,nx,ny)*12+10],
+      cellEdgeIds[key(x,y-1,z,nx,ny)*12+11],
+      cellEdgeIds[key(x,y,z,nx,ny)*12+8],
+      cellEdgeIds[key(x-1,y,z,nx,ny)*12+9],a>=0
+    );
   }
   return {positions:new Float32Array(positions),normals:new Float32Array(normals),indices:new Uint32Array(indices),vertexCount:positions.length/3,triangleCount:indices.length/3,bounds:{min:[...min],max:[...max]},cells:[nx,ny,nz]};
 }
