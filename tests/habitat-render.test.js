@@ -21,7 +21,9 @@ test('habitat browser module parses and initializes every fish before rendering'
 test('population control defaults to 10–200 while retaining saved bounds for other sliders',()=>{
  assert.match(html,/id="population" type="range" min="10" max="200" step="10" value="150"/);
  assert.match(html,/id="population-min">10 CREATURES/);
- assert.match(script,/delete savedSliderBounds\.population/);
+ assert.match(script,/const POPULATION_RANGE_VERSION_KEY='mocean\.populationRange\.v1'/);
+ assert.match(script,/if\(populationRangeVersion!=='10-200'\)/);
+ assert.match(script,/localStorage\.setItem\(POPULATION_RANGE_VERSION_KEY,'10-200'\)/);
  assert.match(script,/setPopulation\(populationSlider\.value\)/);
 });
 
