@@ -144,15 +144,18 @@ The experiment should use local interactions, not a shared waypoint:
 
 First establish a reproducible single-fish baseline, then profile 10, 25, 50 and 100 agents. Keep the experiment isolated and compare group behaviour and frame time against the single-fish build. Do not introduce schooling infrastructure into the production fish until the experiment demonstrates value.
 
-## Phase 6 · Environment and water surface
+## Phase 6 · 3D environment, seabed and water
 
-**Status:** Deferred until locomotion and autonomous movement are convincing.
+**Status:** Authorised · in progress on `phase-6-environment` (11 November 2026). The user expanded the original environment/water scope to include open-source 3D assets, complex spatial terrain, underwater lighting and post-processing. See [PHASE_6.md](PHASE_6.md) for the implementation plan, audit evidence and acceptance criteria.
 
-- [ ] P6-1 Sparse bubbles with buoyant rise and size variation.
-- [ ] P6-2 Tiny plankton/detritus with layered drift and parallax.
-- [ ] P6-3 Occasional drifting objects with passive motion.
-- [ ] P6-4 Water surface with travelling ripples and swells.
-- [ ] P6-5 Wind field and intermittent surface chop.
+- [x] P6-0 Audit current renderer, simulation/terrain coupling and delivery constraints. (Assistant complete; evidence in `PHASE_6.md`.)
+- [ ] P6-1 Renderer architecture and compatibility spike.
+- [ ] P6-2 Spatial seabed: elevations, rock formations, shelves, overhangs, arches, crevasses, caves and sand channels.
+- [ ] P6-3 Verified open-source environment assets and optimised materials.
+- [ ] P6-4 Water depth/absorption, haze, light shafts, plankton/particles, bubbles and surface motion.
+- [ ] P6-5 Underwater lighting, shadows and restrained bloom/post-processing.
+- [ ] P6-6 Simulation-driven creature rendering and terrain-contact integration.
+- [ ] P6-7 Regression, performance, visual evidence and user acceptance.
 
 ## Phase 7 · Integration and polish
 
