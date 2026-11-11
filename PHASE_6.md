@@ -129,3 +129,28 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 **Assistant completion:** pending subgoal evidence.  
 **User confirmation:** pending independent review.  
 **Phase 7:** not authorised by this document.
+
+## Volumetric terrain and Osmocean model port · 12 November 2026
+
+**Active implementation branch:** `phase-6-voxel-and-osmocean-models`.
+
+### Volumetric terrain prototype
+
+- Added `src/phase6/dual-contouring.js`: renderer-independent dual contouring over signed-distance fields. Positive values represent open water; negative values represent solid.
+- The extractor builds one QEF-constrained vertex per mixed-sign voxel cell, estimates surface normals from the field gradient, and connects neighbouring cell vertices across sign-changing lattice edges.
+- Added tests for finite sphere extraction, hollow/cave-like fields, valid indices and invalid density/bounds input.
+- Added `voxel-terrain-study.html`, a standalone Three.js study with multi-scale seabed relief and carved cave volumes. This is deliberately isolated from the live habitat while topology, normals, seams and performance are evaluated.
+- Current limitations: no chunk streaming, worker scheduling, LOD transitions, collision integration, or validation against a complete watertight reference mesh. Boundary-edge handling and QEF error need adversarial testing before production use.
+
+### Osmocean animated model port
+
+- Audited `gemquota/osmocean` and its `docs/FISH-MODELS-AND-SOCIAL-ECOLOGY.md`. Its animated marine model tier uses the Quaternius Animated Fish Bundle from pinned upstream commit `f42095c120c29a892c0c221bdc8357ac982ccfca`, recorded as CC0 1.0.
+- Added a Pages build step to fetch that pinned source and stage 15 selected GLBs plus the original licence under `assets/models/osmocean/species/`.
+- Added `src/phase6/osmocean-marine-models.js`, a Three.js GLTFLoader/SkeletonUtils adapter with cached loads, skeleton-safe instances, axis/scale normalization and per-instance AnimationMixer playback.
+- Added `osmocean-model-study.html` to inspect the selected model assets and embedded animation clips independently.
+- This first port covers bony fish / shark / sunfish representations only. It does not pretend fish meshes are suitable replacements for crabs, lobsters, rays, whales, turtles, jellyfish, eels or benthic invertebrates. Their existing species-specific renderers must remain until suitable models and animation rigs are sourced.
+- The model adapter is not yet connected to the 30-species Canvas renderer. The current habitat is Canvas 2D, so actual replacement requires the staged Three.js creature-render integration and live-state pose bridge described in P6-6. The study page is an asset/animation inspection step, not evidence that live creatures have been replaced.
+
+### Verification boundary
+
+No browser visual/performance verification has yet been recorded for either study page. No model replacement or terrain collision is considered complete. Existing `schooling.html` remains the regression baseline. Phase 6 remains in progress; no Phase 7 gate is implied.
