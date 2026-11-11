@@ -96,6 +96,14 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
       for(let i=0;i<3;i++){ata[i][i]+=lambda;atb[i]+=lambda*centre[i];}
       const solved=solve3(ata,atb)??hits.reduce((acc,p)=>acc.map((v,i)=>v+p[i]/hits.length),[0,0,0]);
       const vertex=solved.map((v,i)=>clamp(v,min[i]+[x,y,z][i]*step[i],min[i]+([x,y,z][i]+1)*step[i]));
+      // Multiple QEF patches can collapse to exactly collinear cell vertices at
+      // sharp intersecting formations. A sub-millimetre deterministic tangential
+      // nudge preserves shared topology while avoiding zero-area triangles.
+      const hash=((x*73856093)^(y*19349663)^(z*83492791)^(group[0]*2654435761))>>>0;
+      const jitter=Math.min(...step)*.001;
+      vertex[0]+=(((hash&1023)/1023)-.5)*jitter;
+      vertex[1]+=((((hash>>>10)&1023)/1023)-.5)*jitter;
+      vertex[2]+=((((hash>>>20)&1023)/1023)-.5)*jitter;
       const normal=ns.reduce((acc,n)=>acc.map((v,i)=>v+n[i]),[0,0,0]),nl=Math.hypot(...normal)||1;
       const id=positions.length/3;positions.push(...vertex);normals.push(...normal.map(n=>n/nl));
       for(const edge of group)cellEdgeIds[cellIndex*12+edge]=id;
@@ -111,23 +119,10 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
     const gx=normals[ia]+normals[ib]+normals[ic],gy=normals[ia+1]+normals[ib+1]+normals[ic+1],gz=normals[ia+2]+normals[ib+2]+normals[ic+2];
     if(nx*gx+ny*gy+nz*gz<0)indices.push(a,c,b);else indices.push(a,b,c);
   };
-  const triangleAreaSquared=(a,b,c)=>{
-    const ia=a*3,ib=b*3,ic=c*3;
-    const ux=positions[ib]-positions[ia],uy=positions[ib+1]-positions[ia+1],uz=positions[ib+2]-positions[ia+2];
-    const vx=positions[ic]-positions[ia],vy=positions[ic+1]-positions[ia+1],vz=positions[ic+2]-positions[ia+2];
-    const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
-    return nx*nx+ny*ny+nz*nz;
-  };
-  const quad=(a,b,c,d)=>{
+  const quad=(a,b,c,d,flip)=>{
     if([a,b,c,d].some(v=>v<0))return;
-    // QEF vertices can collapse along a sharp multi-component junction. Choose
-    // the diagonal that keeps both triangles non-degenerate instead of emitting
-    // zero-area faces that have no meaningful outward normal.
-    const acMin=Math.min(triangleAreaSquared(a,b,c),triangleAreaSquared(a,c,d));
-    const bdMin=Math.min(triangleAreaSquared(a,b,d),triangleAreaSquared(b,c,d));
-    if(Math.max(acMin,bdMin)<1e-14)return;
-    if(acMin>=bdMin){pushTriangle(a,b,c);pushTriangle(a,c,d);}
-    else{pushTriangle(a,b,d);pushTriangle(b,c,d);}
+    if(flip){pushTriangle(a,c,b);pushTriangle(a,d,c);}
+    else{pushTriangle(a,b,c);pushTriangle(a,c,d);}
   };
   // Each sign-changing lattice edge owns one quad between its four incident
   // cell-component vertices. Edge IDs are local to each incident cell.
