@@ -105,8 +105,10 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ### P6-7 · Verification and acceptance
 
-- [ ] Unit-test terrain determinism, geometry bounds, normals/indices and ground-contact consistency.
-- [ ] Run the full existing test suite and add renderer/terrain regression tests.
+- [x] Add deterministic signed-distance field tests, finite mesh/index checks, outward-winding and watertight sphere regression checks.
+- [x] Route live agent terrain contact through the same voxel density field used for mesh extraction; retain the sand-eel burrowing exception.
+- [x] Add live habitat renderer integration regression tests and voxel terrain contact tests.
+- [ ] Run the full existing test suite and inspect CI results.
 - [ ] Verify no startup freeze, blank canvas, WebGL context loss loop or animation fault.
 - [ ] Measure frame time and memory at representative populations on ordinary hardware.
 - [ ] Capture before/after visual evidence and inspect it at desktop and mobile aspect ratios.
@@ -118,8 +120,8 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 ## Known risks
 
-- The current Canvas renderer cannot display genuine 3D meshes, physically based materials, shadow maps or a bloom render pass. A renderer migration or carefully bounded staged integration is required.
-- The current `seabedHeight(x, z)` is a single-valued heightfield and cannot represent overhangs or caves. Ground contact and navigation need a terrain query that can represent more than one surface at a given horizontal coordinate.
+- The habitat keeps its established Canvas projection for coral, invertebrates and species without matching rigs. A transparent Three.js layer now composites animated fish GLBs over that view; cross-renderer depth ordering remains a known limitation.
+- The original `seabedHeight(x, z)` remains as the broad base profile, but the visible seabed is now extracted from a signed-distance volume. Creature contact uses the same volume field; full path planning through cave networks is not yet implemented.
 - A 30-species migration is a substantial compatibility task. Start with environment geometry and a small representative creature set; do not port all renderers in one untestable change.
 - Visual fidelity is not evidence of physical correctness. Keep simulation and rendering responsibilities separate.
 
@@ -134,23 +136,23 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 **Active implementation branch:** `phase-6-voxel-and-osmocean-models`.
 
-### Volumetric terrain prototype
+### Integrated volumetric terrain
 
-- Added `src/phase6/dual-contouring.js`: renderer-independent dual contouring over signed-distance fields. Positive values represent open water; negative values represent solid.
-- The extractor builds one QEF-constrained vertex per mixed-sign voxel cell, estimates surface normals from the field gradient, and connects neighbouring cell vertices across sign-changing lattice edges.
-- Added tests for finite sphere extraction, hollow/cave-like fields, valid indices and invalid density/bounds input.
-- Added `voxel-terrain-study.html`, a standalone Three.js study with multi-scale seabed relief and carved cave volumes. This is deliberately isolated from the live habitat while topology, normals, seams and performance are evaluated.
-- Current limitations: no chunk streaming, worker scheduling, LOD transitions, collision integration, or validation against a complete watertight reference mesh. Boundary-edge handling and QEF error need adversarial testing before production use.
+- Added `src/phase6/dual-contouring.js` with QEF-constrained cell vertices, gradient normals and shared-edge quads. Corrected winding on the X/Z edge families and added outward-normal plus watertight-sphere tests.
+- Added `src/phase6/voxel-field.js` as the common signed-distance source for the visible terrain and live creature contact. It combines the base seabed, connected limestone masses, two tunnel runs and a cave chamber.
+- Added `src/phase6/habitat-voxel-terrain.js`; the live `schooling.html` now projects the extracted volumetric mesh into its fixed-camera habitat canvas and caches the static raster between camera/viewport changes.
+- The same density field is attached to each school and queried after each simulation step. Fish and benthic creatures are pushed out of solid terrain with inward normal velocity removed; sand eels remain exempt so their existing burrowing behaviour survives.
+- The standalone `voxel-terrain-study.html` remains available for isolated inspection. The integrated habitat uses a single world mesh, not yet streamed chunks; worker generation and LOD remain future optimisation work.
 
-### Osmocean animated model port
+### Osmocean animated model integration
 
-- Audited `gemquota/osmocean` and its `docs/FISH-MODELS-AND-SOCIAL-ECOLOGY.md`. Its animated marine model tier uses the Quaternius Animated Fish Bundle from pinned upstream commit `f42095c120c29a892c0c221bdc8357ac982ccfca`, recorded as CC0 1.0.
-- Added a Pages build step to fetch that pinned source and stage 15 selected GLBs plus the original licence under `assets/models/osmocean/species/`.
-- Added `src/phase6/osmocean-marine-models.js`, a Three.js GLTFLoader/SkeletonUtils adapter with cached loads, skeleton-safe instances, axis/scale normalization and per-instance AnimationMixer playback.
-- Added `osmocean-model-study.html` to inspect the selected model assets and embedded animation clips independently.
-- This first port covers bony fish / shark / sunfish representations only. It does not pretend fish meshes are suitable replacements for crabs, lobsters, rays, whales, turtles, jellyfish, eels or benthic invertebrates. Their existing species-specific renderers must remain until suitable models and animation rigs are sourced.
-- The model adapter is not yet connected to the 30-species Canvas renderer. The current habitat is Canvas 2D, so actual replacement requires the staged Three.js creature-render integration and live-state pose bridge described in P6-6. The study page is an asset/animation inspection step, not evidence that live creatures have been replaced.
+- Audited the pinned Osmocean asset source `Vitexus/ishtaria-client@f42095c120c29a892c0c221bdc8357ac982ccfca`. Its Quaternius Animated Fish Bundle includes 35 low-poly animated fish GLBs and a CC0 licence.
+- The Pages build now stages the complete fish bundle and original licence under `assets/models/osmocean/species/`.
+- Added `src/phase6/osmocean-marine-models.js`: cached GLTF loading, skeleton-safe cloning, longest-axis normalisation, per-instance animation mixers and species-to-model mapping.
+- The live `schooling.html` now mounts a transparent Three.js overlay. Suitable fish models follow the simulation's live position and forward vector; animation playback speed is scaled by swimming speed. The procedural 2D fish remains visible until its GLB has loaded, then yields to the model.
+- The full fish bundle is inspectable through `osmocean-model-study.html`, which lists embedded animation clips for the imported models.
+- Schooling fish retain the light procedural renderer to avoid creating dozens of skeletal animation mixers for the densest shoal. Whale shark, mammals, rays, eels and crustaceans retain their dedicated renderers because the pinned Osmocean bundle does not contain equivalent suitable animated rigs. No animal is silently replaced with an unrelated fish.
 
 ### Verification boundary
 
-No browser visual/performance verification has yet been recorded for either study page. No model replacement or terrain collision is considered complete. Existing `schooling.html` remains the regression baseline. Phase 6 remains in progress; no Phase 7 gate is implied.
+The live habitat integration is implemented on the feature branch, but browser visual inspection, frame-time/memory profiling, and complete CI verification are still outstanding. The PR remains unmerged and undeployed pending those checks. Phase 6 remains in progress; no Phase 7 gate is implied.
