@@ -4,6 +4,16 @@ const normalAt=(field,x,y,z)=>{
  const h=.22,dx=field(x+h,y,z)-field(x-h,y,z),dy=field(x,y+h,z)-field(x,y-h,z),dz=field(x,y,z+h)-field(x,y,z-h),m=Math.hypot(dx,dy,dz)||1;
  return {x:dx/m,y:dy/m,z:dz/m};
 };
+const projectToSurface=(field,point)=>{
+ let {x,y,z}=point;
+ for(let i=0;i<3;i++){
+  const distance=field(x,y,z),normal=normalAt(field,x,y,z);
+  if(!Number.isFinite(distance)||Math.abs(distance)<.004)break;
+  const correction=clamp(distance,-.35,.35);
+  x-=normal.x*correction;y-=normal.y*correction;z-=normal.z*correction;
+ }
+ return {x,y,z,normal:normalAt(field,x,y,z)};
+};
 
 /** Find the upper solid-to-water crossing and its outward surface normal. */
 export function sampleTerrainTop(field,x,z,{minY=-14.2,maxY=-5.2,step=.34}={}){
@@ -13,8 +23,8 @@ export function sampleTerrainTop(field,x,z,{minY=-14.2,maxY=-5.2,step=.34}={}){
   if(previous<=0&&current>0){
    let low=previousY,high=currentY;
    for(let i=0;i<7;i++){const mid=(low+high)*.5;if(field(x,mid,z)<=0)low=mid;else high=mid;}
-   const surfaceY=(low+high)*.5,normal=normalAt(field,x,surfaceY,z);
-   if(normal.y>0.2)best={x,y:surfaceY,z,normal};
+   const surfaceY=(low+high)*.5,surface=projectToSurface(field,{x,y:surfaceY,z});
+   if(surface.normal.y>0.2)best=surface;
   }
   previousY=currentY;previous=current;
   if(currentY>=maxY)break;
@@ -33,8 +43,8 @@ function sampleWallCrossing(field,start,end,y,fixed,axis){
    for(let n=0;n<6;n++){const mid=(low+high)*.5,probe=field(axis==='x'?mid:fixed,y,axis==='x'?fixed:mid);if(probe<=0)low=mid;else high=mid;}
    const coordinate=(low+high)*.5;
    const px=axis==='x'?coordinate:fixed,pz=axis==='x'?fixed:coordinate;
-   const normal=normalAt(field,px,y,pz);
-   if(normal.y>=-.12&&normal.y<.68)return {x:px,y,z:pz,normal};
+   const surface=projectToSurface(field,{x:px,y,z:pz});
+   if(surface.normal.y>=-.12&&surface.normal.y<.68)return surface;
   }
   previous=current;previousValue=value;
  }
