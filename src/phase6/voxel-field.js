@@ -19,16 +19,25 @@ const smoothMin=(a,b,k)=>{
 export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,z)=>-8.65){
  const sx=worldSize.x/41,sz=worldSize.z/31;
  return (x,y,z)=>{
-  let solid=y-floorAt(x,z);
-  solid=smoothMin(solid,ellipsoid(x,y,z,-13*sx,-8.15,-5*sz,6.1*sx,2.1,4.8*sz),1.15);
-  solid=smoothMin(solid,ellipsoid(x,y,z,1*sx,-8.05,7*sz,7*sx,2.25,5*sz),1.25);
-  solid=smoothMin(solid,ellipsoid(x,y,z,15*sx,-8.35,-7*sz,4.8*sx,1.8,5.2*sz),.95);
-  solid=smoothMin(solid,ellipsoid(x,y,z,-2*sx,-8.25,-13*sz,5.2*sx,1.9,3*sz),.9);
-  const caveA=capsule(x,y,z,[-19*sx,-9.05,-5*sz],[-8*sx,-9.25,-5*sz],1.35);
-  const caveB=capsule(x,y,z,[2*sx,-9.25,7*sz],[14*sx,-9.35,7*sz],1.25);
-  const chamber=ellipsoid(x,y,z,-4*sx,-9.5,1*sz,2.15*sx,1.65,2.25*sz);
-  return Math.max(solid,-Math.min(caveA,caveB,chamber));
- };
+  const base=y-floorAt(x,z);
+  // No geological solid reaches above this conservative ceiling. Most fish
+  // swim higher, so their collision query can avoid all rock/cave SDF work.
+  if(y>-5.2)return base;
+  let solid=base;
+  const cx1=-13*sx,cz1=-5*sz;
+  if(Math.abs(x-cx1)<7.6*sx&&Math.abs(y+8.15)<3.6&&Math.abs(z-cz1)<6.3*sz)solid=smoothMin(solid,ellipsoid(x,y,z,cx1,-8.15,cz1,6.1*sx,2.1,4.8*sz),1.15);
+  const cx2=1*sx,cz2=7*sz;
+  if(Math.abs(x-cx2)<8.5*sx&&Math.abs(y+8.05)<3.6&&Math.abs(z-cz2)<6.5*sz)solid=smoothMin(solid,ellipsoid(x,y,z,cx2,-8.05,cz2,7*sx,2.25,5*sz),1.25);
+  const cx3=15*sx,cz3=-7*sz;
+  if(Math.abs(x-cx3)<6.1*sx&&Math.abs(y+8.35)<3.1&&Math.abs(z-cz3)<6.5*sz)solid=smoothMin(solid,ellipsoid(x,y,z,cx3,-8.35,cz3,4.8*sx,1.8,5.2*sz),.95);
+  const cx4=-2*sx,cz4=-13*sz;
+  if(Math.abs(x-cx4)<6.4*sx&&Math.abs(y+8.25)<3.1&&Math.abs(z-cz4)<4.2*sz)solid=smoothMin(solid,ellipsoid(x,y,z,cx4,-8.25,cz4,5.2*sx,1.9,3*sz),.9);
+  let cave=Infinity;
+  if(x>-21*sx&&x<-6*sx&&Math.abs(y+9.15)<1.9&&Math.abs(z+5*sz)<2.0)cave=Math.min(cave,capsule(x,y,z,[-19*sx,-9.05,-5*sz],[-8*sx,-9.25,-5*sz],1.35));
+  if(x>0&&x<16*sx&&Math.abs(y+9.3)<1.8&&Math.abs(z-7*sz)<1.9)cave=Math.min(cave,capsule(x,y,z,[2*sx,-9.25,7*sz],[14*sx,-9.35,7*sz],1.25));
+  if(Math.abs(x+4*sx)<3.0*sx&&Math.abs(y+9.5)<2.5&&Math.abs(z-1*sz)<3.1*sz)cave=Math.min(cave,ellipsoid(x,y,z,-4*sx,-9.5,1*sz,2.15*sx,1.65,2.25*sz));
+  return cave===Infinity?solid:Math.max(solid,-cave);
+ }
 }
 
 export function resolveVoxelTerrainContact(agent,field,{clearance=null,step=.075}={}){
