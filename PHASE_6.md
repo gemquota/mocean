@@ -52,14 +52,17 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 **Prototype started:** the isolated renderer spike now contains a seeded heightfield, irregular rock clusters and arch meshes. The arches are genuine 3D geometry with an open aperture, not painted cave symbols. This is scene-prototype geometry only; the live habitat's ground-contact model is unchanged.
 
 - [ ] Replace the simple analytic floor presentation with irregular 3D terrain at multiple elevations.
-- [ ] Extend the prototype to coherent shelves, overhangs, crevasses, caves and sand channels.
+- [x] Add seeded raised rock shelves with finite solid volume and queryable undersides.
+- [x] Add smooth, rotated, finite-length depressed sand channels and use the composed floor for the terrain mesh and feature placement.
+- [ ] Extend the prototype to coherent overhangs, crevasses with steeper walls, and larger connected cave systems.
 - [x] Add an initial renderer-independent signed-distance query for the seabed, ellipsoidal boulders and finite-depth hollow arch ribs (`src/phase6/spatial-query.js`).
 - [x] Return outward surface normals and feature identity; add a sphere-clearance helper for future contact checks.
+- [x] Add oriented box signed-distance queries for raised shelves, including top and underside clearance.
 - [ ] Validate query distances against the exact rendered mesh geometry, including faceted boulder geometry and arch transforms.
 - [x] Use deterministic generation/seeds for initial rock and arch placement (`src/phase6/terrain.js`).
 - [ ] Integrate spatial contact/navigation with benthic species, eels and sheltering creatures only after visual/query agreement is demonstrated.
 
-**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The current query uses an analytic seabed, ellipsoid approximations for rocks and a finite-depth half-torus approximation for arches. It is not yet used by the live simulation. The prototype now renders faceted sphere-based boulders using the same ellipsoidal scale parameters as the query. The query remains a smooth signed-distance approximation to the triangulated mesh, so final collision integration still requires a measured surface-error tolerance.
+**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The current query uses the same composed analytic floor as the rendered heightfield, ellipsoid approximations for rocks, oriented box volumes for shelves and a finite-depth half-torus approximation for arches. It is not yet used by the live simulation. The prototype now renders faceted sphere-based boulders using the same ellipsoidal scale parameters as the query. Raised shelves are rendered as instanced-shape box geometry (shared geometry/materials) and use matching oriented-box distance queries. The seabed heightfield and generated rock/arch placement both use the same smoothed crevasse depression function. The query remains a smooth signed-distance approximation to the triangulated mesh, so final collision integration still requires a measured surface-error tolerance.
 
 ### P6-3 · Open-source asset integration
 
