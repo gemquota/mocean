@@ -66,7 +66,8 @@ export function generateWaterParticles({
     throw new RangeError('Particle count must be a non-negative integer.');
   }
   for (const axis of ['X', 'Y', 'Z']) {
-    if (!(bounds['max' + axis] > bounds['min' + axis])) {
+    if (!Number.isFinite(bounds['min' + axis]) || !Number.isFinite(bounds['max' + axis])
+      || !(bounds['max' + axis] > bounds['min' + axis])) {
       throw new RangeError('Particle bounds must have positive extent on every axis.');
     }
   }
