@@ -9,6 +9,19 @@ const rotatedEllipsoid=(x,y,z,cx,cy,cz,rx,ry,rz,angle)=>{
  const c=Math.cos(angle),s=Math.sin(angle),dx=x-cx,dz=z-cz;
  return ellipsoid(dx*c-dz*s,y-cy,dx*s+dz*c,0,0,0,rx,ry,rz);
 };
+const superellipsoid=(x,y,z,cx,cy,cz,rx,ry,rz,p=3.2)=>{
+ const q=Math.pow(Math.abs((x-cx)/rx),p)+Math.pow(Math.abs((y-cy)/ry),p)+Math.pow(Math.abs((z-cz)/rz),p);
+ return (Math.pow(q,1/p)-1)*Math.min(rx,ry,rz);
+};
+const rotatedSuperellipsoid=(x,y,z,cx,cy,cz,rx,ry,rz,angle,p=3.2)=>{
+ const c=Math.cos(angle),s=Math.sin(angle),dx=x-cx,dz=z-cz;
+ return superellipsoid(dx*c-dz*s,y-cy,dx*s+dz*c,0,0,0,rx,ry,rz,p);
+};
+const rotatedBox=(x,y,z,cx,cy,cz,hx,hy,hz,angle,bevel=.12)=>{
+ const c=Math.cos(angle),s=Math.sin(angle),dx=x-cx,dz=z-cz;
+ const qx=Math.abs(dx*c-dz*s)-hx+bevel,qy=Math.abs(y-cy)-hy+bevel,qz=Math.abs(dx*s+dz*c)-hz+bevel;
+ return Math.hypot(Math.max(qx,0),Math.max(qy,0),Math.max(qz,0))+Math.min(Math.max(qx,qy,qz),0)-bevel;
+};
 const capsule=(x,y,z,a,b,r)=>{
  const pax=x-a[0],pay=y-a[1],paz=z-a[2],bax=b[0]-a[0],bay=b[1]-a[1],baz=b[2]-a[2];
  const h=clamp((pax*bax+pay*bay+paz*baz)/(bax*bax+bay*bay+baz*baz||1),0,1);
@@ -42,6 +55,27 @@ const CAVE_TUNNELS=[
  [[7,-9.25,7],[7,-9.0,12],.88],
  [[7,-9.0,12],[12,-9.05,14],.78],
  [[-4,-9.5,1],[-1,-9.35,4],.85]
+];
+const ANGULAR_ROCKS=[
+ [-17.5,-8.0,-14.2,2.8,1.9,2.5,-.38,3.5],
+ [-10.5,-8.1,8.2,2.5,1.7,2.0,.22,3.8],
+ [1.8,-8.0,-16.8,2.4,1.8,2.3,-.55,3.3],
+ [15.6,-8.15,9.0,3.0,1.85,2.3,.42,3.6],
+ [18.0,-8.35,-10.5,2.2,1.5,2.1,-.2,3.8],
+ [-2.0,-8.2,17.0,2.3,1.55,2.4,.5,3.4],
+ [-19.0,-8.3,10.8,2.0,1.45,2.0,-.3,3.7],
+ [8.2,-8.0,0.5,2.1,1.65,1.8,.7,3.4]
+];
+const RAVINES=[
+ // Deep, open-sided trenches cut into the reef, not shallow colour channels.
+ [-6.8,-9.55,-7.0,2.15,3.25,12.5,.28],
+ [11.5,-9.55,-2.0,1.9,3.2,11.5,-.52],
+ [-17.0,-9.55,8.0,1.65,3.15,8.8,.08]
+];
+const CAVE_CHAMBERS=[
+ [-13,-9.65,-5,2.25,1.55,2.35],
+ [8,-9.55,9,2.55,1.72,2.45],
+ [17,-9.65,-9,2.15,1.48,2.2]
 ];
 const RIDGES=[
  // Long, broken reef spines with irregular shoulders and sloping flanks.
@@ -91,12 +125,28 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
    solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx*sx,cy,cz*sz,rx*sx,ry,rz*sz,angle),.42);
   }
 
+  // Faceted, blocky superellipsoid outcrops give the reef angular shoulders.
+  for(const [rx0,cy,rz0,rx,ry,rz,angle,p] of ANGULAR_ROCKS){
+   const cx=rx0*sx,cz=rz0*sz;
+   if(Math.abs(x-cx)>rx*sx+1||Math.abs(z-cz)>rz*sz+1||Math.abs(y-cy)>ry+1)continue;
+   solid=smoothMin(solid,rotatedSuperellipsoid(x,y,z,cx,cy,cz,rx*sx,ry,rz*sz,angle,p),.18);
+  }
+
   // Embedded boulders and talus. Spatial bounds avoid evaluating every primitive
   // for every voxel sample.
   for(const [rockX,cy,rockZ,radiusX,radiusY,radiusZ,angle] of ROCKS){
    const cx=rockX*sx,cz=rockZ*sz;
    if(Math.abs(x-cx)>radiusX*sx+1||Math.abs(z-cz)>radiusZ*sz+1||Math.abs(y-cy)>radiusY+1)continue;
    solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx,cy,cz,radiusX*sx,radiusY,radiusZ*sz,angle),.38);
+  }
+
+  // Carve three deep ravines through the seabed volume. Their flat-ish floors,
+  // abrupt shoulders and steep walls create distinct depth corridors.
+  for(const [cx,cy,cz,hx,hy,hz,angle] of RAVINES){
+   const px=cx*sx,pz=cz*sz;
+   if(Math.abs(x-px)>hx*sx+1||Math.abs(z-pz)>hz*sz+1||Math.abs(y-cy)>hy+1)continue;
+   const cut=rotatedBox(x,y,z,px,cy,pz,hx*sx,hy,hz*sz,angle,.16);
+   solid=Math.max(solid,-cut);
   }
 
   // Fine geological breakup is supplied by the nested rock and ridge forms.
@@ -113,6 +163,13 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
    cave=Math.min(cave,capsule(x,y,z,a,b,r));
   }
   if(Math.abs(x+4*sx)<3.2*sx&&Math.abs(y+9.5)<2.5&&Math.abs(z-1*sz)<3.2*sz)cave=Math.min(cave,ellipsoid(x,y,z,-4*sx,-9.5,1*sz,2.15*sx,1.65,2.25*sz));
+  // Three enlarged chambers with multiple narrow connections. Each remains a
+  // genuine void in the same solid field, so the roof and walls are meshed.
+  for(const [cx,cy,cz,rx,ry,rz] of CAVE_CHAMBERS){
+   const px=cx*sx,pz=cz*sz;
+   if(Math.abs(x-px)>rx*sx+1||Math.abs(y-cy)>ry+1||Math.abs(z-pz)>rz*sz+1)continue;
+   cave=Math.min(cave,ellipsoid(x,y,z,px,cy,pz,rx*sx,ry,rz*sz));
+  }
   if(cave===Infinity)return solid;
   return Math.max(solid,-cave);
  }
