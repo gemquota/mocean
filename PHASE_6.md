@@ -63,6 +63,10 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ### P6-3 · Open-source asset integration
 
+**Source shortlist started:** `ASSET_SOURCES.md` records Poly Haven's CC0 licence and four reviewed rock/cliff candidates, including triangle counts and download-size concerns. No binary asset has been downloaded or integrated yet.
+
+- [x] Identify a preferred CC0 source and verify its redistribution terms (`https://polyhaven.com/license`).
+- [x] Record initial model/texture candidates and reject raw assets that exceed a sensible browser budget (`ASSET_SOURCES.md`).
 - [ ] Source suitable rocks, seabed materials, coral/environment props and other useful models from repositories with verified redistribution terms.
 - [ ] Prefer CC0 assets where quality is appropriate; document each asset's origin and licence.
 - [ ] Optimise meshes, textures, material variants and texture sizes for browser delivery.
