@@ -77,8 +77,13 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ### P6-4 · Water and suspended matter
 
-- [ ] Add depth-dependent colour absorption, haze and distance attenuation.
-- [ ] Add restrained volumetric-looking light shafts, drifting particulate/plankton and occasional bubbles.
+**Prototype started:** `src/phase6/water.js` provides per-channel Beer-Lambert transmittance and a scattering-colour blend; the spike uses the resulting blue-green attenuation colour for distance fog. A seeded 260-point suspended-particle field drifts slowly without reading or modifying simulation state. This is an approximation, not volumetric light transport or depth-correct per-fragment absorption.
+
+- [x] Add a deterministic per-channel absorption function and water-scattering colour blend (`src/phase6/water.js`).
+- [x] Apply a restrained depth-attenuation fog colour in the isolated WebGL spike.
+- [x] Add a bounded, seeded suspended-particle field with subtle drift and no simulation coupling.
+- [ ] Add true depth-aware per-fragment absorption and distance attenuation.
+- [ ] Add restrained volumetric-looking light shafts and occasional bubbles.
 - [ ] Add surface ripples/swell and intermittent chop where visible in the fixed camera.
 - [ ] Preserve the existing plankton layer's movement character while integrating it into the new depth model.
 
