@@ -52,8 +52,8 @@ test('heightfield rejects invalid geometry budgets and missing floor function', 
 
 test('terrain study browser module parses before deployment', () => {
   const html = readFileSync(new URL('../phase6-spike.html', import.meta.url), 'utf8');
-  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
   assert.ok(match, 'module script exists');
-  const withoutImports = match[1].replace(/^import .*;\\s*$/gm, '');
+  const withoutImports = match[1].replace(/^import .*;\s*$/gm, '');
   assert.doesNotThrow(() => new vm.Script(withoutImports, { filename: 'phase6-spike.html' }));
 });
