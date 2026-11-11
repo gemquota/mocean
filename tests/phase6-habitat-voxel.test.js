@@ -15,7 +15,8 @@ test('habitat voxel field contains solid seabed, open water and connected cave v
   const vx=terrain.mesh.positions[c]-terrain.mesh.positions[a],vy=terrain.mesh.positions[c+1]-terrain.mesh.positions[a+1],vz=terrain.mesh.positions[c+2]-terrain.mesh.positions[a+2];
   const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
   const gx=terrain.mesh.normals[a]+terrain.mesh.normals[b]+terrain.mesh.normals[c],gy=terrain.mesh.normals[a+1]+terrain.mesh.normals[b+1]+terrain.mesh.normals[c+1],gz=terrain.mesh.normals[a+2]+terrain.mesh.normals[b+2]+terrain.mesh.normals[c+2];
-  assert.ok(nx*gx+ny*gy+nz*gz>0,'terrain triangles must face outward');
+  const alignment=nx*gx+ny*gy+nz*gz;
+  assert.ok(alignment>0, 'terrain triangles must face outward; alignment='+alignment+' ids='+ids.join(',')+' centre='+[(terrain.mesh.positions[a]+terrain.mesh.positions[b]+terrain.mesh.positions[c])/3,(terrain.mesh.positions[a+1]+terrain.mesh.positions[b+1]+terrain.mesh.positions[c+1])/3,(terrain.mesh.positions[a+2]+terrain.mesh.positions[b+2]+terrain.mesh.positions[c+2])/3].join(','));
   for(const [u,v] of [[ids[0],ids[1]],[ids[1],ids[2]],[ids[2],ids[0]]]){const key=u<v?u+':'+v:v+':'+u;edgeUse.set(key,(edgeUse.get(key)||0)+1);}
  }
  assert.ok([...edgeUse.values()].every(count=>count<=2),'terrain must not contain non-manifold edges');
