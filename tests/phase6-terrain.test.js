@@ -13,8 +13,8 @@ test('terrain features remain within configured horizontal bounds', () => {
   for(const item of features.rocks){
     assert.ok(item.x-item.radius>=bounds.minX);
     assert.ok(item.x+item.radius<=bounds.maxX);
-    assert.ok(item.z-item.radius>=bounds.minZ);
-    assert.ok(item.z+item.radius<=bounds.maxZ);
+    assert.ok(item.z-item.depth>=bounds.minZ);
+    assert.ok(item.z+item.depth<=bounds.maxZ);
     assert.ok(item.radius>0&&item.height>0&&item.depth>0);
   }
   for(const item of features.arches){
