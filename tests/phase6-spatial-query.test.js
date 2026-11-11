@@ -27,10 +27,13 @@ test('arch passage remains open while the arch rib is solid', () => {
   assert.equal(hasTerrainClearance({ x: 0, y: -9.5, z: 0 }, 0.5, { features, floorAt }), true);
 });
 
-test('arch query respects finite depth and rotation', () => {
+test('arch query respects finite depth and arbitrary horizontal rotation', () => {
   const features = { rocks: [], arches: [{ ...arch, rotation: Math.PI / 3 }] };
   const inside = sampleSpatialTerrain({ x: 0, y: -9.5, z: 0 }, { features, floorAt });
-  const outsideDepth = sampleSpatialTerrain({ x: -2.6, y: -6, z: 4 }, { features, floorAt });
+  const outsideDepth = sampleSpatialTerrain(
+    { x: 1.9052558883, y: -5.3, z: 1.1 },
+    { features, floorAt }
+  );
   assert.ok(inside.distance > 0);
   assert.ok(outsideDepth.distance > 0);
 });
@@ -47,6 +50,13 @@ test('ellipsoidal boulder contributes a solid obstacle and outward normal', () =
   assert.ok(inside.distance < 0);
   assert.ok(above.distance > 0);
   assert.ok(above.normal.y > 0.95);
+});
+
+test('surface normal follows a sloped seabed rather than assuming world-up', () => {
+  const slopedFloor = (x) => -10 + x * 0.25;
+  const sample = sampleSpatialTerrain({ x: 0, y: -9, z: 0 }, { floorAt: slopedFloor });
+  assert.ok(sample.normal.x < -0.2);
+  assert.ok(sample.normal.y > 0.95);
 });
 
 test('terrain query returns finite unit normals and validates inputs', () => {
