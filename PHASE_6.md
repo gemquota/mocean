@@ -45,14 +45,16 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - [ ] Establish a reproducible baseline for startup time, frame time, memory/geometry budget and creature counts.
 - [x] Keep all work isolated on this branch; the existing live habitat entry point remains unchanged.
 
-**Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield plus low-poly rock masses with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `tests/phase6-renderer.test.js` covers camera projection, capability detection and renderer lifecycle. Automated test status is pending; browser visual verification has not yet been performed.
+**Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield, irregular rock clusters and half-ring arch formations with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `src/phase6/terrain.js` generates seeded, bounded rock/arch placements and exposes a preliminary arch-aperture query. `tests/phase6-renderer.test.js` and `tests/phase6-terrain.test.js` cover camera projection, capability detection, renderer lifecycle, deterministic layout and feature bounds. GitHub Actions passed the core test suite on commits `23b5289` and later branch commits through `cf9bd36`. Browser visual verification and performance profiling have not yet been performed.
 
 ### P6-2 · Spatial seabed and terrain
 
+**Prototype started:** the isolated renderer spike now contains a seeded heightfield, irregular rock clusters and arch meshes. The arches are genuine 3D geometry with an open aperture, not painted cave symbols. This is scene-prototype geometry only; the live habitat's ground-contact model is unchanged.
+
 - [ ] Replace the simple analytic floor presentation with irregular 3D terrain at multiple elevations.
-- [ ] Add coherent rock formations, shelves, overhangs, arches, crevasses, caves and sand channels.
-- [ ] Keep collision/ground-contact queries consistent with visible terrain. A visual cave must not be solid floor in the simulation, and vice versa.
-- [ ] Use deterministic generation/seeds so tests and visual comparisons are reproducible.
+- [ ] Extend the prototype to coherent shelves, overhangs, crevasses, caves and sand channels.
+- [ ] Design a spatial surface/obstacle query that agrees with visible terrain. A visual cave must not be solid floor in the simulation, and vice versa.
+- [x] Use deterministic generation/seeds for initial rock and arch placement (`src/phase6/terrain.js`).
 - [ ] Ensure benthic species, eels and sheltering creatures still interact plausibly with the new terrain.
 
 ### P6-3 · Open-source asset integration
