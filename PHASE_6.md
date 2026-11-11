@@ -59,7 +59,7 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - [x] Use deterministic generation/seeds for initial rock and arch placement (`src/phase6/terrain.js`).
 - [ ] Integrate spatial contact/navigation with benthic species, eels and sheltering creatures only after visual/query agreement is demonstrated.
 
-**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The current query uses an analytic seabed, ellipsoid approximations for rocks and a finite-depth half-torus approximation for arches. It is not yet used by the live simulation. The current rendered dodecahedron boulders are not identical to the ellipsoid query primitive; this mismatch must be resolved before collision integration.
+**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The current query uses an analytic seabed, ellipsoid approximations for rocks and a finite-depth half-torus approximation for arches. It is not yet used by the live simulation. The prototype now renders faceted sphere-based boulders using the same ellipsoidal scale parameters as the query. The query remains a smooth signed-distance approximation to the triangulated mesh, so final collision integration still requires a measured surface-error tolerance.
 
 ### P6-3 · Open-source asset integration
 
