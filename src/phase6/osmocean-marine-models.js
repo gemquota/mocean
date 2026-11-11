@@ -8,10 +8,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 
 export const MARINE_MODEL_BY_SPECIES = Object.freeze({
-  fish:'moorish_idol', schoolFish:'clownfish', clownfish:'clownfish',
+  fish:'blue_goldfish', schoolFish:'tetra', clownfish:'clownfish',
   parrotfish:'parrot_fish', blueTang:'blue_tang', angelfish:'butterfly_fish',
   butterflyfish:'butterfly_fish', grouper:'coral_grouper', moorishIdol:'moorish_idol',
-  barracuda:'swordfish', marlin:'swordfish', tuna:'tuna', wobbegong:'shark',
+  barracuda:'red_snapper', marlin:'swordfish', tuna:'tuna', wobbegong:'shark',
   shark:'shark', whaleShark:'shark', mola:'sunfish'
 });
 export const MARINE_MODEL_IDS = Object.freeze([...new Set(Object.values(MARINE_MODEL_BY_SPECIES))]);
