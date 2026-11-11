@@ -6,7 +6,7 @@ export function createHabitatVoxelTerrain(worldSize={x:41,y:15.5,z:31}){
  const halfX=worldSize.x*.5+4,halfZ=worldSize.z*.5+4;
  const minY=-8.9-worldSize.y*.42,maxY=-8.9+worldSize.y*.28;
  const field=createHabitatVoxelField(worldSize,seabedHeight);
- const nx=Math.max(64,Math.round(worldSize.x*1.6)),nz=Math.max(48,Math.round(worldSize.z*1.65)),ny=26;
+ const nx=Math.max(82,Math.round(worldSize.x*2)),nz=Math.max(64,Math.round(worldSize.z*2.05)),ny=32;
  const mesh=buildDualContourSurface({
   min:[-halfX,minY,-halfZ],max:[halfX,maxY,halfZ],
   cells:[nx,ny,nz],sampleDistance:field
