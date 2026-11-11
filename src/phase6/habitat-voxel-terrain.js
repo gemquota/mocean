@@ -1,53 +1,6 @@
-import { buildDualContourSurface, smoothUnion } from './dual-contouring.js';
+import { buildDualContourSurface } from './dual-contouring.js';
+import { createHabitatVoxelField } from './voxel-field.js';
 import { seabedHeight } from '../schooling.js';
-
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const ellipsoid=(x,y,z,cx,cy,cz,rx,ry,rz)=>{
- const k0=Math.hypot((x-cx)/rx,(y-cy)/ry,(z-cz)/rz);
- if(k0<1e-9)return -Math.min(rx,ry,rz);
- const k1=Math.hypot((x-cx)/(rx*rx),(y-cy)/(ry*ry),(z-cz)/(rz*rz));
- return k0*(k0-1)/k1;
-};
-const capsule=(x,y,z,a,b,r)=>{
- const pax=x-a[0],pay=y-a[1],paz=z-a[2],bax=b[0]-a[0],bay=b[1]-a[1],baz=b[2]-a[2];
- const h=clamp((pax*bax+pay*bay+paz*baz)/(bax*bax+bay*bay+baz*baz||1),0,1);
- return Math.hypot(pax-bax*h,pay-bay*h,paz-baz*h)-r;
-};
-
-export function createHabitatVoxelTerrain(worldSize={x:41,y:15.5,z:31}){
- const halfX=worldSize.x*.5+4,halfZ=worldSize.z*.5+4;
- const floorAt=seabedHeight;
- const minY=-8.9-worldSize.y*.42,maxY=-8.9+worldSize.y*.28;
- const field=(x,y,z)=>{
-  let solid=y-floorAt(x,z);
-  // Broad connected limestone masses create real ledges and overhanging shoulders.
-  solid=smoothUnion(solid,ellipsoid(x,y,z,-13,-8.15,-5,6.1,2.1,4.8),1.15);
-  solid=smoothUnion(solid,ellipsoid(x,y,z,1,-8.05,7,7.0,2.25,5.0),1.25);
-  solid=smoothUnion(solid,ellipsoid(x,y,z,15,-8.35,-7,4.8,1.8,5.2),.95);
-  solid=smoothUnion(solid,ellipsoid(x,y,z,-2,-8.25,-13,5.2,1.9,3.0),.9);
-  // Subtract connected tunnels and chambers from the solid volume.
-  const caveA=capsule(x,y,z,[-19,-9.05,-5],[-8,-9.25,-5],1.35);
-  const caveB=capsule(x,y,z,[2,-9.25,7],[14,-9.35,7],1.25);
-  const chamber=ellipsoid(x,y,z,-4,-9.5,1,2.15,1.65,2.25);
-  const cave=Math.min(caveA,caveB,chamber);
-  return Math.max(solid,-cave);
- };
- const nx=Math.max(64,Math.round(worldSize.x*1.6)),nz=Math.max(48,Math.round(worldSize.z*1.65)),ny=26;
- const mesh=buildDualContourSurface({
-  min:[-halfX,minY,-halfZ],max:[halfX,maxY,halfZ],
-  cells:[nx,ny,nz],sampleDistance:field
- });
- return {mesh,field,worldSize:{...worldSize},stats:{vertices:mesh.vertexCount,triangles:mesh.triangleCount,cells:mesh.cells}};
-}
-
-let terrainCache=null,projectionCache=null;
-function shade(normal,position){
- const up=clamp(normal[1],0,1),light=Math.max(0,normal[0]*-.28+normal[1]*.82+normal[2]*.49);
- const sediment=clamp((up-.68)*2.6,0,1),height=clamp((position[1]+11.5)/5,0,1);
- const rock=[42,65,58],sand=[126,119,91],deep=[24,39,38];
- const base=rock.map((v,i)=>v*(1-sediment)+sand[i]*sediment);
- return 'rgb('+base.map((v,i)=>Math.round((v*(.68+light*.38)+deep[i]*.12)*(0.92+height*.08))).join(',')+')';
-}
 
 /** Draw the true volumetric seabed into the habitat's existing fixed-camera canvas. */
 export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize){
