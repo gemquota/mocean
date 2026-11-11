@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createTerrainFloor } from '../src/phase6/terrain.js';
 import { hasTerrainClearance, sampleSpatialTerrain } from '../src/phase6/spatial-query.js';
 
 const floorAt = () => -10;
@@ -50,6 +51,43 @@ test('ellipsoidal boulder contributes a solid obstacle and outward normal', () =
   assert.ok(inside.distance < 0);
   assert.ok(above.distance > 0);
   assert.ok(above.normal.y > 0.95);
+});
+
+test('raised shelf has a solid top and underside with open water beneath it', () => {
+  const shelf = {
+    id: 'shelf-a', x: 0, y: -6, z: 0,
+    width: 8, height: 1, depth: 4, rotation: Math.PI / 4
+  };
+  const features = { rocks: [], arches: [], shelves: [shelf] };
+  const below = sampleSpatialTerrain({ x: 0, y: -8, z: 0 }, { features, floorAt });
+  const solid = sampleSpatialTerrain({ x: 0, y: -6, z: 0 }, { features, floorAt });
+  const above = sampleSpatialTerrain({ x: 0, y: -4, z: 0 }, { features, floorAt });
+  assert.ok(below.distance > 0);
+  assert.equal(solid.featureId, 'shelf-a');
+  assert.equal(solid.featureType, 'shelf');
+  assert.ok(solid.distance < 0);
+  assert.ok(above.distance > 0);
+  assert.ok(hasTerrainClearance({ x: 0, y: -8, z: 0 }, 1, { features, floorAt }));
+});
+
+test('composed channel floor is the same surface used by spatial queries', () => {
+  const features = {
+    rocks: [], arches: [], shelves: [],
+    crevasses: [{
+      id: 'channel-a', x: 0, z: 0, length: 20, width: 4,
+      depth: 2, rotation: 0
+    }]
+  };
+  const channelFloor = createTerrainFloor(floorAt, features);
+  const centre = sampleSpatialTerrain({ x: 0, y: -11, z: 0 }, {
+    features, floorAt: channelFloor
+  });
+  const shoulder = sampleSpatialTerrain({ x: 0, y: -9, z: 2.5 }, {
+    features, floorAt: channelFloor
+  });
+  assert.ok(centre.distance < 0);
+  assert.ok(shoulder.distance > 0);
+  assert.equal(centre.featureType, 'seabed');
 });
 
 test('surface normal follows a sloped seabed rather than assuming world-up', () => {
