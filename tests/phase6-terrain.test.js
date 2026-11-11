@@ -110,7 +110,7 @@ test('terrain feature bounds include rock, arch, shelf and channel extents', () 
     crevasses: [{ x: -8, z: 0, length: 6, width: 2, rotation: 0 }]
   };
   assert.deepEqual(terrainFeatureBounds(features), {
-    minX: -11, maxX: 10, minZ: -2, maxZ: 2
+    minX: -11, maxX: 10, minZ: -1, maxZ: 1
   });
   assert.equal(terrainFeatureBounds({ rocks: [], arches: [], shelves: [], crevasses: [] }), null);
 });
