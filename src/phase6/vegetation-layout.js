@@ -13,7 +13,7 @@ export function sampleTerrainTop(field,x,z,{minY=-14.2,maxY=-5.2,step=.34}={}){
    let low=previousY,high=currentY;
    for(let i=0;i<7;i++){const mid=(low+high)*.5;if(field(x,mid,z)<=0)low=mid;else high=mid;}
    const surfaceY=(low+high)*.5,surface={x,y:surfaceY,z,normal:normalAt(field,x,surfaceY,z)};
-   if(surface.normal.y>0.2)best=surface;
+   if(surface.normal.y>0.2&&Math.abs(field(surface.x,surface.y,surface.z))<.12)best=surface;
   }
   previousY=currentY;previous=current;
   if(currentY>=maxY)break;
@@ -33,7 +33,7 @@ function sampleWallCrossing(field,start,end,y,fixed,axis){
    const coordinate=(low+high)*.5;
    const px=axis==='x'?coordinate:fixed,pz=axis==='x'?fixed:coordinate;
    const surface={x:px,y,z:pz,normal:normalAt(field,px,y,pz)};
-   if(surface.normal.y>=-.12&&surface.normal.y<.68)return surface;
+   if(surface.normal.y>=-.12&&surface.normal.y<.68&&Math.abs(field(surface.x,surface.y,surface.z))<.12)return surface;
   }
   previous=current;previousValue=value;
  }
