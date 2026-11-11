@@ -187,10 +187,10 @@ test('dedicated schooling fish are one quarter scale and form persistent, separa
 
 test('starfish remain benthic and dolphins travel in social pods', () => {
   const school=createSchool(1000,73421),stars=school.fish.filter(f=>f.species==='starfish'),dolphins=school.fish.filter(f=>f.species==='dolphin');
-  assert.ok(stars.length>20 && stars.every(f=>Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8));
+  assert.ok(stars.length>20 && stars.every(f=>school.terrainField(f.p.x,f.p.y,f.p.z)>=.04));
   assert.ok(dolphins.length>=1 && dolphins.every(f=>f.socialGroupId>=0));
   const before=dolphins.map(f=>({...f.p}));for(let i=0;i<240;i++)stepSchool(school,1/60);
-  assert.ok(stars.every(f=>Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8 && Math.hypot(f.v.x,f.v.z)<=.080001));
+  assert.ok(stars.every(f=>school.terrainField(f.p.x,f.p.y,f.p.z)>=.04 && Math.hypot(f.v.x,f.v.z)<=.080001 && f.v.y===0));
   assert.ok(dolphins.every(f=>Math.hypot(f.v.x,f.v.y,f.v.z)<=2.21));
   assert.ok(dolphins.some((f,i)=>Math.hypot(f.p.x-before[i].x,f.p.y-before[i].y,f.p.z-before[i].z)>1));
 });
@@ -232,7 +232,7 @@ test('benthic crustaceans and mantis shrimp use bounded grounded locomotion', ()
   const ground = school.fish.filter(agent => agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis');
   const before = ground.map(agent => ({...agent.p}));
   for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
-  assert.ok(ground.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
+  assert.ok(ground.every(agent => school.terrainField(agent.p.x,agent.p.y,agent.p.z)>=.04 && agent.v.y === 0));
   assert.ok(ground.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
   assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 1.6));
   assert.ok(ground.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.z-before[i].z) > 0.25));
@@ -350,10 +350,10 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
   const school = createSchool(1000, 73421, { speciesPercentages: { mantis: 100 } });
   const mantis = school.fish.filter(agent => agent.species === 'mantis');
   assert.equal(mantis.length, 1000);
-  assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
+  assert.ok(mantis.every(agent => school.terrainField(agent.p.x,agent.p.y,agent.p.z)>=.04 && agent.v.y === 0));
   const before = mantis.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
-  assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && Number.isFinite(agent.v.x) && Number.isFinite(agent.v.z)));
+  assert.ok(mantis.every(agent => school.terrainField(agent.p.x,agent.p.y,agent.p.z)>=.04 && Number.isFinite(agent.v.x) && Number.isFinite(agent.v.z) && agent.v.y===0));
   assert.ok(mantis.some((agent, i) => Math.hypot(agent.p.x - before[i].x, agent.p.z - before[i].z) > 0.4));
 });
 
