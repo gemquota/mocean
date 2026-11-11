@@ -141,7 +141,7 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 - Added `src/phase6/dual-contouring.js` with multi-component QEF-constrained cell vertices, gradient normals and shared-edge quads. Ambiguous face crossings are separated into distinct surface patches; winding is corrected per triangle. Sphere and integrated terrain tests check watertight/manifold topology, outward normals and boundary-only open edges.
 - Added `src/phase6/voxel-field.js` as the common signed-distance source for the visible terrain and live creature contact. It combines the base seabed, connected limestone masses, two tunnel runs and a cave chamber.
 - Added `src/phase6/habitat-voxel-terrain.js`; the live `schooling.html` now projects the extracted volumetric mesh into its fixed-camera habitat canvas and caches the static raster between camera/viewport changes.
-- The same density field is attached to each school and queried after each simulation step. Fish and benthic creatures are pushed out of solid terrain with inward normal velocity removed; sand eels remain exempt so their existing burrowing behaviour survives.
+- The same density field is attached to each school and queried after each simulation step. Benthic agents are initially seated on the nearest upward-facing voxel surface, remain there between steps, and are re-seated only if they drift clear; all non-burrowing creatures are projected out of solid terrain. Sand eels remain exempt so their existing burrowing behaviour survives.
 - The standalone `voxel-terrain-study.html` remains available for isolated inspection. The integrated habitat uses a single world mesh, not yet streamed chunks; worker generation and LOD remain future optimisation work.
 
 ### Osmocean animated model integration
