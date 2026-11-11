@@ -33,7 +33,8 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
 
 export function resolveVoxelTerrainContact(agent,field,{clearance=null,step=.075}={}){
  if(typeof field!=='function')return false;
- const radius=clearance??(agent.species==='crab'||agent.species==='lobster'||agent.species==='mantis'||agent.species==='starfish'||agent.species==='stingray'||agent.species==='wobbegong'?.055:Math.min(.42,.085+(agent.bodyScale??1)*.085));
+ const grounded=['crab','lobster','mantis','starfish','stingray','wobbegong'].includes(agent.species);
+ const radius=clearance??(grounded?.055:Math.min(.42,.085+(agent.bodyScale??1)*.085));
  const d=field(agent.p.x,agent.p.y,agent.p.z);
  if(!Number.isFinite(d)||d>=radius)return false;
  const h=step,dx=field(agent.p.x+h,agent.p.y,agent.p.z)-field(agent.p.x-h,agent.p.y,agent.p.z),dy=field(agent.p.x,agent.p.y+h,agent.p.z)-field(agent.p.x,agent.p.y-h,agent.p.z),dz=field(agent.p.x,agent.p.y,agent.p.z+h)-field(agent.p.x,agent.p.y,agent.p.z-h);
