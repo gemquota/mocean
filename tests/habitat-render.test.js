@@ -133,7 +133,7 @@ test('live habitat integrates a real voxel surface and animated Osmocean GLB mod
   assert.match(script,/entry\.root\.quaternion\.setFromUnitVectors/);
   assert.match(script,/if\(marineModelEntries\.has\(fish\)\)return/);
   assert.match(script,/modelRenderer\.render\(modelScene,modelCamera\)/);
-  assert.match(script,/catch\(error\)\{console\.warn\('Mocean animated model layer unavailable/);
+  assert.match(script,/catch\(error\)\{modelRenderer=null;marineModels=null;console\.warn\('Mocean animated model layer unavailable/);
 });
 test('habitat preserves procedural species fallbacks for animals without matching fish rigs',()=>{
   assert.match(script,/if\(fish\.species==='eel'\)\{drawEel\(fish\);return;\}/);
