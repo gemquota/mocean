@@ -27,7 +27,7 @@ import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/exam
 import { OutputPass } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/OutputPass.js';
 import { createPhase6Renderer, detectWebGL2 } from './src/phase6/renderer.js';
 import { createTerrainFloor, generateTerrainFeatures } from './src/phase6/terrain.js';
-import { buildSeabedGrid } from './src/phase6/terrain-surface.js';
+import { buildSeabedGrid, sampleSeabedHeight } from './src/phase6/terrain-surface.js';
 import { seabedHeight } from './src/schooling.js';
 import { generateWaterParticles, waterColorAtDistance } from './src/phase6/water.js';
 
@@ -139,7 +139,7 @@ try{
   seed:6102026,bounds:{minX:-41,maxX:41,minZ:-29,maxZ:29},
   rockCount:42,archCount:7,shelfCount:9,crevasseCount:6,floorAt:seabedHeight
  });
- const floor=createTerrainFloor((x,z)=>seabedHeight(x,z),features);
+ const featureFloor=createTerrainFloor(seabedHeight,features);\n const floor=(x,z)=>sampleSeabedHeight(x,z,featureFloor);
  const grid=buildSeabedGrid({width:84,depth:60,segmentsX:240,segmentsZ:172,floorAt:floor});
  const terrainGeometry=new THREE.BufferGeometry();
  terrainGeometry.setAttribute('position',new THREE.BufferAttribute(grid.positions,3));
@@ -181,7 +181,7 @@ try{
  const shelfGeometries=Array.from({length:4},(_,i)=>makeShelfGeometry(i*2.2));
  features.shelves.forEach((shelf,i)=>{
   const mesh=new THREE.Mesh(shelfGeometries[i%shelfGeometries.length],shelfMaterials[i%shelfMaterials.length]);
-  mesh.position.set(shelf.x,shelf.y,shelf.z);
+  const shelfOffset=shelf.y-featureFloor(shelf.x,shelf.z);\n  mesh.position.set(shelf.x,floor(shelf.x,shelf.z)+shelfOffset,shelf.z);
   mesh.scale.set(shelf.width*.58,shelf.depth*.58,shelf.height*1.1);
   mesh.rotation.y=shelf.rotation;mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
  });
@@ -192,7 +192,7 @@ try{
  features.arches.forEach((arch,i)=>{
   const geometry=makeArchGeometry(arch.radius,arch.tube,arch.depth);
   const mesh=new THREE.Mesh(geometry,archMaterials[i%archMaterials.length]);
-  mesh.position.set(arch.x,arch.floor,arch.z);mesh.rotation.y=arch.rotation;
+  mesh.position.set(arch.x,floor(arch.x,arch.z),arch.z);mesh.rotation.y=arch.rotation;
   mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
  });
 
