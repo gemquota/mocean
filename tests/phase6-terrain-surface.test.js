@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import { seabedRelief, sampleSeabedHeight, buildSeabedGrid } from '../src/phase6/terrain-surface.js';
 
 test('multi-scale relief is deterministic, finite and non-flat', () => {
@@ -45,4 +47,13 @@ test('heightfield rejects invalid geometry budgets and missing floor function', 
   assert.throws(() => buildSeabedGrid({ floorAt: () => -10, segmentsX: 1 }), RangeError);
   assert.throws(() => buildSeabedGrid({ floorAt: () => -10, width: 0 }), RangeError);
   assert.throws(() => buildSeabedGrid({ floorAt: null }), RangeError);
+});
+
+
+test('terrain study browser module parses before deployment', () => {
+  const html = readFileSync(new URL('../phase6-spike.html', import.meta.url), 'utf8');
+  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  assert.ok(match, 'module script exists');
+  const withoutImports = match[1].replace(/^import .*;\\s*$/gm, '');
+  assert.doesNotThrow(() => new vm.Script(withoutImports, { filename: 'phase6-spike.html' }));
 });
