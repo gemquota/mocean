@@ -16,7 +16,7 @@ test('vegetation niches are generated from the terrain surface and are determini
  assert.ok(layout.grass.every(p=>p.normal.y>.94&&p.y>-11.1&&p.y<-7.2));
  assert.ok(layout.kelp.every(p=>p.normal.y>.68&&p.normal.y<.94));
  assert.ok(layout.walls.every(p=>p.normal.y>=-.08&&p.normal.y<.68));
- for(const p of [...layout.grass,...layout.kelp,...layout.walls])assert.ok(Math.abs(field(p.x,p.y,p.z))<.22,'vegetation root must sit on the voxel surface');
+ for(const p of [...layout.grass,...layout.kelp,...layout.walls])assert.ok(Math.abs(field(p.x,p.y,p.z))<.22,'vegetation root must sit on the voxel surface: '+[p.x,p.y,p.z,field(p.x,p.y,p.z)].join(','));
 });
 
 test('terrain top sampler returns upward-facing roots on actual solid-water crossings',()=>{
