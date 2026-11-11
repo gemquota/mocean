@@ -36,11 +36,16 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ### P6-1 · Renderer architecture and compatibility spike
 
-- [ ] Compare a single WebGL scene migration with a staged hybrid renderer; select one based on measurable performance and maintainability.
-- [ ] Define one camera/projection contract shared by environment and creatures. Avoid two independently drifting camera models.
-- [ ] Prove WebGL capability detection and graceful fallback on unsupported devices.
+**Implementation decision (provisional): staged WebGL scene, with the existing Canvas habitat retained as the fallback and regression baseline.** A separate spike page avoids destabilising the live habitat while the renderer, camera and geometry budgets are evaluated. If the spike validates, the next integration step is a shared scene/camera contract with the current Canvas creature layer before migrating species one group at a time.
+
+- [x] Compare single-scene migration with staged integration; select staged integration for the first compatibility spike.
+- [x] Define a camera/projection contract matching the current habitat's camera position, target, world-up and focal-length rule (`src/phase6/renderer.js`).
+- [x] Add explicit WebGL2 capability detection and an isolated fallback message (`phase6-spike.html`).
+- [ ] Browser-verify WebGL initialisation and graceful fallback on unsupported devices.
 - [ ] Establish a reproducible baseline for startup time, frame time, memory/geometry budget and creature counts.
-- [ ] Keep all work isolated on this branch until regression and visual review.
+- [x] Keep all work isolated on this branch; the existing live habitat entry point remains unchanged.
+
+**Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield plus low-poly rock masses with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `tests/phase6-renderer.test.js` covers camera projection, capability detection and renderer lifecycle. Automated test status is pending; browser visual verification has not yet been performed.
 
 ### P6-2 · Spatial seabed and terrain
 
