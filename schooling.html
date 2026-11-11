@@ -31,18 +31,21 @@ a:hover{text-decoration:underline}
 <body>
 <canvas id="school" aria-label="A mixed habitat of regular and dedicated schooling fish, moray eels, crabs, lobsters, mantis shrimp, manta rays, stingrays, reef sharks, whale sharks, ocean sunfish, starfish, dolphins, sea turtles, jellyfish, burrowing sand eels, coral reefs and plankton"></canvas>
 <header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 30 SPECIES</div></header><div class="species-counts" id="species-counts">REGULAR FISH · SOCIAL 31<br>SCHOOLING FISH · DEDICATED SHOALS 63<br>EELS 22<br>CRABS 5<br>LOBSTERS 5<br>MANTIS SHRIMP 3<br>MANTA RAYS 3<br>STINGRAYS 3<br>SHARKS 3<br>WHALE SHARKS 3<br>STARFISH 4<br>DOLPHINS 5<br>SEA TURTLES 3<br>JELLYFISH 4<br>SAND EELS 3</div>
-<button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><p class="slider-bounds-hint">LONG-PRESS ANY SLIDER TO EDIT ITS MINIMUM AND MAXIMUM. BOUNDS ARE SAVED ON THIS DEVICE.</p><nav class="config-tabs" role="tablist"><button class="active" data-tab="prevalence">Prevalence</button><button data-tab="speed">Speed</button><button data-tab="size">Size</button><button data-tab="range">Min / max size</button><button data-tab="aggression">Aggression</button><button data-tab="world">World</button></nav><section class="config-page active" data-page="prevalence"><p>Species population share. Setting any species to 100% clears all others.</p><div id="species-mix"></div></section><section class="config-page" data-page="speed"><p>Speed multiplier, independently adjustable for every species.</p><div id="species-speed"></div></section><section class="config-page" data-page="size"><p>Body-size multiplier for each species. Existing species proportions are preserved.</p><div id="species-size"></div></section><section class="config-page" data-page="range"><p>Each species gets its own minimum and maximum body-size variation.</p><div id="species-size-range"></div></section><section class="config-page" data-page="aggression"><p>Species-specific pursuit and feeding drive. Zero suppresses active pursuit.</p><div id="species-aggression"></div></section><section class="config-page" data-page="world"><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">41</output><input id="world-x" type="range" min="20" max="100" value="41"></label><label>Y <output id="world-y-value">15.5</output><input id="world-y" type="range" min="8" max="40" step="0.5" value="15.5"></label><label>Z <output id="world-z-value">31</output><input id="world-z" type="range" min="15" max="90" value="31"></label></div></section></aside><section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="50" max="200" step="10" value="150" aria-label="Number of visible creatures" title="Long-press to customise minimum and maximum"><div class="population-scale"><button id="population-min">50 CREATURES</button><button id="population-max">200 CREATURES</button></div></section>
+<button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><p class="slider-bounds-hint">LONG-PRESS ANY SLIDER TO EDIT ITS MINIMUM AND MAXIMUM. BOUNDS ARE SAVED ON THIS DEVICE.</p><nav class="config-tabs" role="tablist"><button class="active" data-tab="prevalence">Prevalence</button><button data-tab="speed">Speed</button><button data-tab="size">Size</button><button data-tab="range">Min / max size</button><button data-tab="aggression">Aggression</button><button data-tab="world">World</button></nav><section class="config-page active" data-page="prevalence"><p>Species population share. Setting any species to 100% clears all others.</p><div id="species-mix"></div></section><section class="config-page" data-page="speed"><p>Speed multiplier, independently adjustable for every species.</p><div id="species-speed"></div></section><section class="config-page" data-page="size"><p>Body-size multiplier for each species. Existing species proportions are preserved.</p><div id="species-size"></div></section><section class="config-page" data-page="range"><p>Each species gets its own minimum and maximum body-size variation.</p><div id="species-size-range"></div></section><section class="config-page" data-page="aggression"><p>Species-specific pursuit and feeding drive. Zero suppresses active pursuit.</p><div id="species-aggression"></div></section><section class="config-page" data-page="world"><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">41</output><input id="world-x" type="range" min="20" max="100" value="41"></label><label>Y <output id="world-y-value">15.5</output><input id="world-y" type="range" min="8" max="40" step="0.5" value="15.5"></label><label>Z <output id="world-z-value">31</output><input id="world-z" type="range" min="15" max="90" value="31"></label></div></section></aside><section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="10" max="200" step="10" value="150" aria-label="Number of visible creatures" title="Long-press to customise minimum and maximum"><div class="population-scale"><button id="population-min">10 CREATURES</button><button id="population-max">200 CREATURES</button></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="module">
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE, SCHOOLING_SPECIES_PERCENTAGES, REEF_ANEMONE_SITES, seabedHeight } from './src/schooling.js';
 import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/core/body.js';
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
 import { drawHabitatVoxelTerrain } from './src/phase6/habitat-voxel-terrain.js';
+import { createHabitatVoxelField } from './src/phase6/voxel-field.js';
+import { createVegetationLayout, sampleTerrainTop } from './src/phase6/vegetation-layout.js';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
 const speciesMix={...SCHOOLING_SPECIES_PERCENTAGES},worldSize={x:41,y:15.5,z:31};
+let vegetationField=null,vegetationLayout=null,coralColonies=[],anemoneSites=[];
 const mixRoot=document.getElementById('species-mix'),configPanel=document.getElementById('config-panel'),configToggle=document.getElementById('config-toggle');
 const speciesLabels={fish:'Regular fish',schoolFish:'Dedicated shoaling fish',grouper:'Giant Queensland grouper',moorishIdol:'Moorish idol',barracuda:'Great barracuda',clownfish:'Clownfish',parrotfish:'Parrotfish',blueTang:'Blue tang',angelfish:'Angelfish',butterflyfish:'Butterflyfish',wobbegong:'Wobbegong shark',marlin:'Marlin',tuna:'Tuna',eel:'Moray eels',crab:'Crabs',lobster:'Lobsters',mantis:'Mantis shrimp',manta:'Manta rays',stingray:'Stingrays',shark:'Reef sharks',whaleShark:'Whale sharks',mola:'Mola mola',orca:'Orcas',spermWhale:'Sperm whales',seal:'Seals',starfish:'Starfish',dolphin:'Dolphins',turtle:'Sea turtles',jellyfish:'Jellyfish',sandEel:'Burrowing sand eels'};
 const speciesSettings=Object.fromEntries(Object.keys(speciesLabels).map(key=>[key,{speed:1,size:1,minSize:.8,maxSize:1.2,aggression:1}]));
@@ -54,7 +57,7 @@ function updateMix(changed,value){value=Math.max(0,Math.min(100,Number(value)||0
 for(const [key,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='mix-row';row.dataset.species=key;row.innerHTML=`<span>${label}</span><input type="range" min="0" max="100" step="0.01" value="${speciesMix[key]??0}" aria-label="${label} percentage"><output>${Number(speciesMix[key]??0).toFixed(2)}%</output>`;row.querySelector('input').addEventListener('input',event=>updateMix(key,event.target.value));mixRoot.append(row);}
 for(const tab of configPanel.querySelectorAll('[data-tab]'))tab.addEventListener('click',()=>{for(const el of configPanel.querySelectorAll('[data-tab]'))el.classList.toggle('active',el===tab);for(const page of configPanel.querySelectorAll('[data-page]'))page.classList.toggle('active',page.dataset.page===tab.dataset.tab);});
 configToggle.addEventListener('click',()=>{configPanel.hidden=!configPanel.hidden;configToggle.setAttribute('aria-expanded',String(!configPanel.hidden));});document.getElementById('config-close').addEventListener('click',()=>{configPanel.hidden=true;configToggle.setAttribute('aria-expanded','false');});
-for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+axis),output=document.getElementById('world-'+axis+'-value');slider.addEventListener('input',()=>{worldSize[axis]=Number(slider.value);output.value=slider.value;output.textContent=slider.value;});slider.addEventListener('change',()=>{school.worldSize={...worldSize};});}
+for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+axis),output=document.getElementById('world-'+axis+'-value');slider.addEventListener('input',()=>{worldSize[axis]=Number(slider.value);output.value=slider.value;output.textContent=slider.value;});slider.addEventListener('change',()=>{school.worldSize={...worldSize};rebuildPlantLayout();});}
 function addSpeciesSlider(containerId,key,min,max,initial){const root=document.getElementById(containerId);for(const [species,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='species-setting';row.innerHTML=`<span>${label}</span><input type="range" min="${min}" max="${max}" step="1" value="${initial}" aria-label="${label} ${key}"><output>${initial}%</output>`;const slider=row.querySelector('input'),output=row.querySelector('output');slider.addEventListener('input',()=>{const value=Number(slider.value)/100;output.textContent=slider.value+'%';applySpeciesSetting(species,key,value);});root.append(row);}}
 addSpeciesSlider('species-speed','speed',25,200,100);
 addSpeciesSlider('species-size','size',40,200,100);
@@ -97,6 +100,9 @@ function applySliderBounds(slider,bounds){
  if(value<min)slider.value=String(min);else if(value>max)slider.value=String(max);
 }
 function saveSliderBounds(){try{localStorage.setItem(SLIDER_BOUNDS_STORAGE_KEY,JSON.stringify(savedSliderBounds));}catch(error){console.warn('Could not save slider bounds:',error);}}
+// Population bounds are now deliberately 10–200. Preserve custom bounds on every
+// other slider, but discard an older population override so this requested range wins.
+if(Object.hasOwn(savedSliderBounds,'population')){delete savedSliderBounds.population;saveSliderBounds();}
 function editSliderBounds(slider){
  const currentMin=slider.min,currentMax=slider.max;
  const minText=window.prompt('Set slider minimum value:',currentMin);if(minText===null)return;
@@ -405,10 +411,73 @@ function drawMantaRay(fish){
 
 const planktonParticles=Array.from({length:480},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
 function drawSeagrassAndKelp(){
- const grassBeds=[[-33,-10],[-24,12],[-8,-7],[9,13],[25,-12],[34,8],[-2,25]];
- for(let bed=0;bed<grassBeds.length;bed++){const [cx,cz]=grassBeds[bed];for(let i=0;i<18;i++){const a=i*2.3999632297+bed*.8,rad=.25+Math.sqrt(i/18)*2.4,x=cx+Math.cos(a)*rad,z=cz+Math.sin(a)*rad,floor=seabedHeight(x,z),root=project(vec3(x,floor+.04,z)),blades=3+i%3,sway=Math.sin(school.time*.72+i*.9+bed)*.24;ctx.save();ctx.lineCap='round';for(let b=0;b<blades;b++){const side=(b-(blades-1)/2)*.075,height=.55+((i*7+b*3)%5)*.12,tip=project(vec3(x+side+sway*height,floor+height,z+side*.35));if(root.depth<2.5||tip.depth<2.5)continue;ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo(root.x+side*root.size*.2,root.y-tip.size*.22,tip.x,tip.y);ctx.strokeStyle=b%2?'#648d55':'#88a966';ctx.lineWidth=Math.max(.8,root.size*.022);ctx.stroke();}ctx.restore();}}
- const kelpBeds=[[-31,-16],[-12,-16],[5,4],[21,-19],[32,13],[-4,23]];
- for(let bed=0;bed<kelpBeds.length;bed++){const [cx,cz]=kelpBeds[bed];for(let i=0;i<5;i++){const a=i*2.3999632297+bed*.53,rad=.35+Math.sqrt(i/5)*1.35,x=cx+Math.cos(a)*rad,z=cz+Math.sin(a)*rad,floor=seabedHeight(x,z),sway=Math.sin(school.time*.42+i+bed)*.58,root=project(vec3(x,floor+.08,z)),top=project(vec3(x+sway,floor+3.8+(i%3)*.42,z));if(root.depth<2.5||top.depth<2.5)continue;ctx.save();ctx.lineCap='round';ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo(root.x+sway*root.size*.18,(root.y+top.y)*.52,top.x,top.y);ctx.strokeStyle='#78945a';ctx.lineWidth=Math.max(1.2,root.size*.035);ctx.stroke();for(let blade=0;blade<7;blade++){const t=.18+blade*.105,side=blade%2?1:-1,base=project(vec3(x+sway*t,floor+3.8*t,z)),tip=project(vec3(x+sway*t+side*(.38+blade*.045),floor+3.8*t+.34,z));if(base.depth<2.5||tip.depth<2.5)continue;ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo((base.x+tip.x)*.5+side*tip.size*.08,(base.y+tip.y)*.5,tip.x,tip.y);ctx.strokeStyle=blade%2?'#8eaa62':'#668b4e';ctx.lineWidth=Math.max(1,base.size*.028);ctx.stroke();}ctx.restore();}}
+ const layout=vegetationLayout;if(!layout)return;
+ // Seagrass grows in broad, sparse meadows on near-horizontal sediment.
+ for(const anchor of layout.grass){
+  const x=anchor.x,y=anchor.y,z=anchor.z,root=project(vec3(x,y+.035,z));
+  if(root.depth<2.5)continue;
+  ctx.save();ctx.lineCap='round';
+  const blades=4+(anchor.id%3),sway=Math.sin(school.time*.68+anchor.id*1.71)*.16;
+  for(let b=0;b<blades;b++){
+   const side=(b-(blades-1)/2)*.085,height=.52+((anchor.id*7+b*3)%5)*.13;
+   const tip=project(vec3(x+side+sway*height,y+height,z+side*.32));
+   if(tip.depth<2.5)continue;
+   ctx.beginPath();ctx.moveTo(root.x,root.y);
+   ctx.quadraticCurveTo(root.x+side*root.size*.2,root.y-tip.size*.24,tip.x,tip.y);
+   ctx.strokeStyle=b%2?'#648d55':'#91b276';ctx.lineWidth=Math.max(.8,root.size*.021);ctx.stroke();
+  }
+  ctx.restore();
+ }
+ // Kelp is concentrated around sloping reef shoulders and ledges, with longer
+ // blades than seagrass and a little more density than the previous layout.
+ for(const anchor of layout.kelp){
+  const {x,y,z,id}=anchor,root=project(vec3(x,y+.06,z));if(root.depth<2.5)continue;
+  ctx.save();ctx.lineCap='round';
+  const stems=2+(id%2),sway=Math.sin(school.time*.38+id*1.3)*.46;
+  for(let stem=0;stem<stems;stem++){
+   const offset=(stem-(stems-1)/2)*.14,height=3.5+(id+stem)%4*.42;
+   const tip=project(vec3(x+offset+sway,y+height,z+offset*.35));
+   if(tip.depth<2.5)continue;
+   ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo(root.x+sway*root.size*.15,(root.y+tip.y)*.52,tip.x,tip.y);
+   ctx.strokeStyle='#789b58';ctx.lineWidth=Math.max(1.15,root.size*.033);ctx.stroke();
+   for(let blade=0;blade<6;blade++){
+    const t=.18+blade*.115,side=blade%2?1:-1;
+    const base=project(vec3(x+offset+sway*t,y+height*t,z+offset*.35));
+    const leaf=project(vec3(x+offset+sway*t+side*(.42+blade*.055),y+height*t+.28,z+offset*.35+side*.08));
+    if(base.depth<2.5||leaf.depth<2.5)continue;
+    ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo((base.x+leaf.x)*.5+side*leaf.size*.08,(base.y+leaf.y)*.5,leaf.x,leaf.y);
+    ctx.strokeStyle=blade%2?'#91ad61':'#688f50';ctx.lineWidth=Math.max(.9,base.size*.026);ctx.stroke();
+   }
+  }
+  ctx.restore();
+ }
+ // Attached algae and short kelp fronds follow the actual outward normal on
+ // vertical ravine walls, reef faces and cave mouths instead of floating nearby.
+ for(const anchor of layout.walls){
+  const n=anchor.normal,x=anchor.x,y=anchor.y,z=anchor.z;
+  const growRaw={x:-n.x*n.y,y:1-n.y*n.y,z:-n.z*n.y},gm=Math.hypot(growRaw.x,growRaw.y,growRaw.z)||1;
+  const up={x:growRaw.x/gm,y:growRaw.y/gm,z:growRaw.z/gm};
+  const side={x:n.y*up.z-n.z*up.y,y:n.z*up.x-n.x*up.z,z:n.x*up.y-n.y*up.x};
+  const root=project(vec3(x+n.x*.045,y+n.y*.045,z+n.z*.045));if(root.depth<2.5)continue;
+  ctx.save();ctx.lineCap='round';
+  const stems=2+(anchor.id%2),sway=Math.sin(school.time*.43+anchor.id)*.22;
+  for(let stem=0;stem<stems;stem++){
+   const lateral=(stem-(stems-1)/2)*.12,height=1.35+(anchor.id+stem)%3*.3;
+   const tip=project(vec3(x+n.x*.12+up.x*height+side.x*lateral+sway,y+n.y*.12+up.y*height+side.y*lateral,z+n.z*.12+up.z*height+side.z*lateral));
+   if(tip.depth<2.5)continue;
+   ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo((root.x+tip.x)*.5,(root.y+tip.y)*.5-root.size*.08,tip.x,tip.y);
+   ctx.strokeStyle='#688e56';ctx.lineWidth=Math.max(1,root.size*.03);ctx.stroke();
+   for(let leaf=1;leaf<=3;leaf++){
+    const t=leaf/4,base=project(vec3(x+n.x*.1+up.x*height*t,y+n.y*.1+up.y*height*t,z+n.z*.1+up.z*height*t));
+    const sign=leaf%2?1:-1;
+    const end=project(vec3(x+n.x*.2+up.x*height*t+side.x*sign*.42,y+n.y*.2+up.y*height*t+.12,z+n.z*.2+up.z*height*t+side.z*sign*.42));
+    if(base.depth<2.5||end.depth<2.5)continue;
+    ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo((base.x+end.x)*.5,(base.y+end.y)*.5-root.size*.035,end.x,end.y);
+    ctx.strokeStyle='#86a961';ctx.lineWidth=Math.max(.8,base.size*.022);ctx.stroke();
+   }
+  }
+  ctx.restore();
+ }
 }
 function drawPlankton(){
  ctx.save();ctx.globalCompositeOperation='screen';
