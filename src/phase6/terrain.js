@@ -48,7 +48,7 @@ export function generateTerrainFeatures({
     rocks.push(Object.freeze({
       id: 'rock-' + i,
       x, z,
-      y: floorAt(x, z) + height * 0.34,
+      y: floorAt(x, z) + height * 0.82,
       radius,
       height,
       depth: radius * range(0.62, 1.12),
