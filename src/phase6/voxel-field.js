@@ -99,13 +99,9 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
    solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx,cy,cz,radiusX*sx,radiusY,radiusZ*sz,angle),.38);
   }
 
-  // Multi-frequency weathering is confined to a narrow band around the solid
-  // boundary. This adds chipped, naturally irregular surfaces without turning
-  // the whole rock volume into noisy collision geometry.
-  const nearSurface=Math.exp(-Math.abs(solid)*.72);
-  const weather=(Math.sin(x*.83+Math.sin(z*.51)*.45)*Math.sin(z*.91+y*.31)+
-    .32*Math.sin(x*1.47+z*1.13+y*.58)+.16*Math.sin(x*2.05-z*1.72+y*.9))*.028;
-  solid+=weather*nearSurface;
+  // Fine geological breakup is supplied by the nested rock and ridge forms.
+  // Keep the collision field smooth at contact scale so benthic gait is not
+  // perturbed by decorative high-frequency surface noise.
 
   // A branched cave network: two main passages, side galleries and a chamber.
   // All voids are carved from the same rock field used for rendering/contact.
