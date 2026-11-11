@@ -35,13 +35,26 @@ export function resolveVoxelTerrainContact(agent,field,{clearance=null,step=.075
  if(typeof field!=='function')return false;
  const grounded=['crab','lobster','mantis','starfish','stingray','wobbegong'].includes(agent.species);
  const radius=clearance??(grounded ? 0.055 : Math.min(.42,.085+(agent.bodyScale??1)*.085));
- const d=field(agent.p.x,agent.p.y,agent.p.z);
- if(!Number.isFinite(d)||d>=radius)return false;
- const h=step,dx=field(agent.p.x+h,agent.p.y,agent.p.z)-field(agent.p.x-h,agent.p.y,agent.p.z),dy=field(agent.p.x,agent.p.y+h,agent.p.z)-field(agent.p.x,agent.p.y-h,agent.p.z),dz=field(agent.p.x,agent.p.y,agent.p.z+h)-field(agent.p.x,agent.p.y,agent.p.z-h);
- const magnitude=Math.hypot(dx,dy,dz)||1,nx=dx/magnitude,ny=dy/magnitude,nz=dz/magnitude,penetration=radius-d;
- agent.p.x+=nx*penetration;agent.p.y+=ny*penetration;agent.p.z+=nz*penetration;
- const vn=agent.v.x*nx+agent.v.y*ny+agent.v.z*nz;
- if(vn<0){agent.v.x-=nx*vn;agent.v.y-=ny*vn;agent.v.z-=nz*vn;}
- agent.terrainContact=true;
- return true;
+ let contact=false,nx=0,ny=1,nz=0;
+ // Smooth unions are distance-like but not exact SDFs at blend regions. Iterate
+ // projection so a deep initial overlap cannot leave the animal inside a ledge.
+ for(let iteration=0;iteration<4;iteration++){
+  const d=field(agent.p.x,agent.p.y,agent.p.z);
+  if(!Number.isFinite(d)||d>=radius)break;
+  const h=step;
+  const dx=field(agent.p.x+h,agent.p.y,agent.p.z)-field(agent.p.x-h,agent.p.y,agent.p.z);
+  const dy=field(agent.p.x,agent.p.y+h,agent.p.z)-field(agent.p.x,agent.p.y-h,agent.p.z);
+  const dz=field(agent.p.x,agent.p.y,agent.p.z+h)-field(agent.p.x,agent.p.y,agent.p.z-h);
+  const magnitude=Math.hypot(dx,dy,dz);
+  if(magnitude>1e-7){nx=dx/magnitude;ny=dy/magnitude;nz=dz/magnitude;}
+  const penetration=Math.min(2.5,radius-d);
+  agent.p.x+=nx*penetration;agent.p.y+=ny*penetration;agent.p.z+=nz*penetration;
+  contact=true;
+ }
+ if(contact){
+  const vn=agent.v.x*nx+agent.v.y*ny+agent.v.z*nz;
+  if(vn<0){agent.v.x-=nx*vn;agent.v.y-=ny*vn;agent.v.z-=nz*vn;}
+  agent.terrainContact=true;
+ }
+ return contact;
 }
