@@ -6,9 +6,9 @@
 </p>
 
 <p align="center">
-  <a href="https://mocean-tap-to-swim-3d.vercel.app/"><strong>▶ OPEN THE CURRENT BUILD</strong></a>
+  <a href="https://gemquota.github.io/mocean/"><strong>▶ OPEN THE LIVE SIMULATION</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://mocean-tap-to-swim-3d.vercel.app/development.html">Development presentation</a>
+  <a href="https://gemquota.github.io/mocean/development.html">Development presentation</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/gemquota/mocean">Source repository</a>
 </p>
@@ -22,23 +22,13 @@
 
 ---
 
-## Builds
+## The live build
 
-The links below point to real Vercel deployments. The first link is the stable production alias; the others are retained snapshots of earlier milestones, not separate active projects.
+**[Open Mocean on GitHub Pages ↗](https://gemquota.github.io/mocean/)**
 
-| Build | What it represents | Link |
-|---|---|---|
-| **Current · Phase 6 spatial terrain** | Latest production build on `main`, including the Phase 6 spatial-terrain integration | [Open current build](https://mocean-tap-to-swim-3d.vercel.app/) |
-| Phase 6 · Environment foundation | Earlier production snapshot with the initial 3D renderer and terrain prototype | [Open build](https://mocean-tap-to-swim-3d-nm4373ozd-gemquotas-projects.vercel.app/) |
-| Phase 2–4 · Locomotion sequences | Production snapshot containing physics-driven movement primitives and compound manoeuvre intent | [Open build](https://mocean-tap-to-swim-3d-kv0qsynz8-gemquotas-projects.vercel.app/) |
-| Mixed-species habitat · Renderer fix | Habitat build after the animal-renderer startup fix | [Open build](https://mocean-tap-to-swim-3d-ct785bkzx-gemquotas-projects.vercel.app/) |
-| Crabs and lobsters | Earlier mixed-species build with articulated crustacean locomotion | [Open build](https://mocean-tap-to-swim-3d-nuqiilkox-gemquotas-projects.vercel.app/) |
-| 1,000-fish schooling | Expanded schooling build with a five-times-larger habitat | [Open build](https://mocean-tap-to-swim-3d-1sd3de3h6-gemquotas-projects.vercel.app/) |
-| Tap-to-swim 3D | Earlier production integration of tap-to-swim navigation | [Open build](https://mocean-tap-to-swim-3d-n90duukoq-gemquotas-projects.vercel.app/) |
-| Phase 1–4 locomotion | Earlier production snapshot of the integrated 3D locomotion foundation | [Open build](https://mocean-tap-to-swim-3d-b0r506j79-gemquotas-projects.vercel.app/) |
-| Phase 6 · Spatial-terrain preview | Branch preview for the terrain-query work that was subsequently integrated into `main` | [Open preview](https://mocean-tap-to-swim-3d-htk8fqs7k-gemquotas-projects.vercel.app/) |
+This is the canonical live version of the project. Mocean is published through GitHub Pages from the repository's `main` branch.
 
-Deployment URLs are snapshots and may eventually be retired by the hosting provider. The stable production alias above is the canonical link to share.
+There is currently one canonical live habitat, not a collection of separately maintained product versions. Older deployment snapshots are intentionally not presented as distinct builds: a different deployment URL does not make the fish any less the same fish.
 
 ## What Mocean is
 
@@ -54,7 +44,7 @@ The project has expanded from a single flexible swimmer into a richer marine hab
 - **Phase 6 · Environment, seabed and water:** authorised and in progress. The current increment adds a staged 3D renderer, spatial terrain geometry and renderer-independent terrain-clearance queries. Browser visual verification and performance profiling remain important acceptance work.
 - **Phase 7 · Integration and polish:** not started.
 
-See the [canonical roadmap](ROADMAP.md) and [Phase 6 record](PHASE_6.md) for task-level status and evidence. The [development presentation](https://mocean-tap-to-swim-3d.vercel.app/development.html) provides the visual project overview.
+See the [canonical roadmap](ROADMAP.md) and [Phase 6 record](PHASE_6.md) for task-level status and evidence. The [development presentation](https://gemquota.github.io/mocean/development.html) provides the visual project overview.
 
 ## Engineering priorities
 
@@ -113,7 +103,7 @@ Mocean uses biomechanical and ecological approximations. It is not a validated a
 ---
 
 <p align="center">
-  <a href="https://mocean-tap-to-swim-3d.vercel.app/"><strong>Explore the current build ↗</strong></a>
+  <a href="https://gemquota.github.io/mocean/"><strong>Explore the live simulation ↗</strong></a>
   <br>
   <sub>Mocean · one evolving underwater world</sub>
 </p>
