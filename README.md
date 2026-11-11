@@ -31,6 +31,11 @@ The links below point to real Vercel deployments. The first link is the stable p
 | **Current · Phase 6 spatial terrain** | Latest production build on `main`, including the Phase 6 spatial-terrain integration | [Open current build](https://mocean-tap-to-swim-3d.vercel.app/) |
 | Phase 6 · Environment foundation | Earlier production snapshot with the initial 3D renderer and terrain prototype | [Open build](https://mocean-tap-to-swim-3d-nm4373ozd-gemquotas-projects.vercel.app/) |
 | Phase 2–4 · Locomotion sequences | Production snapshot containing physics-driven movement primitives and compound manoeuvre intent | [Open build](https://mocean-tap-to-swim-3d-kv0qsynz8-gemquotas-projects.vercel.app/) |
+| Mixed-species habitat · Renderer fix | Habitat build after the animal-renderer startup fix | [Open build](https://mocean-tap-to-swim-3d-ct785bkzx-gemquotas-projects.vercel.app/) |
+| Crabs and lobsters | Earlier mixed-species build with articulated crustacean locomotion | [Open build](https://mocean-tap-to-swim-3d-nuqiilkox-gemquotas-projects.vercel.app/) |
+| 1,000-fish schooling | Expanded schooling build with a five-times-larger habitat | [Open build](https://mocean-tap-to-swim-3d-1sd3de3h6-gemquotas-projects.vercel.app/) |
+| Tap-to-swim 3D | Earlier production integration of tap-to-swim navigation | [Open build](https://mocean-tap-to-swim-3d-n90duukoq-gemquotas-projects.vercel.app/) |
+| Phase 1–4 locomotion | Earlier production snapshot of the integrated 3D locomotion foundation | [Open build](https://mocean-tap-to-swim-3d-b0r506j79-gemquotas-projects.vercel.app/) |
 | Phase 6 · Spatial-terrain preview | Branch preview for the terrain-query work that was subsequently integrated into `main` | [Open preview](https://mocean-tap-to-swim-3d-htk8fqs7k-gemquotas-projects.vercel.app/) |
 
 Deployment URLs are snapshots and may eventually be retired by the hosting provider. The stable production alias above is the canonical link to share.
