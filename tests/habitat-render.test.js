@@ -141,3 +141,11 @@ test('habitat preserves procedural species fallbacks for animals without matchin
   assert.match(script,/if\(fish\.species==='manta'\)\{drawMantaRay\(fish\);return;\}/);
   assert.match(script,/if\(fish\.species==='orca'\)\{drawOrca\(fish\);return;\}/);
 });
+
+test('voxel and WebGL failures preserve the procedural habitat fallback',()=>{
+  assert.match(script,/Voxel seabed failed; using safe heightfield fallback/);
+  assert.match(script,/if\(!voxelFallbackWarned\)/);
+  assert.match(script,/initialiseMarineModelLayer\(\)/);
+  assert.match(script,/webglcontextlost/);
+  assert.match(script,/Animated GLB layer disabled; procedural species renderers remain active/);
+});
