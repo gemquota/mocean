@@ -155,4 +155,4 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 ### Verification boundary
 
-The live habitat integration is implemented on the feature branch, but browser visual inspection, frame-time/memory profiling, and complete CI verification are still outstanding. The PR remains unmerged and undeployed pending those checks. Phase 6 remains in progress; no Phase 7 gate is implied.
+Merged in PR #48 (commit `f9a2051c993102c8dff26d7e723b2fad1f45d247`) and deployed to GitHub Pages. Main-branch CI passed 160/160 tests; the Pages build and deployment both succeeded, including the pinned 35-model CC0 asset bundle. Targeted runtime checks found no non-manifold terrain edges or inward-facing triangles, and benthic/mixed-school simulations remained finite in tested runs. Browser visual inspection and ordinary-hardware frame-time/memory profiling are still outstanding; cross-renderer depth ordering between the WebGL fish layer and remaining Canvas creatures is a known limitation. Phase 6 remains in progress pending independent user review; no Phase 7 gate is implied.
