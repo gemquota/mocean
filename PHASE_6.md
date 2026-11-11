@@ -129,7 +129,7 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 **Implementation branch:** `habitat-ravines-vegetation` · pending CI and review.
 
-- Population control defaults to 10–200 creatures in steps of ten. The previous device-saved population override is cleared once so the requested range takes effect; custom bounds on other sliders remain intact.
+- Population control defaults to 10–200 creatures in steps of ten. Any previous population override is cleared once so the requested range takes effect; later long-press custom bounds are saved and restored normally, as are other sliders.
 - Terrain adds angular superellipsoid outcrops, three deep open ravines with steep walls and solid lower floors, and three enlarged cave chambers with stepped connectors and side galleries. All geometry remains in the shared voxel signed-distance field used for rendering and collision.
 - Added a deterministic terrain-aware vegetation layout. Seagrass is sampled onto near-horizontal sediment, kelp onto sloping reef shoulders and ledges, and attached macroalgae onto exposed vertical faces including ravine/cave walls.
 - Increased kelp presence while reducing the previous scattered, circular bed placement. Coral colonies and anemones have been moved inside the terrain footprint and their root heights are sampled from the voxel surface.
