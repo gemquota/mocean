@@ -68,7 +68,7 @@ The repository keeps the simulation and presentation responsibilities separate:
 - **Environment:** terrain, habitat features and spatial queries.
 - **Rendering:** fixed-camera presentation derived from simulation state.
 
-The Phase 6 renderer and terrain prototype are isolated behind their own modules and tests. The existing habitat remains the regression reference while integration proceeds.
+The Phase 6 renderer and terrain prototypes are isolated behind their own modules and tests. The existing habitat remains the regression reference while integration proceeds. The volumetric voxel study and Osmocean creature-model review are separate experiments; neither has replaced the live habitat yet.
 
 ## Core project records
 
@@ -79,6 +79,13 @@ The Phase 6 renderer and terrain prototype are isolated behind their own modules
 - [Open asset sources and licences](ASSET_SOURCES.md)
 - [Tap-to-swim navigation experiment](EXPERIMENT_TAP_TO_SWIM.md)
 - [Schooling experiment](SCHOOLING_100.md)
+
+## Phase 6 prototypes
+
+- [Volumetric voxel terrain study](voxel-terrain-spike.html): signed-density seabed, Dual Contouring, caves and an overhanging arch.
+- [Creature model and animation review](creature-model-review.html): pinned Osmocean GLB assets, embedded clip inspection and licence metadata.
+
+These pages are engineering review surfaces, not alternate canonical habitat builds.
 
 ## Tests and local development
 

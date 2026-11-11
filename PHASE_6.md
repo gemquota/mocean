@@ -129,3 +129,35 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 **Assistant completion:** pending subgoal evidence.  
 **User confirmation:** pending independent review.  
 **Phase 7:** not authorised by this document.
+
+
+## Additional Phase 6 candidate work · volumetric terrain and creature assets
+
+### P6-8 · Volumetric voxel seabed prototype
+
+Prototype page: [voxel-terrain-spike.html](voxel-terrain-spike.html).
+
+- [x] Define a deterministic signed-density field with connected seabed mass, geological outcrops, a genuine subtractive tunnel and an overhanging arch.
+- [x] Implement single-resolution Dual Contouring with Hermite intersections, finite-difference normals and regularised QEF vertex placement.
+- [x] Move density sampling and mesh extraction into a module Web Worker.
+- [x] Add deterministic field, cave/solid separation, mesh topology and invalid-input tests.
+- [ ] Inspect the generated surface in a browser at desktop and mobile sizes.
+- [ ] Benchmark mesh extraction, frame time and memory on ordinary hardware.
+- [ ] Implement chunk boundaries, neighbour sampling and LOD stitching only after the single-volume prototype is visually and numerically accepted.
+
+### P6-9 · Osmocean creature model intake and review
+
+Model/animation review page: [creature-model-review.html](creature-model-review.html).
+
+- [x] Add a pinned build-time intake step for the twelve Quaternius animated fish models and their CC0 licence.
+- [x] Add a pinned build-time intake step for the PolyFish rigged model and MIT licence.
+- [x] Add a build-time CC0-only downloader for the static marine-animal catalogue.
+- [x] Add an exact species-to-model map; unsupported species are explicit.
+- [x] Add a skeleton-safe model bank with clip playback and PolyFish procedural swim support.
+- [x] Add a dedicated 3D model/animation review page.
+- [ ] Visually inspect all model silhouettes, axes, scale, clip quality and material response.
+- [ ] Integrate supported models into the live habitat renderer without changing simulation authority.
+- [ ] Source suitable rigged models for eel, crustaceans, starfish, seals, dolphins and the remaining unsupported species, or retain the existing species renderers until appropriate models are available.
+- [ ] Verify that clips do not introduce root motion or degrade simulated locomotion.
+
+These are assistant implementation candidates only. No P6 subgoal or phase is marked complete, and no user acceptance is inferred.

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06151d">
+<title>Mocean · Volumetric Voxel Terrain Study</title>
+<style>
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06151d;color:#d7eee7;font:11px ui-monospace,SFMono-Regular,Consolas,monospace}canvas{display:block;width:100%;height:100%}#status{position:fixed;top:16px;left:18px;z-index:2;padding:11px 14px;border:1px solid #8acbb53d;border-radius:5px;background:#061a22dc;line-height:1.8;letter-spacing:.07em;pointer-events:none;backdrop-filter:blur(8px)}#status strong{color:#a6e5ce;font-weight:600}#status small{display:block;color:#9bbab5a8;font-size:9px}#hint{position:fixed;right:18px;bottom:16px;color:#9bbab57a;font-size:9px;letter-spacing:.08em;pointer-events:none;text-align:right}@media(max-width:600px){#status{top:10px;left:10px;font-size:9px}#hint{right:10px;bottom:10px;font-size:8px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="status"><strong>MOCEAN / VOLUMETRIC TERRAIN</strong><small id="state">Sampling signed-density field…</small></div>
+<div id="hint">DRAG TO ORBIT · PINCH / WHEEL TO ZOOM<br>DUAL CONTOURING · SINGLE-RESOLUTION PROTOTYPE</div>
+<canvas id="world"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const canvas=document.querySelector('#world');
+const state=document.querySelector('#state');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x061a24);
+scene.fog=new THREE.FogExp2(0x092633,.012);
+const camera=new THREE.PerspectiveCamera(48,1,.1,180);
+camera.position.set(0,-1,48);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,-8.2,0);
+controls.enableDamping=true;
+controls.dampingFactor=.055;
+controls.minDistance=12;
+controls.maxDistance=90;
+controls.maxPolarAngle=Math.PI*.88;
+scene.add(new THREE.HemisphereLight(0x9edce3,0x132b2d,1.35));
+const key=new THREE.DirectionalLight(0xd3f1e7,2.1);
+key.position.set(-18,24,15);
+scene.add(key);
+const fill=new THREE.DirectionalLight(0x2c8da4,.7);
+fill.position.set(16,5,-18);
+scene.add(fill);
+
+function resize(){
+ const width=innerWidth,height=innerHeight;
+ renderer.setSize(width,height,false);
+ camera.aspect=width/height;
+ camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize);
+resize();
+
+const worker=new Worker('./src/phase6/voxel-worker.js',{type:'module'});
+const started=performance.now();
+worker.addEventListener('message',event=>{
+ const message=event.data;
+ if(message.type==='error'){
+  state.textContent='VOXEL GENERATION FAILED · '+message.message;
+  return;
+ }
+ if(message.type!=='complete')return;
+ const mesh=message.mesh;
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.BufferAttribute(mesh.positions,3));
+ geometry.setAttribute('normal',new THREE.BufferAttribute(mesh.normals,3));
+ geometry.setIndex(new THREE.BufferAttribute(mesh.indices,1));
+ const colours=new Float32Array(mesh.positions.length);
+ const color=new THREE.Color();
+ for(let i=0;i<mesh.positions.length;i+=3){
+  const x=mesh.positions[i],y=mesh.positions[i+1],z=mesh.positions[i+2];
+  const ny=mesh.normals[i+1];
+  const slope=THREE.MathUtils.clamp(1-ny,0,1);
+  const grain=.5+.5*Math.sin(x*.72+Math.sin(z*.41)*2.1)*Math.cos(z*.61-x*.23);
+  const sediment=THREE.MathUtils.clamp((y+10.5)*.11,0,1);
+  const rock=THREE.MathUtils.clamp(slope*.95+(1-sediment)*.2,0,1);
+  color.setRGB(.095+grain*.018+rock*.055,.17+sediment*.045+rock*.07,.16+grain*.014+rock*.055);
+  colours[i]=color.r;colours[i+1]=color.g;colours[i+2]=color.b;
+ }
+ geometry.setAttribute('color',new THREE.BufferAttribute(colours,3));
+ geometry.computeBoundingSphere();
+ const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.94,metalness:.015});
+ const terrain=new THREE.Mesh(geometry,material);
+ terrain.receiveShadow=true;
+ scene.add(terrain);
+ state.textContent=mesh.vertexCount.toLocaleString()+' vertices · '+mesh.triangleCount.toLocaleString()+' triangles · '+((performance.now()-started)/1000).toFixed(2)+' s';
+ const marker=document.createElement('small');
+ marker.textContent='Carved tunnels · solid overhang · connected rock volume';
+ document.querySelector('#status').append(marker);
+ worker.terminate();
+});
+worker.postMessage({
+ type:'generate',seed:6102026,
+ origin:{x:-36,y:-15,z:-28},
+ cells:{x:72,y:27,z:56},
+ cellSize:1
+});
+
+function animate(){
+ requestAnimationFrame(animate);
+ controls.update();
+ renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>
