@@ -23,7 +23,7 @@ test('water colour tends towards blue-green scattering with distance', () => {
   const far = waterColorAtDistance(80);
   assert.ok(far.red < near.red);
   assert.ok(far.green < near.green);
-  assert.ok(far.blue > near.blue);
+  assert.ok(far.blue / far.red > near.blue / near.red);
   for (const value of Object.values(far)) assert.ok(value >= 0 && value <= 1);
 });
 
