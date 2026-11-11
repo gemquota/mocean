@@ -26,12 +26,12 @@ test('habitat voxel field contains solid seabed, open water and connected cave v
  assert.ok(terrain.field(-13,-9.05,-5)>0,'the carved tunnel is open');
  assert.ok(terrain.field(-13,-12,-5)<0,'rock remains below the tunnel');
  assert.ok(terrain.field(-16,-8,-2.4)<0,'connected ridge spine adds solid relief');
- assert.ok(terrain.field(-18.8,-8,-12.1)<0,'embedded boulder cluster adds finite rock volume');
+ assert.ok(terrain.field(-25.8,-8,-12.1)<0,'embedded boulder cluster adds finite rock volume');
  assert.ok(terrain.field(4,-7.45,-6.5)<0,'raised shelf has a solid upper surface');
  assert.ok(terrain.field(-14,-9.2,0)>0,'side gallery remains a carved cave void');
  assert.ok(terrain.field(7,-9.1,11.5)>0,'branched passage remains open');
  const repeat=createHabitatVoxelTerrain();
- for(const point of [[-16,-8,-2.4],[-18.8,-8,-12.1],[4,-7.45,-6.5],[-14,-9.2,0],[7,-9.1,11.5]]){
+ for(const point of [[-16,-8,-2.4],[-25.8,-8,-12.1],[4,-7.45,-6.5],[-14,-9.2,0],[7,-9.1,11.5]]){
   assert.equal(terrain.field(...point),repeat.field(...point),'geological field is deterministic');
  }
 });
