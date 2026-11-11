@@ -125,6 +125,16 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - Added deterministic field assertions for ridge, boulder, shelf and cave-gallery samples. The existing topology checks enforce outward-facing triangles, no non-manifold edges and boundary-only open edges.
 - PR validation passed 160/160 tests; the production Pages build and deployment for the merge commit succeeded. Browser visual inspection and ordinary-hardware startup/frame-time/memory profiling remain outstanding. This is a geometry pass, not a material/lighting pass, and Phase 6 remains in progress.
 
+## Habitat terrain and vegetation pass · 12 November 2026
+
+**Implementation branch:** `habitat-ravines-vegetation` · pending CI and review.
+
+- Population control defaults to 10–200 creatures in steps of ten. The previous device-saved population override is cleared once so the requested range takes effect; custom bounds on other sliders remain intact.
+- Terrain adds angular superellipsoid outcrops, three deep open ravines with steep walls and solid lower floors, and three enlarged cave chambers with stepped connectors and side galleries. All geometry remains in the shared voxel signed-distance field used for rendering and collision.
+- Added a deterministic terrain-aware vegetation layout. Seagrass is sampled onto near-horizontal sediment, kelp onto sloping reef shoulders and ledges, and attached macroalgae onto exposed vertical faces including ravine/cave walls.
+- Increased kelp presence while reducing the previous scattered, circular bed placement. Coral colonies and anemones have been moved inside the terrain footprint and their root heights are sampled from the voxel surface.
+- Added field assertions for ravines, angular rock, cave chambers and connectors, plus vegetation normal/clearance/determinism tests. Browser visual review and startup/frame-time profiling remain required before acceptance.
+
 ## Acceptance criteria
 
 Phase 6 is not complete until the environment has visibly real 3D depth and irregular terrain, including overhangs/caves; lighting and water effects improve realism without obscuring creatures; existing species remain visible and animated by the simulation; benthic movement agrees with visible ground; performance remains acceptable; tests pass; documentation/evidence are updated; and the user confirms after review.
