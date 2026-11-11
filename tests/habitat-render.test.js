@@ -126,7 +126,8 @@ test('every habitat range slider supports long-press min/max editing persisted i
 test('live habitat integrates a real voxel surface and animated Osmocean GLB models',()=>{
   assert.match(html,/three@0\.180\.0\/build\/three\.module\.js/);
   assert.match(script,/drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,worldSize\)/);
-  assert.match(script,/new OsmoceanMarineModels\(THREE/);
+  assert.match(script,/await Promise\.all\(\[import\('three'\),import\('\.\/src\/phase6\/osmocean-marine-models\.js'\)\]\)/);
+  assert.match(script,/new adapter\.OsmoceanMarineModels\(THREE/);
   assert.match(script,/function syncMarineModels\(ordered,dt\)/);
   assert.match(script,/entry\.mixer\.timeScale=/);
   assert.match(script,/entry\.root\.quaternion\.setFromUnitVectors/);
