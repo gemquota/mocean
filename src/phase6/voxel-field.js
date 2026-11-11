@@ -103,8 +103,8 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
   // boundary. This adds chipped, naturally irregular surfaces without turning
   // the whole rock volume into noisy collision geometry.
   const nearSurface=Math.exp(-Math.abs(solid)*.72);
-  const weather=(Math.sin(x*1.17+Math.sin(z*.71)*.8)*Math.sin(z*1.31+y*.43)+
-    .42*Math.sin(x*2.43+z*1.87+y*.9)+.22*Math.sin(x*4.1-z*3.2+y*1.6))*.105;
+  const weather=(Math.sin(x*.83+Math.sin(z*.51)*.45)*Math.sin(z*.91+y*.31)+
+    .32*Math.sin(x*1.47+z*1.13+y*.58)+.16*Math.sin(x*2.05-z*1.72+y*.9))*.028;
   solid+=weather*nearSurface;
 
   // A branched cave network: two main passages, side galleries and a chamber.
