@@ -175,6 +175,7 @@ test('voxel and WebGL failures preserve the procedural habitat fallback',()=>{
   assert.match(script,/if\(!voxelFallbackWarned\)/);
   assert.match(script,/initialiseMarineModelLayer\(\)/);
   assert.match(script,/webglcontextlost/);
+  assert.match(script,/Naturalistic GLB layer disabled; unsupported species keep their native renderers/);
   assert.match(script,/Animated GLB layer disabled; procedural species renderers remain active/);
 });
 
@@ -241,4 +242,11 @@ test('Pages workflow stages only naturalistic CC0 models and validates each GLB'
   assert.match(verifier,/glTF/);
   assert.match(verifier,/animationMode:'procedural'/);
   assert.match(verifier,/CC0 1\.0 Universal/);
+});
+
+test('naturalistic model flattening preserves quantized GLB vertex precision', () => {
+  const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
+  assert.match(adapter,/promoteQuantizedAttributes/);
+  assert.match(adapter,/attribute\.getX\(index\)/);
+  assert.match(adapter,/new THREE\.BufferAttribute\(values,itemSize,false\)/);
 });
