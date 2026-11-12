@@ -6,9 +6,9 @@
 </p>
 
 <p align="center">
-  <a href="https://gemquota.github.io/mocean/"><strong>▶ OPEN THE LIVE SIMULATION</strong></a>
+  <a href="https://gemquota.github.io/mocean/schooling.html"><strong>▶ OPEN THE LIVE SIMULATION</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://gemquota.github.io/mocean/development.html">Development presentation</a>
+  <a href="https://gemquota.github.io/mocean/schooling.htmldevelopment.html">Development presentation</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/gemquota/mocean">Source repository</a>
 </p>
@@ -22,19 +22,19 @@
 
 ---
 
-## The live build
+## The main simulation
 
-**[Open Mocean on GitHub Pages ↗](https://gemquota.github.io/mocean/)**
+**[▶ Open Schooling · the main Mocean simulation ↗](https://gemquota.github.io/mocean/schooling.html)**
 
-This is the canonical live version of the project. Mocean is published through GitHub Pages from the repository's `main` branch.
+Schooling is the primary live simulation for Mocean: a mixed-species aquatic habitat driven by autonomous schooling and individual creature behaviour. It is published through GitHub Pages from this repository's `main` branch.
 
-There is currently one canonical live habitat, not a collection of separately maintained product versions. Older deployment snapshots are intentionally not presented as distinct builds: a different deployment URL does not make the fish any less the same fish.
+The [single-creature prototype](https://gemquota.github.io/mocean/) remains available as a secondary locomotion experiment; it is not the main simulation.
 
 ## What Mocean is
 
 Mocean is a full-screen aquatic simulation. The habitat and its creatures are the experience: there is no user-facing configuration dashboard. Creature movement is intended to emerge from body mechanics, inertia, resistance and behavioural intent rather than canned animation cycles.
 
-The project has expanded from a single flexible swimmer into a richer marine habitat with multiple fish and benthic species, reefs, vegetation and spatial environment work. The current focus is making the habitat genuinely three-dimensional while preserving the existing simulation and its working behaviours.
+The main experience is the Schooling simulation: a mixed-species marine habitat with autonomous group motion, individual variation and population controls. The original single-creature swimmer remains available as a focused locomotion prototype.
 
 ## Current development status
 
@@ -44,7 +44,7 @@ The project has expanded from a single flexible swimmer into a richer marine hab
 - **Phase 6 · Environment, seabed and water:** authorised and in progress. The current increment adds a staged 3D renderer, spatial terrain geometry and renderer-independent terrain-clearance queries. Browser visual verification and performance profiling remain important acceptance work.
 - **Phase 7 · Integration and polish:** not started.
 
-See the [canonical roadmap](ROADMAP.md) and [Phase 6 record](PHASE_6.md) for task-level status and evidence. The [development presentation](https://gemquota.github.io/mocean/development.html) provides the visual project overview.
+See the [canonical roadmap](ROADMAP.md) and [Phase 6 record](PHASE_6.md) for task-level status and evidence. The [development presentation](https://gemquota.github.io/mocean/schooling.htmldevelopment.html) provides the visual project overview.
 
 ## Engineering priorities
 
@@ -78,7 +78,8 @@ The Phase 6 renderer and terrain prototypes are isolated behind their own module
 - [Phase 6 environment and terrain work](PHASE_6.md)
 - [Open asset sources and licences](ASSET_SOURCES.md)
 - [Tap-to-swim navigation experiment](EXPERIMENT_TAP_TO_SWIM.md)
-- [Schooling experiment](SCHOOLING_100.md)
+- [Main simulation: Schooling](schooling.html)
+- [Schooling experiment notes](SCHOOLING_100.md)
 
 ## Phase 6 prototypes
 
@@ -110,7 +111,7 @@ Mocean uses biomechanical and ecological approximations. It is not a validated a
 ---
 
 <p align="center">
-  <a href="https://gemquota.github.io/mocean/"><strong>Explore the live simulation ↗</strong></a>
+  <a href="https://gemquota.github.io/mocean/schooling.html"><strong>Explore the Schooling simulation ↗</strong></a>
   <br>
   <sub>Mocean · one evolving underwater world</sub>
 </p>
