@@ -10,6 +10,8 @@ assert.ok(match, 'habitat page should contain its module script');
 const script = match[1].replace(/^import .*?;\s*$/gm, '');
 
 test('habitat browser module parses and initializes every fish before rendering', () => {
+  assert.match(html, /from '\.\/src\/phase6\/animated-species-filter\.js'/);
+  assert.match(html, /from '\.\/src\/phase6\/schooling-creature-renderer\.js'/);
   assert.doesNotThrow(() => new vm.Script(script), 'browser module should remain syntactically valid');
   const created = script.indexOf('let school=createSchool(150,73421,{speciesPercentages:speciesMix,worldSize})');
   const initialized = script.indexOf('initialiseFishVisualState(school)');
