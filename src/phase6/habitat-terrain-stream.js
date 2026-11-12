@@ -54,7 +54,7 @@ export function createHabitatVoxelTerrainStream({
     const visible=[...chunks.values()].filter(item=>item.visible&&item.mesh);
     return {
       loaded:[...chunks.values()].filter(item=>item.mesh).length,
-      pending:queue.length+workers.filter(slot=>slot.busy).length,
+      pending:workers.some(slot=>!slot.failed)?queue.length+workers.filter(slot=>slot.busy).length:0,
       visible:visible.length,
       triangles:visible.reduce((sum,item)=>sum+(item.mesh?.triangleCount??0),0),
       failed:[...chunks.values()].filter(item=>item.error).length,
@@ -65,16 +65,16 @@ export function createHabitatVoxelTerrainStream({
   function dispatch(){
     if(disposed)return;
     for(const slot of workers){
-      if(slot.busy||!queue.length)continue;
+      if(slot.busy||slot.failed||!queue.length)continue;
       const job=queue.shift(),item=chunks.get(job.key);
       if(!item||item.token!==job.token)continue;
       slot.busy=true;slot.key=job.key;
-      slot.worker.postMessage({
+      try{slot.worker.postMessage({
         type:'generate-chunk',key:job.key,token:job.token,
         chunkX:job.x,chunkZ:job.z,chunkSize,seed:TERRAIN_SEED,
         worldSize:size,minY:MIN_Y,maxY:MAX_Y,cellSize:CELL_SIZE,
         includeStreamRocks:false
-      });
+      });}catch(error){slot.busy=false;slot.failed=true;item.error=String(error?.message??error);slot.key=null;}
     }
     report();
   }
@@ -90,10 +90,10 @@ export function createHabitatVoxelTerrainStream({
   }
   for(let index=0;index<workerCount;index++){
     const worker=new Worker(new URL('./streamed-voxel-worker.js',import.meta.url),{type:'module'});
-    const slot={worker,busy:false,key:null};
+    const slot={worker,busy:false,failed:false,key:null};
     worker.addEventListener('message',event=>handleMessage(slot,event));
     worker.addEventListener('error',event=>{
-      slot.busy=false;
+      slot.busy=false;slot.failed=true;
       const item=slot.key?chunks.get(slot.key):null;
       if(item)item.error=event.message||'Habitat terrain worker failed';
       slot.key=null;dispatch();
