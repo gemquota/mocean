@@ -221,7 +221,7 @@ test('jellyfish remain upright while following heading with a vertical-axis root
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
   const mapping = readFileSync(new URL('../src/phase6/species-model-map.js', import.meta.url), 'utf8');
   assert.match(mapping,/jellyfish: \{ collection: 'naturalistic', id: 'moon_jellyfish'.*orientation: 'vertical' \}/);
-  assert.match(adapter,/mapping\.orientation === 'vertical'/);
+  assert.match(adapter,/mapping\.orientation \?\? 'horizontal'/);
   assert.match(script,/setFromAxisAngle\(new THREE\.Vector3\(0,1,0\),yaw\)/);
 });
 
