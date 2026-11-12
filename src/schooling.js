@@ -24,19 +24,19 @@ export const SCHOOLING_WORLD_EDGE_MARGIN = 0.1;
 // is a temperate Australian coastal-reef suitability/encounter index (1 = uncommon,
 // 10 = very common), not a census-derived abundance estimate.
 export const SCHOOLING_SPECIES_VOLUME = Object.freeze({
-  fish: 1, schoolFish: 0.015625, seahorse: 0.07, seaDragon: 0.14, clownfish: 0.16, parrotfish: 0.72, blueTang: 0.12, angelfish: 0.48, butterflyfish: 0.22, grouper: 5.8, moorishIdol: 0.20, barracuda: 3.2, wobbegong: 4.8, marlin: 5.2, tuna: 3.8, eel: 1.35, crab: 0.38, lobster: 0.32,
+  fish: 1, schoolFish: 0.015625, seahorse: 0.07, seaDragon: 0.14, anglerfish: 0.38, clownfish: 0.16, parrotfish: 0.72, blueTang: 0.12, angelfish: 0.48, butterflyfish: 0.22, grouper: 5.8, moorishIdol: 0.20, barracuda: 3.2, wobbegong: 4.8, marlin: 5.2, tuna: 3.8, eel: 1.35, crab: 0.38, lobster: 0.32,
   mantis: 0.30, manta: 6.5, stingray: 3.2, shark: 5.8, whaleShark: 21,
   mola: 4.4, orca: 24, spermWhale: 70, seal: 2.2, starfish: 0.08,
   dolphin: 2.9, turtle: 1.4, jellyfish: 0.55, sandEel: 0.38
 });
 export const SCHOOLING_SPECIES_ADULT_MASS_KG = Object.freeze({
-  fish: 0.10, schoolFish: 0.025, seahorse: 0.025, seaDragon: 0.045, clownfish: 0.025, parrotfish: 0.65, blueTang: 0.018, angelfish: 0.35, butterflyfish: 0.045, grouper: 180, moorishIdol: 0.20, barracuda: 18, wobbegong: 100, marlin: 90, tuna: 35, eel: 15, crab: 0.30, lobster: 0.90,
+  fish: 0.10, schoolFish: 0.025, seahorse: 0.025, seaDragon: 0.045, anglerfish: 0.42, clownfish: 0.025, parrotfish: 0.65, blueTang: 0.018, angelfish: 0.35, butterflyfish: 0.045, grouper: 180, moorishIdol: 0.20, barracuda: 18, wobbegong: 100, marlin: 90, tuna: 35, eel: 15, crab: 0.30, lobster: 0.90,
   mantis: 0.09, manta: 350, stingray: 8, shark: 13, whaleShark: 15000,
   mola: 1000, orca: 3500, spermWhale: 36000, seal: 180, starfish: 0.06,
   dolphin: 225, turtle: 150, jellyfish: 0.01, sandEel: 0.01
 });
 export const SCHOOLING_SPECIES_ECOLOGY = Object.freeze({
-  fish: 10, schoolFish: 9, seahorse: 2, seaDragon: 1, clownfish: 7, parrotfish: 8, blueTang: 6, angelfish: 5, butterflyfish: 6, grouper: 2, moorishIdol: 5, barracuda: 3, wobbegong: 4, marlin: 2, tuna: 4, eel: 5, crab: 8, lobster: 4,
+  fish: 10, schoolFish: 9, seahorse: 2, seaDragon: 1, anglerfish: 1, clownfish: 7, parrotfish: 8, blueTang: 6, angelfish: 5, butterflyfish: 6, grouper: 2, moorishIdol: 5, barracuda: 3, wobbegong: 4, marlin: 2, tuna: 4, eel: 5, crab: 8, lobster: 4,
   mantis: 3, manta: 2, stingray: 5, shark: 3, whaleShark: 1,
   mola: 1, orca: 1, spermWhale: 1, seal: 2, starfish: 8,
   dolphin: 2, turtle: 3, jellyfish: 7, sandEel: 8
@@ -326,6 +326,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       : species === 'sandEel' ? 2.2 + random() * 0.5
       : species === 'seahorse' ? 0.55 + random() * 0.18
       : species === 'seaDragon' ? 0.62 + random() * 0.22
+      : species === 'anglerfish' ? 0.82 + random() * 0.24
       : 0.78 + random() * 0.34;
     const eelLengthScale = species === 'eel' ? 2 + random() * 3 : 1;
     const schoolAffinity = species === 'fish' ? clamp(1.48 - bodyScale * 0.62, 0.48, 1.12) : species === 'schoolFish' ? 2.4 : 0;
@@ -379,6 +380,12 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
       agent.p.y = -3.4 + (agent.id % 6) * 0.28;
       agent.v = { x: 0.09 * side, y: 0.015, z: 0.025 };
       agent.forward = { x: side, y: 0, z: 0 };
+    } else if (agent.species === 'anglerfish') {
+      agent.p.x = -7 + (agent.id % 7 - 3) * .72;
+      agent.p.z = -7 + (agent.id % 5 - 2) * .68;
+      agent.p.y = -5.5 + (agent.id % 4) * .24;
+      agent.v = { x: .06, y: 0, z: -.025 };
+      agent.forward = { x: 1, y: 0, z: 0 };
     }
     if (['crab','lobster','mantis','starfish','sandEel'].includes(agent.species)) agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
   }
@@ -660,6 +667,20 @@ export function stepSchool(school, dt) {
       agent.v = limit(agent.v, .32);
       agent.p.x += agent.v.x * step; agent.p.y += agent.v.y * step; agent.p.z += agent.v.z * step;
       agent.phase += step * .62; speedTotal += length(agent.v); continue;
+    }
+    if (agent.species === 'anglerfish') {
+      // A slow deep-water ambush cruiser, holding station above the ravine floor.
+      const targetY=-5.45+Math.sin(school.time*.075+agent.phase)*.38;
+      const desired=.24+.025*Math.sin(school.time*.09+agent.phase);
+      const speed=length(agent.v),direction=speed>.04?normalize(agent.v):agent.forward;
+      const correction=clamp((desired-speed)*.5,-.05,.06);
+      agent.v.x+=(acceleration.x*.18+direction.x*correction)*step;
+      agent.v.y+=(acceleration.y*.12+(targetY-agent.p.y)*.055-agent.v.y*.16)*step;
+      agent.v.z+=(acceleration.z*.18+direction.z*correction)*step;
+      agent.v=limit(agent.v,.36);
+      agent.forward=turnDirection(agent.forward,normalize(agent.v),.22*step);
+      agent.p.x+=agent.v.x*step;agent.p.y+=agent.v.y*step;agent.p.z+=agent.v.z*step;
+      agent.phase+=step*.42;speedTotal+=length(agent.v);continue;
     }
     if (agent.species === 'turtle') {
       const desired = .48 + .05 * Math.sin(school.time * .2 + agent.phase), speed = length(agent.v);
