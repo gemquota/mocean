@@ -73,9 +73,9 @@ function buildChunk({ seed, chunkX, chunkZ, chunkSize }) {
   // One-cell halo on all horizontal sides makes boundary quads available to
   // both adjacent workers. A centroid ownership rule assigns every triangle
   // to exactly one chunk, eliminating cracks and duplicate faces.
-  const min = [minX - cell, -17, minZ - cell];
-  const max = [minX + size + cell, -3, minZ + size + cell];
-  const cells = [size / cell + 2, 14, size / cell + 2];
+  const min = [minX - cell, -18, minZ - cell];
+  const max = [minX + size + cell, 0, minZ + size + cell];
+  const cells = [size / cell + 2, 18, size / cell + 2];
   const sampleDistance = makeChunkField(seed, chunkX, chunkZ);
   const full = buildDualContourSurface({ min, max, cells, sampleDistance });
   const kept = [];
