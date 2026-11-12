@@ -133,7 +133,7 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 **Status:** Primary live simulation on `main` and published through GitHub Pages.
 
-**Entry point:** [schooling.html](schooling.html) · [model notes](SCHOOLING_100.md).
+**Entry point:** [schooling.html](schooling.html) · [model notes](SCHOOLING.md).
 
 The habitat uses local group interactions rather than a shared waypoint:
 - separation to avoid crowding and collisions;
@@ -143,7 +143,7 @@ The habitat uses local group interactions rather than a shared waypoint:
 - individual inertia, turn-rate limits and phase variation;
 - a default population of 1,000 fish, with mixed-species habitat work layered around the schooling model.
 
-The single-creature swimmer at [index.html](index.html) remains a separate locomotion prototype. Its mechanics and tests are useful references, but it is not the primary live experience. See `SCHOOLING_100.md` for model details and known limitations.
+The single-creature swimmer at [index.html](index.html) remains a separate locomotion prototype. Its mechanics and tests are useful references, but it is not the primary live experience. See `SCHOOLING.md` for model details and known limitations.
 
 ## Phase 6 · 3D environment, seabed and water
 
