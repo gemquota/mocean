@@ -17,17 +17,17 @@ Each fish has independent 3D position, velocity, body-forward direction and gait
 - **Habitat pressure:** a smooth ellipsoidal force steers fish away from the soft boundary.
 - **Individual variation:** slow phase-offset drift prevents a rigid rotating formation.
 
-The live page starts with 150 creatures and exposes a population slider from 10 to 200 in steps of ten. Its species catalogue contains 30 species. The rendered schooling-fish body scale is 25% of the shared single-creature body dimensions. The habitat starts at 100 × 100 × 100 world units; its dimensions can be adjusted in the habitat configuration panel. The simulation uses a fixed-step update and shares gait/body helpers with the single-creature locomotion prototype.
+The live page starts with 150 creatures and exposes a population slider from 10 to 200 in steps of ten. Its full species catalogue contains 30 species, but only the 12 species with reviewed animated models are active by default. The other 18 are temporarily disabled in the prevalence controls until appropriate models are sourced. The rendered schooling-fish body scale is 25% of the shared single-creature body dimensions. The habitat starts at 100 × 100 × 100 world units; its dimensions can be adjusted in the habitat configuration panel. The simulation uses a fixed-step update and shares gait/body helpers with the single-creature locomotion prototype.
 
 ## Performance strategy
 
-A uniform 3D spatial hash replaces an all-pairs neighbour scan. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. The habitat uses a Canvas-based world layer plus a transparent Three.js overlay for suitable animated fish models. The procedural renderer remains responsible for species without a matching imported rig.
+A uniform 3D spatial hash replaces an all-pairs neighbour scan. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. The habitat uses a Canvas-based world layer plus a transparent Three.js overlay for all 12 active species. Their GLBs are selected from the complete 35-model Quaternius Animated Fish Bundle plus a rigged PolyFish dolphin. Species without an appropriate animated model are temporarily disabled rather than shown with unrelated stand-ins. The Canvas renderer remains a graceful loading/runtime fallback.
 
 This reduces work for a spatially distributed school, but actual frame time still depends on browser, screen resolution and device. Performance should be measured on representative hardware rather than inferred from algorithmic complexity alone.
 
 ## Validation
 
-The live habitat also uses a shared signed-distance voxel field for the visible seabed and creature terrain contact. Selected animated fish models are loaded from the pinned Quaternius bundle; other species retain their dedicated procedural renderers.
+The live habitat also uses a shared signed-distance voxel field for the visible seabed and creature terrain contact. All 35 Quaternius fish GLBs are staged from a pinned CC0 source, alongside a pinned MIT-licensed PolyFish dolphin. A build-time verifier checks that each required GLB contains animation clips and writes a catalogue of clip names. Twelve exact species mappings are enabled; the remaining 18 species are explicitly disabled until matching animated assets are available.
 
 Automated coverage includes:
 
