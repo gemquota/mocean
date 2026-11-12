@@ -249,3 +249,13 @@ test('naturalistic model flattening preserves quantized GLB vertex precision', (
   assert.match(adapter,/attribute\.getX\(index\)/);
   assert.match(adapter,/new THREE\.BufferAttribute\(values,itemSize,false\)/);
 });
+
+test('model review gallery displays only the naturalistic procedural CC0 catalogue', () => {
+  const gallery = readFileSync(new URL('../creature-model-review.html', import.meta.url), 'utf8');
+  const legacy = readFileSync(new URL('../osmocean-model-study.html', import.meta.url), 'utf8');
+  assert.match(gallery,/naturalistic\/catalog\.json/);
+  assert.match(gallery,/OsmoceanMarineModels/);
+  assert.match(gallery,/PAUSE SWIM/);
+  assert.doesNotMatch(gallery,/Quaternius|Gobkit|animated\/catalog\.json|static\/catalog\.json/);
+  assert.match(legacy,/creature-model-review\.html/);
+});
