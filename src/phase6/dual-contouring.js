@@ -43,18 +43,23 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
   // edge crossings. Re-sampling the signed-distance field six times for every
   // crossing dominated worker time on detailed habitat chunks.
   const gradients=new Float32Array(values.length*3);
-  for(let z=0;z<sz;z++)for(let y=0;y<sy;y++)for(let x=0;x<sx;x++){
+  const gradientReady=new Uint8Array(values.length);
+  const latticeGradient=index=>{
+    if(gradientReady[index])return index*3;
+    const x=index%sx,yz=(index-x)/sx,y=yz%sy,z=(yz-y)/sy;
     const xm=Math.max(0,x-1),xp=Math.min(sx-1,x+1);
     const ym=Math.max(0,y-1),yp=Math.min(sy-1,y+1);
     const zm=Math.max(0,z-1),zp=Math.min(sz-1,z+1);
     const dx=(values[key(xp,y,z,sx,sy)]-values[key(xm,y,z,sx,sy)])/((xp-xm)*step[0]||1);
     const dy=(values[key(x,yp,z,sx,sy)]-values[key(x,ym,z,sx,sy)])/((yp-ym)*step[1]||1);
     const dz=(values[key(x,y,zp,sx,sy)]-values[key(x,y,zm,sx,sy)])/((zp-zm)*step[2]||1);
-    const length=Math.hypot(dx,dy,dz)||1,index=key(x,y,z,sx,sy)*3;
-    gradients[index]=dx/length;gradients[index+1]=dy/length;gradients[index+2]=dz/length;
-  }
+    const length=Math.hypot(dx,dy,dz)||1,offset=index*3;
+    gradients[offset]=dx/length;gradients[offset+1]=dy/length;gradients[offset+2]=dz/length;
+    gradientReady[index]=1;
+    return offset;
+  };
   const gradientAt=(a,b,t)=>{
-    const ia=a*3,ib=b*3,blend=1-t;
+    const ia=latticeGradient(a),ib=latticeGradient(b),blend=1-t;
     const dx=gradients[ia]*blend+gradients[ib]*t;
     const dy=gradients[ia+1]*blend+gradients[ib+1]*t;
     const dz=gradients[ia+2]*blend+gradients[ib+2]*t;
