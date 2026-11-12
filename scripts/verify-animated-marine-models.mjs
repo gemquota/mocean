@@ -49,11 +49,13 @@ const manifestPath=process.argv[3];
 if(!manifestPath) throw new Error('Gobkit manifest path is required for source/licence verification');
 const manifest=JSON.parse(await fs.readFile(path.resolve(manifestPath),'utf8'));
 const manifestModels=(manifest.packs??[]).flatMap(pack=>pack.models??[]);
+const gobkitSourceByFile=new Map();
 for(const item of gobkit){
   const source=manifestModels.find(model=>model.url===item.url);
   if(!source||!source.rigged||!(source.animations??[]).length||!String(source.license??'').includes('CC0 1.0')){
     throw new Error('Gobkit source manifest does not confirm a rigged CC0 animated model: '+item.file);
   }
+  gobkitSourceByFile.set(item.file,source);
 }
 
 function readGlb(file){
@@ -73,17 +75,23 @@ const entries=[];
 for(const file of required){
   const bytes=await fs.readFile(path.join(directory,file));
   const gltf=readGlb(bytes);
-  const animations=(gltf.animations??[]).map((clip,index)=>clip.name||'Animation '+(index+1));
+  const embeddedClips=gltf.animations??[];
   const quaterniusAsset=quaternius.includes(file);
   const gobkitAsset=gobkit.some(item=>item.file===file);
+  const gobkitSource=gobkitSourceByFile.get(file);
   const proceduralDolphin=file==='dolphin_rigged.glb'&&Array.isArray(gltf.skins)&&gltf.skins.length>0;
-  if(!animations.length&&(quaterniusAsset||gobkitAsset||!proceduralDolphin)) throw new Error(file+' contains neither embedded clips nor a reviewed procedural swim rig');
+  if(!embeddedClips.length&&(quaterniusAsset||gobkitAsset||!proceduralDolphin)) throw new Error(file+' contains neither embedded clips nor a reviewed procedural swim rig');
+  const animations=gobkitAsset
+    ? gobkitSource.animations.map(clip=>clip.name+' ['+clip.from+'-'+clip.to+']')
+    : embeddedClips.map((clip,index)=>clip.name||'Animation '+(index+1));
+  const animationMode=gobkitAsset?'baked-timeline-subclips':embeddedClips.length?'baked-clips':'procedural-swim';
   entries.push({
     id:path.basename(file,'.glb'),
     file,
     animations,
     animationCount:animations.length,
-    animationMode:animations.length?'baked-clips':'procedural-swim',
+    animationMode,
+    framesPerSecond:gobkitAsset?gobkitSource.fps:null,
     source:quaterniusAsset
       ? 'Quaternius Animated Fish Bundle / Vitexus ishtaria-client'
       : gobkitAsset ? 'Gobkit Free 3D Assets / live CC0 manifest' : 'PolyFish / unclemattmakes-polyfish',
@@ -98,4 +106,4 @@ const catalogue={
   species:entries
 };
 await fs.writeFile(path.join(directory,'catalog.json'),JSON.stringify(catalogue,null,2)+'\\n');
-console.log('Verified '+entries.length+' animated marine GLBs ('+catalogue.totalAnimationClips+' baked clips plus procedural dolphin swim).');
+console.log('Verified '+entries.length+' animated marine GLBs ('+catalogue.totalAnimationClips+' animation actions plus procedural dolphin swim).');
