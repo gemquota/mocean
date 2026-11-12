@@ -8,7 +8,7 @@
 
 Turn the mixed-species habitat into a convincing underwater environment without degrading creature simulation, locomotion, interaction, or ordinary-browser performance. The environment must be a real spatial scene, not a flat backdrop decorated with fake depth cues.
 
-`schooling.html` retains its Canvas-based habitat and species renderers, now augmented by a volumetric voxel terrain projection and a transparent Three.js overlay for thirteen naturalistic marine models with procedural swimming. `src/schooling.js` owns creature state and the fixed-step simulation; `src/phase6/voxel-field.js` supplies the shared signed-distance field used by terrain extraction and creature contact. This is a staged hybrid renderer, not yet a fully unified 3D scene: cross-renderer depth ordering, water/light integration and performance on ordinary hardware remain open.
+`schooling.html` retains its Canvas-based habitat and species renderers, now augmented by a volumetric voxel terrain projection and a transparent Three.js overlay for sixteen naturalistic marine models with procedural swimming. `src/schooling.js` owns creature state and the fixed-step simulation; `src/phase6/voxel-field.js` supplies the shared signed-distance field used by terrain extraction and creature contact. This is a staged hybrid renderer, not yet a fully unified 3D scene: cross-renderer depth ordering, water/light integration and performance on ordinary hardware remain open.
 
 ## Non-negotiable constraints
 
@@ -48,7 +48,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ### P6-2 · Spatial seabed and terrain
 
-**Prototype and live integration:** isolated terrain studies contain seeded heightfields, irregular rock clusters, arch meshes, raised shelves and depressed sand channels. The live habitat now extracts a volumetric terrain mesh from a shared signed-distance field and uses that same field for creature contact. The richer terrain study remains a separate review surface; the live hybrid renderer still needs visual and performance acceptance.
+**Prototype and live integration:** isolated terrain studies contain seeded heightfields, irregular rock clusters, arch meshes, raised shelves and depressed sand channels. The live habitat now streams 32-unit voxel chunks from two module workers, sampling the same signed-distance field used for creature contact. The fixed-camera habitat keeps a two-chunk visible radius and three-chunk prefetch ring, uses half-unit cells, and caches projected chunk tiles for Canvas compositing. Extra study-only boulders are disabled in the live worker path so visual geometry cannot diverge from collision. The live hybrid renderer still needs visual and performance acceptance.
 
 - [x] Replace the simple analytic floor presentation with a volumetric terrain mesh extracted from the shared signed-distance field at multiple elevations.
 - [x] Add seeded raised rock shelves with finite solid volume and queryable top/underside normals.
@@ -69,7 +69,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ### P6-3 · Open-source asset integration
 
-**Naturalistic marine model pipeline established:** `ASSET_SOURCES.md` records the thirteen species-matched CC0 smooth-shaded GLBs now used by the live habitat. The Pages workflow downloads them from stable 3DAssets.dev CDN URLs and validates their glTF structure. They are static posed studies, so the Three.js overlay adds procedural body, tail, ray-wing and jellyfish-bell motion. The old Quaternius/Gobkit cartoon packs are no longer staged or rendered. Environment props and materials still require individual licence review, optimisation and visual acceptance.
+**Naturalistic marine model pipeline established:** `ASSET_SOURCES.md` records the sixteen species-matched CC0 smooth-shaded GLBs now used by the live habitat, including seahorse, leafy seadragon and anglerfish. The Pages workflow downloads them from stable 3DAssets.dev CDN URLs and validates their glTF structure. They are static posed studies, so the Three.js overlay adds procedural body, tail, ray-wing and jellyfish-bell motion. The old Quaternius/Gobkit cartoon packs are no longer staged or rendered. Environment props and materials still require individual licence review, optimisation and visual acceptance.
 
 - [x] Identify a preferred CC0 source and verify its redistribution terms (`https://polyhaven.com/license`).
 - [x] Record initial model/texture candidates and reject raw assets that exceed a sensible browser budget (`ASSET_SOURCES.md`).
@@ -99,7 +99,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ### P6-6 · Creature/render integration
 
-- [x] Integrate the live 30-species simulation with shared voxel terrain contact without changing simulation authority.
+- [x] Integrate the live 33-species simulation with shared voxel terrain contact without changing simulation authority.
 - [x] Add a Three.js overlay for suitable animated fish models driven by live creature position, heading and swimming speed; retain dedicated renderers for species without reviewed naturalistic models.
 - [ ] Resolve cross-renderer depth ordering, scale and occlusion across the full habitat.
 - [ ] Compare representative species and population settings against the Canvas baseline on ordinary hardware.
@@ -139,13 +139,13 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ## Acceptance criteria
 
-Phase 6 is not complete until the environment has visibly real 3D depth and irregular terrain, including overhangs/caves; lighting and water effects improve realism without obscuring creatures; existing species remain visible and animated by the simulation; benthic movement agrees with visible ground; performance remains acceptable; tests pass; documentation/evidence are updated; and the user confirms after review.
+Phase 6 is not complete until the environment has visibly real 3D depth and irregular terrain, including overhangs/caves; distinct coral-reef, kelp-forest, seagrass-meadow, sponge-garden and rocky-ravine biomes have appropriate flora; lighting and water effects improve realism without obscuring creatures; existing species remain visible and animated by the simulation; benthic movement agrees with visible ground; performance remains acceptable; tests pass; documentation/evidence are updated; and the user confirms after review.
 
 ## Known risks
 
 - The habitat keeps its established Canvas projection for coral, invertebrates and disabled species. A transparent Three.js layer now composites naturalistic marine GLBs with procedural swimming over that view; cross-renderer depth ordering remains a known limitation.
 - The original `seabedHeight(x, z)` remains as the broad base profile, but the visible seabed is now extracted from a signed-distance volume. Creature contact uses the same volume field; full path planning through cave networks is not yet implemented.
-- The habitat already contains 30 species, but only suitable fish use the imported animated-model overlay. Other species retain their dedicated Canvas renderers; do not replace them with unrelated GLBs merely to increase model coverage.
+- The habitat now contains 33 species, but only suitable fish use the imported animated-model overlay. Other species retain their dedicated Canvas renderers; do not replace them with unrelated GLBs merely to increase model coverage.
 - Visual fidelity is not evidence of physical correctness. Keep simulation and rendering responsibilities separate.
 
 ## Phase gate
@@ -179,3 +179,16 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 ### Verification boundary
 
 Merged in PR #48 (commit `f9a2051c993102c8dff26d7e723b2fad1f45d247`) and deployed to GitHub Pages. Main-branch CI passed 160/160 tests; the Pages build and deployment both succeeded, including the pinned 35-model CC0 asset bundle. Targeted runtime checks found no non-manifold terrain edges or inward-facing triangles, and benthic/mixed-school simulations remained finite in tested runs. Browser visual inspection and ordinary-hardware frame-time/memory profiling are still outstanding; cross-renderer depth ordering between the WebGL fish layer and remaining Canvas creatures is a known limitation. Phase 6 remains in progress pending independent user review; no Phase 7 gate is implied.
+
+
+## Live habitat streaming, biome flora and species expansion · 12 November 2026
+
+**Implementation staged on `feat/endless-voxel-terrain-streaming`; acceptance pending.**
+
+- Integrated worker-backed 32-unit voxel chunks into `schooling.html`. The live worker receives the actual habitat dimensions and samples the same `createHabitatVoxelField` used by simulation contact. The study-only procedural boulder overlay is disabled for live chunks, avoiding geometry/collision disagreement.
+- Live terrain uses a 0.5-unit cell size over the seabed/cave vertical band, a two-chunk visible radius, a three-chunk prefetch ring and a 49-chunk cache ceiling. Completed chunks are projected to cached screen-space Canvas tiles; a simple floor silhouette is shown only while visible chunks are being generated. Worker failure retains the original synchronous voxel renderer as fallback.
+- Added deterministic biome classification for coral reef, kelp forest, seagrass meadow, sponge garden and rocky ravine patches. The terrain receives subtle region-specific sediment/rock palettes.
+- Expanded vegetation from seagrass, kelp, macroalgae, coral and anemones to include sponge colonies, soft corals and attached sea fans. New forms reuse sampled surface anchors to avoid a second expensive terrain sampling pass.
+- Added lined seahorse, leafy seadragon and anglerfish as three additional species with verified CC0 GLBs, procedural movement and dedicated slow/hovering simulation behaviour. The model roster is now sixteen species; remaining species stay disabled until reviewed models are available.
+- Reduced model-layer cost with a 72-visible-model budget, screen culling, cached projected fish positions, no antialiasing on the transparent overlay, a 1.25 device-pixel-ratio cap, reusable transform vectors and disposal of cloned geometry/materials when instances are evicted. Creatures outside the 3D budget retain their animated Canvas renderer rather than disappearing.
+- Added tests for biome classification, vegetation forms, terrain worker scheduling/raster caching, new species behaviour, model mapping and browser-page wiring. CI and browser visual/performance verification are still required; this work does not close Phase 6.
