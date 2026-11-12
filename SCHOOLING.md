@@ -17,17 +17,17 @@ Each creature has independent 3D position, velocity, body-forward direction and 
 - **Habitat pressure:** a smooth ellipsoidal force steers creatures away from the soft boundary.
 - **Individual variation:** slow phase-offset drift prevents rigid rotating formations.
 
-The live page starts with 150 creatures and exposes a population slider from 10 to 200 in steps of ten. Its full species catalogue contains 30 species, but only the 12 with reviewed naturalistic models are active by default. Eighteen species are temporarily disabled in the prevalence controls until appropriate models and movement are sourced. The habitat starts at 100 × 100 × 100 world units; its dimensions can be adjusted in the habitat configuration panel.
+The live page starts with 150 creatures and exposes a population slider from 10 to 200 in steps of ten. Its full species catalogue contains 30 species, but only the 13 with reviewed naturalistic models are active by default. Seventeen species are temporarily disabled in the prevalence controls until appropriate models and movement are sourced. The habitat starts at 100 × 100 × 100 world units; its dimensions can be adjusted in the habitat configuration panel.
 
 ## Naturalistic model layer
 
-The live habitat uses twelve species-matched, smooth-shaded, natural-colour GLBs from 3DAssets.dev. The GLBs are static posed studies with no rigs or baked clips. The renderer flattens their mesh hierarchies and applies procedural vertex motion: lateral body waves for fish, vertical tail strokes for cetaceans, wing waves for rays, and a bell pulse for jellyfish.
+The live habitat uses thirteen species-matched, smooth-shaded, natural-colour GLBs from 3DAssets.dev. The GLBs are static posed studies with no rigs or baked clips. The renderer flattens their mesh hierarchies and applies procedural vertex motion: lateral body waves for fish, vertical tail strokes for cetaceans, wing waves for rays, and a bell pulse for jellyfish.
 
 The selected models are not photoreal scans. They are untextured AI-generated smooth-shaded assets, but their body plans and natural colour palettes are a substantial improvement over the previous cartoon/low-poly packs. The exact species mapping, asset IDs, CC0 licence and animation limitations are recorded in [ASSET_SOURCES.md](ASSET_SOURCES.md).
 
-**Enabled:** barracuda, marlin, tuna, great white shark, whale shark, mola, manta ray, stingray, orca, sperm whale, bottlenose dolphin and moon jellyfish.
+**Enabled:** barracuda, marlin, tuna, great white shark, whale shark, mola, manta ray, stingray, orca, sperm whale, bottlenose dolphin, moon jellyfish and loggerhead turtle.
 
-**Temporarily disabled:** regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish, turtle and sand eel.
+**Temporarily disabled:** regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish and sand eel.
 
 The old Quaternius and Gobkit model packs are no longer staged or rendered in Schooling. Modelled species do not fall back to the cartoon Canvas renderers while loading or after a model failure. Unsupported species remain disabled rather than being represented by an unrelated model.
 
@@ -41,7 +41,7 @@ The camera's maximum zoom-in has been reduced from 4.5× to 3.5×, including pin
 
 ## Validation
 
-The live habitat also uses a shared signed-distance voxel field for the visible seabed and creature terrain contact. The Pages build stages the twelve pinned-by-ID CC0 GLBs from their permanent CDN URLs and validates each file's GLB header, glTF 2.0 JSON chunk and mesh primitives. It also verifies that these models are static and that the procedural motion path is selected.
+The live habitat also uses a shared signed-distance voxel field for the visible seabed and creature terrain contact. The Pages build stages the thirteen pinned-by-ID CC0 GLBs from their permanent CDN URLs and validates each file's GLB header, glTF 2.0 JSON chunk and mesh primitives. It also verifies that these models are static and that the procedural motion path is selected.
 
 Automated coverage includes:
 
