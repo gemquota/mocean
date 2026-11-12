@@ -33,14 +33,18 @@ Use the official asset download/API, not scraped preview images. Poly Haven's te
 No Poly Haven binary assets have been added to the repository yet. This register is a vetted source shortlist, not a claim that the models are already downloaded or integrated. The next asset task is a single low-resolution Rock Face 02 glTF intake test, followed by geometry/texture budget measurement in the isolated renderer spike.
 
 
-## Osmocean creature model intake
+## Animated marine model intake
 
-The Mocean branch `phase6-voxel-terrain-and-creature-assets` adds a reproducible build-time intake of the model collections already used by Osmocean:
+The GitHub Pages build stages and validates the complete animated Quaternius fish collection and one additional rigged PolyFish dolphin:
 
-- **Quaternius Animated Fish Bundle:** twelve selected GLB fish, pinned through `Vitexus/ishtaria-client` commit `f42095c120c29a892c0c221bdc8357ac982ccfca`; CC0 1.0. The build retains the original bundle licence.
-- **PolyFish rigged fish:** `fish_rigged.glb`, pinned to `unclemattmakes/polyfish` commit `1c0d7636f2c71fd81d001a597c13554f9cbdd417`; MIT. The procedural vertex-swim shader is adapted separately.
-- **Ocean Animals: Whales, Sharks and Fish:** the published 3DAssets.dev pack manifest is checked at build time. Only published animal assets explicitly marked CC0 1.0 with no attribution requirement are accepted. The pack is AI-generated and its models are static posed meshes with no rig or animation clips; this limitation is retained in the catalogue.
+- **Quaternius Animated Fish Bundle:** all 35 GLB fish models from `Vitexus/ishtaria-client` commit `f42095c120c29a892c0c221bdc8357ac982ccfca`; CC0 1.0. The source licence is copied beside the models.
+- **PolyFish dolphin:** `dolphin_rigged.glb` from `unclemattmakes/polyfish` commit `1c0d7636f2c71fd81d001a597c13554f9cbdd417`; MIT. Its original licence is copied beside the model.
+- **Build verification:** `scripts/verify-animated-marine-models.mjs` parses each GLB's embedded glTF JSON chunk, requires animation clips, and writes a deployment-time `catalog.json` containing every model and clip name. The Pages build fails if a required model is absent, malformed or has no embedded animation.
 
-The review page `creature-model-review.html` loads one model at a time and exposes any embedded animation clips. It is an asset inspection surface, not the live habitat renderer.
+The 35 Quaternius models include anglerfish, armored catfish, betta, black lionfish, blobfish, blue goldfish, blue tang, butterfly fish, cardinal fish, clownfish, coral grouper, cowfish, flatfish, flower horn, goblin shark, goldfish, humphead, koi, lionfish, mandarin fish, Moorish idol, parrot fish, piranha, puffer, red snapper, royal gramma, shark, sunfish, swordfish, tang, tetra, tuna, turbot, yellow tang and zebra clown fish. The extra PolyFish model is a dolphin.
 
-The exact-match mapping currently covers 16 of Mocean's 30 species. Unsupported species remain explicitly unmapped; they are not silently replaced by a vaguely similar animal. The production habitat remains Canvas 2D today, so the GLB bank is not yet wired into the live 30-species scene. The next integration task is to migrate the renderer while preserving the existing agent state and locomotion.
+The live habitat currently enables 12 of its 30 species where a suitable model exists: regular fish (blue goldfish), dedicated shoaling fish (tetra), clownfish, parrotfish, blue tang, butterflyfish, grouper, Moorish idol, tuna, shark, mola mola (sunfish) and dolphin. The other 18 species are temporarily disabled in the prevalence controls and initial population because the reviewed collections do not contain appropriate animated models for them. Similar-looking animals are not silently substituted.
+
+The live habitat uses the animated GLBs through its transparent Three.js overlay. The existing Canvas species renderers remain as a graceful visual fallback while a model loads or if a runtime model load fails; they are no longer used to populate unsupported species. The model animation drives internal deformation only. Simulation position, heading, velocity and behaviour remain owned by `src/schooling.js`.
+
+The separate static Ocean Animals collection remains useful for future visual coverage but is not counted as animated and is not used to re-enable species. Its static posed meshes are not a substitute for a swim cycle.
