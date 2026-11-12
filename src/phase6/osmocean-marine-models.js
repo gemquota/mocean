@@ -22,6 +22,22 @@ export const MARINE_MODEL_ORIENTATION = Object.freeze(Object.fromEntries(
   Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.orientation ?? 'horizontal'])
 ));
 
+function promoteQuantizedAttributes(THREE, geometry) {
+  for (const name of ['position','normal','tangent']) {
+    const attribute=geometry.getAttribute(name);
+    if(!attribute || attribute.array instanceof Float32Array) continue;
+    const itemSize=attribute.itemSize;
+    const values=new Float32Array(attribute.count*itemSize);
+    for(let index=0;index<attribute.count;index++){
+      values[index*itemSize]=attribute.getX(index);
+      if(itemSize>1) values[index*itemSize+1]=attribute.getY(index);
+      if(itemSize>2) values[index*itemSize+2]=attribute.getZ(index);
+      if(itemSize>3) values[index*itemSize+3]=attribute.getW(index);
+    }
+    geometry.setAttribute(name,new THREE.BufferAttribute(values,itemSize,false));
+  }
+}
+
 function flattenStaticModel(THREE, source) {
   source.updateMatrixWorld(true);
   const inverseRoot = new THREE.Matrix4().copy(source.matrixWorld).invert();
@@ -30,6 +46,7 @@ function flattenStaticModel(THREE, source) {
   source.traverse(node => {
     if (!node.isMesh || !node.geometry) return;
     const geometry = node.geometry.clone();
+    promoteQuantizedAttributes(THREE,geometry);
     const relative = new THREE.Matrix4().multiplyMatrices(inverseRoot, node.matrixWorld);
     geometry.applyMatrix4(relative);
     geometry.computeBoundingBox();
