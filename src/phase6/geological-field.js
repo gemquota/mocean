@@ -50,11 +50,24 @@ export function createGeologicalField({
     points:makePath(random,bounds,10,()=>0,(i-(ridgeCount-1)*.5)*span*.19),
     width:4.8+random()*2.8,height:3.2+random()*2.6
   }));
-  const ravines=Array.from({length:ravineCount},(_,i)=>Object.freeze({
-    id:'ravine-'+i,
-    points:makePath(random,bounds,12,()=>0,(i-(ravineCount-1)*.5)*span*.22),
-    width:2.8+random()*2.2,depth:3.5+random()*2.8
-  }));
+  const ravines=Array.from({length:ravineCount},(_,i)=>{
+    const points=makePath(random,bounds,12,()=>0,(i-(ravineCount-1)*.5)*span*.22);
+    // Tributaries branch from an exact point on the trunk, then arc away from
+    // it. Their endpoints remain inside the field so the drainage network is
+    // continuous rather than a collection of unrelated grooves.
+    const junctionIndex=3+Math.floor(random()*7),junction=points[junctionIndex];
+    const side=random()<.5?-1:1,reach=7+random()*5,along=(random()<.5?-1:1)*(5+random()*5);
+    const endX=clamp(junction.x+along,bounds.minX+2,bounds.maxX-2);
+    const endZ=clamp(junction.z+side*reach,bounds.minZ+2,bounds.maxZ-2);
+    const branch=Object.freeze(Array.from({length:5},(_,j)=>{
+      const t=j/4,bend=Math.sin(t*Math.PI)*side*1.8;
+      return Object.freeze({x:mix(junction.x,endX,t),y:0,z:mix(junction.z,endZ,t)+bend});
+    }));
+    return Object.freeze({
+      id:'ravine-'+i,points,branches:Object.freeze([branch]),
+      width:2.8+random()*2.2,depth:3.5+random()*2.8
+    });
+  });
   const caves=Array.from({length:caveCount},(_,i)=>{
     // Extend the cave centre-lines beyond the study bounds so passages have
     // genuine cut-through mouths rather than sealed spherical end caps.
@@ -89,9 +102,15 @@ export function createGeologicalField({
       height+=ridge.height*shoulder*broken;
     }
     for(const ravine of ravines){
-      const d=pathDistance(x,z,ravine.points);
-      height-=ravine.depth*Math.exp(-.5*(d/ravine.width)**2);
-      height+=.48*Math.exp(-.5*((d-ravine.width*1.7)/(ravine.width*.55))**2);
+      const trunkDistance=pathDistance(x,z,ravine.points);
+      height-=ravine.depth*Math.exp(-.5*(trunkDistance/ravine.width)**2);
+      height+=.48*Math.exp(-.5*((trunkDistance-ravine.width*1.7)/(ravine.width*.55))**2);
+      for(const branch of ravine.branches||[]) {
+        const tributaryDistance=pathDistance(x,z,branch);
+        const tributaryWidth=ravine.width*.68;
+        height-=ravine.depth*.62*Math.exp(-.5*(tributaryDistance/tributaryWidth)**2);
+        height+=.28*Math.exp(-.5*((tributaryDistance-tributaryWidth*1.65)/(tributaryWidth*.6))**2);
+      }
     }
     return height;
   }
