@@ -11,7 +11,7 @@ const script = match[1].replace(/^import .*?;\s*$/gm, '');
 
 test('habitat browser module parses and initializes every fish before rendering', () => {
   assert.doesNotThrow(() => new vm.Script(script), 'browser module should remain syntactically valid');
-  const created = script.indexOf('let school=createSchool(150)');
+  const created = script.indexOf('let school=createSchool(150,73421,{speciesPercentages:speciesMix,worldSize})');
   const initialized = script.indexOf('initialiseFishVisualState(school)');
   const rendered = script.indexOf('function render()');
   assert.ok(created >= 0 && initialized > created && initialized < rendered, 'initial school gait state must be initialized before render');
