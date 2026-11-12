@@ -129,7 +129,8 @@ test('33-species catalogue includes three additional modelled fish with ecology-
   for (const species of ['grouper','moorishIdol','barracuda']) assert.match(html, new RegExp(species+':'));
   assert.match(src, /grouper: 5\.8/);
   assert.match(src, /moorishIdol: 0\.20/);
-  assert.match(src, /barracuda: 3\.2/);\n  assert.match(src, /seahorse: 15, seaDragon: 15, anglerfish: 12/);
+  assert.match(src, /barracuda: 3\.2/);
+  assert.match(src, /seahorse: 15, seaDragon: 15, anglerfish: 12/);
   assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
   assert.equal(ANIMATED_MODEL_SPECIES.length, 16);
   assert.match(script, /ANIMATED_MODEL_SPECIES\.length\+' MODELLED SPECIES'/);
