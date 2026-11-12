@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://gemquota.github.io/mocean/schooling.html"><strong>▶ OPEN THE LIVE SIMULATION</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://gemquota.github.io/mocean/schooling.htmldevelopment.html">Development presentation</a>
+  <a href="https://gemquota.github.io/mocean/development.html">Development presentation</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/gemquota/mocean">Source repository</a>
 </p>
@@ -44,7 +44,7 @@ The main experience is the Schooling simulation: a mixed-species marine habitat 
 - **Phase 6 · Environment, seabed and water:** authorised and in progress. The current increment adds a staged 3D renderer, spatial terrain geometry and renderer-independent terrain-clearance queries. Browser visual verification and performance profiling remain important acceptance work.
 - **Phase 7 · Integration and polish:** not started.
 
-See the [canonical roadmap](ROADMAP.md) and [Phase 6 record](PHASE_6.md) for task-level status and evidence. The [development presentation](https://gemquota.github.io/mocean/schooling.htmldevelopment.html) provides the visual project overview.
+See the [canonical roadmap](ROADMAP.md) and [Phase 6 record](PHASE_6.md) for task-level status and evidence. The [development presentation](https://gemquota.github.io/mocean/development.html) provides the visual project overview.
 
 ## Engineering priorities
 
