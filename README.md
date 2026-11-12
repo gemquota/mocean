@@ -49,7 +49,7 @@ See the [engineering roadmap](ROADMAP.md) for phase history and task status, and
 ## Project documentation
 
 - [Engineering roadmap](ROADMAP.md)
-- [Schooling simulation and model notes](SCHOOLING_100.md)
+- [Schooling simulation and model notes](SCHOOLING.md)
 - [Phase 0 architecture and coordinate conventions](PHASE_0.md)
 - [Phases 2–4 movement primitives and sequences](PHASE_2_4.md)
 - [Phase 6 environment, seabed and water](PHASE_6.md)
