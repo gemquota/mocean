@@ -149,7 +149,7 @@ setPopulation(populationSlider.value);
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1;
 function minimumCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x,baseCameraPosition.y,baseCameraPosition.z);return baseDistance/worldExtent;}
-function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(4.5,minimum*4.5),zoom));camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
+function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(3.5,minimum*3.5),zoom));camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
 applyZoom();
 const activePointers=new Map();let pinchDistance=0;
 function pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
@@ -187,7 +187,7 @@ async function initialiseMarineModelLayer(){
   const modelKey=new THREE.DirectionalLight(0xffedcf,2.0);modelKey.position.set(-18,25,20);modelScene.add(modelKey);
   const modelFill=new THREE.DirectionalLight(0x5aa6b3,.65);modelFill.position.set(15,3,-18);modelScene.add(modelFill);
   modelCamera=new THREE.PerspectiveCamera(48,1,.1,220);modelCamera.up.set(0,1,0);
-  marineModels=new adapter.OsmoceanMarineModels(THREE,{baseUrl:'./assets/models/osmocean/species/'});
+  marineModels=new adapter.OsmoceanMarineModels(THREE,{baseUrl:'./assets/models/osmocean/naturalistic/'});
  }catch(error){modelRenderer=null;marineModels=null;console.warn('Mocean animated model layer unavailable; retaining procedural renderers.',error);}
 }
 initialiseMarineModelLayer();
@@ -668,7 +668,7 @@ function drawWobbegong(fish){
  const eye=point(.72,.12,.16);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.02),0,TAU);ctx.fillStyle='#171a16';ctx.fill();}ctx.restore();
 }
 function drawFish(fish){
- if(marineModelEntries.has(fish))return;
+ if(MODELLED_SPECIES.has(fish.species))return;
  if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
  if(['clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','marlin','tuna'].includes(fish.species)){drawReefFish(fish);return;}
  if(fish.species==='wobbegong'){drawWobbegong(fish);return;}
