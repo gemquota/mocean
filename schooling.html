@@ -154,7 +154,7 @@ applyZoom();
 const activePointers=new Map();let pinchDistance=0;
 function pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
 canvas.addEventListener("pointerdown",event=>{activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});canvas.setPointerCapture?.(event.pointerId);if(activePointers.size===2)pinchDistance=pointerDistance();});
-canvas.addEventListener("pointermove",event=>{if(!activePointers.has(event.pointerId))return;activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(minimumCameraZoom(),Math.min(Math.max(4.5,minimumCameraZoom()*4.5),zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}});
+canvas.addEventListener("pointermove",event=>{if(!activePointers.has(event.pointerId))return;activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(minimumCameraZoom(),Math.min(Math.max(3.5,minimumCameraZoom()*3.5),zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}});
 function releasePointer(event){activePointers.delete(event.pointerId);pinchDistance=activePointers.size===2?pointerDistance():0;}
 canvas.addEventListener("pointerup",releasePointer);canvas.addEventListener("pointercancel",releasePointer);canvas.addEventListener("lostpointercapture",releasePointer);
 for(const name of ["gesturestart","gesturechange","gestureend"])document.addEventListener(name,event=>event.preventDefault(),{passive:false});
