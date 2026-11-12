@@ -125,6 +125,7 @@ export function createTerrainChunkStream({
       item.mesh.receiveShadow = true;
       item.mesh.frustumCulled = true;
       item.mesh.userData.chunkKey = message.key;
+      item.mesh.visible = item.visible;
       scene.add(item.mesh);
       item.error = null;
     } else if (item && item.token === message.token && message.type === 'error') {
@@ -161,11 +162,15 @@ export function createTerrainChunkStream({
         chunks.delete(key);
       }
     }
+    // Drop obsolete queued work before it can delay chunks in the new view.
+    for (let i = queue.length - 1; i >= 0; i--) {
+      if (!keep.has(queue[i].key)) queue.splice(i, 1);
+    }
     for (const request of desired) {
       let item = chunks.get(request.key);
       if (item) {
         item.visible = request.visible;
-        if (item.mesh) item.mesh.visible = request.visible || request.distance <= prefetchRadius;
+        if (item.mesh) item.mesh.visible = request.visible;
         continue;
       }
       item = { token: ++sequence, mesh: null, visible: request.visible, error: null };
