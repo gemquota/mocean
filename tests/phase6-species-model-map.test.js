@@ -20,7 +20,7 @@ test('every enabled species maps to a matching animated marine GLB', () => {
   assert.equal(getSpeciesModel('spermWhale').id, 'whale');
   assert.deepEqual(SPECIES_MODEL_MAP.fish.variants, ['blue_goldfish','goldfish','koi']);
   assert.deepEqual(SPECIES_MODEL_MAP.schoolFish.variants, ['tetra','cardinal_fish']);
-  assert.deepEqual(SPECIES_MODEL_MAP.blueTang.variants, ['blue_tang','tang','yellow_tang','gobkit_bluetang']);
+  assert.deepEqual(SPECIES_MODEL_MAP.blueTang.variants, ['blue_tang','gobkit_bluetang']);
   assert.deepEqual(SPECIES_MODEL_MAP.shark.variants, ['shark','gobkit_shark']);
   assert.equal(Object.keys(SPECIES_MODEL_MAP).length, 15);
 });
