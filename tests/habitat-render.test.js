@@ -131,7 +131,7 @@ test('30-species mix includes three new fish with ecology-adjusted weights', () 
   assert.match(src, /moorishIdol: 0\.20/);
   assert.match(src, /barracuda: 3\.2/);
   assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
-  assert.equal(ANIMATED_MODEL_SPECIES.length, 15);
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 12);
   assert.match(script, /ANIMATED_MODEL_SPECIES\.length\+' MODELLED SPECIES'/);
   assert.match(script, /ANIMATED_MODEL_SPECIES\.includes\(changed\)/);
 });
@@ -157,7 +157,7 @@ test('live habitat integrates a real voxel surface and animated Osmocean GLB mod
   assert.match(script,/await Promise\.all\(\[import\('three'\),import\('\.\/src\/phase6\/osmocean-marine-models\.js'\)\]\)/);
   assert.match(script,/new adapter\.OsmoceanMarineModels\(THREE/);
   assert.match(script,/function syncMarineModels\(ordered,dt\)/);
-  assert.match(script,/entry\.mixer\.timeScale=/);
+  assert.match(script,/entry\.update\(dt\)/);
   assert.match(script,/entry\.root\.quaternion\.setFromUnitVectors/);
   assert.match(script,/if\(marineModelEntries\.has\(fish\)\)return/);
   assert.match(script,/modelRenderer\.render\(modelScene,modelCamera\)/);
@@ -166,7 +166,7 @@ test('live habitat integrates a real voxel surface and animated Osmocean GLB mod
 test('habitat preserves procedural species fallbacks for animals without matching fish rigs',()=>{
   assert.match(script,/if\(fish\.species==='eel'\)\{drawEel\(fish\);return;\}/);
   assert.match(script,/if\(fish\.species==='crab'\|\|fish\.species==='lobster'\)\{drawCrustacean\(fish\);return;\}/);
-  assert.match(script,/if\(fish\.species==='manta'\)\{drawMantaRay\(fish\);return;\}/);
+  assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)\)return/);
   assert.match(script,/if\(fish\.species==='orca'\)\{drawOrca\(fish\);return;\}/);
 });
 
@@ -190,11 +190,11 @@ test('habitat enforces the inner-world boundary and ties minimum camera zoom to 
 });
 
 test('only exact animated-model species can spawn and unsupported species are disabled in the prevalence controls', () => {
-  assert.equal(ANIMATED_MODEL_SPECIES.length, 15);
-  for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','butterflyfish','grouper','moorishIdol','tuna','shark','mola','dolphin','jellyfish','seal','spermWhale']) {
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 12);
+  for (const species of ['barracuda','marlin','tuna','shark','whaleShark','mola','manta','stingray','orca','spermWhale','dolphin','jellyfish']) {
     assert.ok(ANIMATED_MODEL_SPECIES.includes(species), species + ' should have a matching animated model');
   }
-  for (const species of ['eel','crab','lobster','mantis','manta','stingray','whaleShark','orca','starfish','turtle','sandEel','angelfish','barracuda','wobbegong','marlin']) {
+  for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','wobbegong','eel','crab','lobster','mantis','seal','starfish','turtle','sandEel']) {
     assert.ok(!ANIMATED_MODEL_SPECIES.includes(species), species + ' should remain temporarily disabled');
   }
   assert.match(script,/const speciesMix=filterToAnimatedSpecies\(SCHOOLING_SPECIES_PERCENTAGES\)/);
@@ -205,28 +205,24 @@ test('only exact animated-model species can spawn and unsupported species are di
   assert.match(script,/NO MODEL/);
 });
 
-test('dolphin uses the reviewed rigged model and procedural swim shader when no baked clips exist', () => {
+test('naturalistic GLBs use procedural body, vertical-tail, ray-wing and jellyfish-pulse motion', () => {
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
   const shader = readFileSync(new URL('../src/phase6/polyfish-swim-material.js', import.meta.url), 'utf8');
-  assert.match(adapter,/else if\(species==='dolphin'\)/);
-  assert.match(adapter,/applySwimMaterial\(visual,'dolphin'\)/);
-  assert.match(adapter,/updateSwimUniforms\(swimData,phase,1,false\)/);
-  assert.match(shader,/dolphin:\s*\{/);
-  assert.match(shader,/export function applySwimMaterial/);
+  assert.match(adapter,/flattenStaticModel/);
+  assert.match(adapter,/applySwimMaterial\(visual,motion\)/);
+  assert.match(adapter,/animationMode:'procedural-'\+motion/);
+  assert.match(shader,/uWaveMode/);
+  assert.match(shader,/uWingMax/);
+  assert.match(shader,/'wing-wave'/);
+  assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)\)return/);
 });
 
-test('jellyfish keep a vertical body axis while yaw follows horizontal heading', () => {
+test('jellyfish remain upright while following heading with a vertical-axis root', () => {
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
   const mapping = readFileSync(new URL('../src/phase6/species-model-map.js', import.meta.url), 'utf8');
-  assert.match(mapping,/jellyfish: \{ collection: 'animated', id: 'jellyfish', animation: 'clip', orientation: 'vertical' \}/);
-  assert.match(adapter,/mapping\.orientation!=='vertical'/);
+  assert.match(mapping,/jellyfish: \{ collection: 'naturalistic', id: 'moon_jellyfish'.*orientation: 'vertical' \}/);
+  assert.match(adapter,/mapping\.orientation === 'vertical'/);
   assert.match(script,/setFromAxisAngle\(new THREE\.Vector3\(0,1,0\),yaw\)/);
-});
-
-test('Gobkit marine models play only their idle subclip, not attack or death frames', () => {
-  const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
-  assert.match(adapter,/GOBKIT_MASTER_TIMELINE_MODELS = new Set\(\['jellyfish','seal','whale','gobkit_bluetang','gobkit_parrotfish','gobkit_moorishidol','gobkit_shark'\]\)/);
-  assert.match(adapter,/AnimationUtils\.subclip\(animations\[0\],'idle',0,29,24\)/);
 });
 
 test('schooling assigns deterministic matching model variants per creature', () => {
@@ -234,4 +230,15 @@ test('schooling assigns deterministic matching model variants per creature', () 
   assert.match(adapter,/MARINE_MODEL_VARIANTS_BY_SPECIES/);
   assert.match(script,/variants\[Math\.abs\(fish\.id\?\?0\)%variants\.length\]/);
   assert.match(script,/modelId\}\)\.then\(instance/);
+});
+
+test('Pages workflow stages only naturalistic CC0 models and validates each GLB', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/pages.yml', import.meta.url), 'utf8');
+  const verifier = readFileSync(new URL('../scripts/verify-naturalistic-marine-models.mjs', import.meta.url), 'utf8');
+  assert.match(workflow,/Stage naturalistic CC0 marine models/);
+  assert.match(workflow,/3dassets\.dev\/assets/);
+  assert.doesNotMatch(workflow,/Quaternius|Gobkit|PolyFish/);
+  assert.match(verifier,/glTF/);
+  assert.match(verifier,/animationMode:'procedural'/);
+  assert.match(verifier,/CC0 1\.0 Universal/);
 });
