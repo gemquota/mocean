@@ -28,6 +28,7 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   assert.ok(sizeSample.some(f => f.species === 'sandEel'), 'sand eels should be present');
   assert.ok(sizeSample.some(f => f.species === 'seahorse'), 'seahorses should be present');
   assert.ok(sizeSample.some(f => f.species === 'seaDragon'), 'leafy seadragons should be present');
+  assert.ok(sizeSample.some(f => f.species === 'anglerfish'), 'anglerfish should be present');
   assert.ok(sizeSample.some(f => f.species === 'lobster'));
   const eels=school.fish.filter(f => f.species === 'eel');
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
@@ -492,4 +493,15 @@ test('seahorses and leafy seadragons retain slow kelp-edge drift and bounded mot
   assert.ok(school.fish.every(agent=>[agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
   assert.ok(seahorses.every(agent=>Math.hypot(agent.v.x,agent.v.y,agent.v.z)<=.241));
   assert.ok(seadragons.every(agent=>Math.hypot(agent.v.x,agent.v.y,agent.v.z)<=.321));
+});
+
+test('anglerfish maintain slow deep-water station keeping with bounded swimming speed',()=>{
+  const school=createSchool(120,73421,{speciesPercentages:{anglerfish:100}});
+  const fish=school.fish;
+  assert.ok(fish.every(agent=>agent.p.y>-5.6&&agent.p.y<-4.7));
+  for(let i=0;i<900;i++)stepSchool(school,1/60);
+  assert.ok(fish.every(agent=>[agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
+  assert.ok(fish.every(agent=>Math.hypot(agent.v.x,agent.v.y,agent.v.z)<=.361));
+  const meanY=fish.reduce((sum,agent)=>sum+agent.p.y,0)/fish.length;
+  assert.ok(meanY>-6.2&&meanY<-4.7);
 });
