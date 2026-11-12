@@ -167,7 +167,7 @@ The single-creature swimmer at [index.html](index.html) remains a separate locom
 - [ ] P7-3 Run regression suite and verify public Pages deployment.
 - [ ] P7-4 Complete final visual and behavioural acceptance review.
 
-## Known model limits
+## Single-creature locomotion model limits
 
 - The spine currently has one dominant lateral deformation axis; independent vertical curvature is not implemented.
 - The caudal fin is still rendered as a separate shape rather than fully deformed from its attachment frame.
@@ -185,7 +185,7 @@ The single-creature swimmer at [index.html](index.html) remains a separate locom
 | 3 · Basic composites | **Provisional candidate complete**; implementation and kinematic checks integrated | Pending visual review · not approved |
 | 4 · Complex arrangements | **Provisional candidate complete**; implementation and kinematic checks integrated | Pending visual review · not approved |
 | 5 · Autonomous behaviour | **Provisional candidate complete**; prototype on feature branch, 68 tests pass | Pending integration, visual review · not approved |
-| 6 · Environment | In progress · isolated prototypes and modules | Pending visual/performance acceptance |
+| 6 · Environment | In progress · voxel terrain/contact and selected animated-model overlay integrated | Pending water/light polish, visual/performance review |
 | 7 · Integration and polish | Queued | Not started |
 
 **Status-label note (10 November 2026):** At the user's request, Phases 2–5 are labelled *provisional / candidate complete*. This is a planning label only. It does not change task checkboxes, assistant-complete evidence, user-confirmation marks or phase-gate approvals. In particular, Phase 5 remains on its feature branch and must be integrated and regression-checked before acceptance.
