@@ -58,7 +58,7 @@ small{display:block;color:#78938b;line-height:1.45;margin-top:9px}
 <script type="module">
 import * as THREE from 'three';
 import { WebGPURenderer, MeshStandardNodeMaterial } from 'three/webgpu';
-import { Fn, instanceIndex, instancedArray, instancedBufferAttribute, positionLocal, sin, vec3, uniform } from 'three/tsl';
+import { Fn, instanceIndex, instancedArray, instancedBufferAttribute, positionLocal, sin, cos, vec3, uniform } from 'three/tsl';
 
 const params=new URLSearchParams(location.search);
 const modeSelect=document.querySelector('#mode');
@@ -86,19 +86,21 @@ function fishGeometry(){
 function createWebGLMaterial(attribute){
  const material=new THREE.MeshStandardMaterial({color:0x75bda5,roughness:.72,metalness:.02});
  material.onBeforeCompile=shader=>{
-  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float instancePhase;');
-  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','vec3 transformed = vec3(position); transformed.y += sin(position.x * 2.7 + instancePhase) * 0.115 * smoothstep(-1.1, 0.5, -position.x);');
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 instanceState;');
+  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','vec3 transformed = vec3(position); transformed.x += instanceState.y; transformed.y += instanceState.z; transformed.y += sin(position.x * 2.7 + instanceState.x) * 0.115 * clamp(-position.x, 0.0, 1.0);');
  };
  material.customProgramCacheKey=()=> 'mocean-gpu-lab-wave-v1';
  return material;
 }
 function createNodeMaterial(useStorage){
  const material=new MeshStandardNodeMaterial({color:0x75bda5,roughness:.72,metalness:.02});
- let phaseNode;
- if(useStorage)phaseNode=phaseBuffer.element(instanceIndex);
- else phaseNode=instancedBufferAttribute(phaseAttribute,'float');
+ let stateNode;
+ if(useStorage)stateNode=phaseBuffer.element(instanceIndex);
+ else stateNode=instancedBufferAttribute(phaseAttribute,'vec4');
  const envelope=positionLocal.x.mul(-1).clamp(0,1);
- material.positionNode=positionLocal.add(vec3(0,sin(positionLocal.x.mul(2.7).add(phaseNode)).mul(.115).mul(envelope),0));
+ const offset=vec3(stateNode.y,stateNode.z,0);
+ const wave=vec3(0,sin(positionLocal.x.mul(2.7).add(stateNode.x)).mul(.115).mul(envelope),0);
+ material.positionNode=positionLocal.add(offset).add(wave);
  return material;
 }
 function resetSamples(){frameSamples=[];updateSamples=[];renderSamples=[];frame=0;startedAt=performance.now();lastTime=startedAt;lastReport=startedAt;warmupComplete=false;finished=false;}
@@ -106,15 +108,16 @@ function buildScene(count){
  scene=new THREE.Scene();scene.background=new THREE.Color(0x07171d);
  camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,400);
  const columns=Math.ceil(Math.sqrt(count)),rows=Math.ceil(count/columns),spacing=3.25;
- camera.position.set(0,Math.max(8,rows*.55),Math.max(20,rows*1.25));camera.lookAt(0,0,0);
+ const frustumHeight=Math.max(rows*spacing*.62,columns*spacing/Math.max(.7,innerWidth/innerHeight));
+ camera.position.set(0,0,Math.max(22,frustumHeight/(2*Math.tan(THREE.MathUtils.degToRad(24)))*1.15));camera.lookAt(0,0,0);
  scene.add(new THREE.HemisphereLight(0xbde9e0,0x1b3036,2));
  const key=new THREE.DirectionalLight(0xffe7c2,2.2);key.position.set(-12,18,22);scene.add(key);
  const fill=new THREE.DirectionalLight(0x4c9eb0,.8);fill.position.set(12,-5,-16);scene.add(fill);
  const geometry=fishGeometry();
- phaseData=new Float32Array(count);
- for(let i=0;i<count;i++)phaseData[i]=(i/count)*Math.PI*2;
- phaseAttribute=new THREE.InstancedBufferAttribute(phaseData,1);
- if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU')phaseBuffer=instancedArray(phaseData,'float');
+ phaseData=new Float32Array(count*4);
+ for(let i=0;i<count;i++)phaseData[i*4]=(i/count)*Math.PI*2;
+ phaseAttribute=new THREE.InstancedBufferAttribute(phaseData,4);
+ if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU')phaseBuffer=instancedArray(phaseData,'vec4');
  let material;
  if(activeMode==='webgl-cpu')material=createWebGLMaterial(phaseAttribute);
  else material=createNodeMaterial(activeMode==='webgpu-compute'&&backendLabel==='WebGPU');
@@ -176,7 +179,12 @@ function tick(now){
   phaseDelta.value=dt;
   renderer.compute(computeNode);
  }else{
-  for(let i=0;i<phaseData.length;i++)phaseData[i]+=dt*(1.1+(i%5)*.035);
+  for(let i=0;i<mesh.count;i++){
+   const offset=i*4,phase=phaseData[offset];
+   phaseData[offset]=phase+dt*1.1;
+   phaseData[offset+1]+=Math.cos(phase)*dt*.12;
+   phaseData[offset+2]+=Math.sin(phase)*dt*.08;
+  }
   phaseAttribute.needsUpdate=true;
  }
  const updateMs=performance.now()-updating;
