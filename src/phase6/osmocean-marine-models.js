@@ -1,19 +1,14 @@
 /**
- * Osmocean/Quaternius model bridge for Mocean.
- * Models are visual representations only: simulation positions, orientations and gait
- * remain owned by src/schooling.js. Benthic/non-fish species retain their existing
- * specialised renderers until equivalent licensed models exist.
+ * Quaternius and PolyFish animated marine models for the Schooling habitat.
+ * Simulation position, heading and behaviour remain owned by schooling.js.
  */
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import { SPECIES_MODEL_MAP } from './species-model-map.js';
 
-export const MARINE_MODEL_BY_SPECIES = Object.freeze({
-  fish:'blue_goldfish', schoolFish:'tetra', clownfish:'clownfish',
-  parrotfish:'parrot_fish', blueTang:'blue_tang', angelfish:'butterfly_fish',
-  butterflyfish:'butterfly_fish', grouper:'coral_grouper', moorishIdol:'moorish_idol',
-  barracuda:'tuna', marlin:'swordfish', tuna:'tuna',
-  shark:'shark', mola:'sunfish'
-});
+export const MARINE_MODEL_BY_SPECIES = Object.freeze(Object.fromEntries(
+  Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.id])
+));
 export const MARINE_MODEL_IDS = Object.freeze([...new Set(Object.values(MARINE_MODEL_BY_SPECIES))]);
 
 export class OsmoceanMarineModels {
@@ -32,6 +27,9 @@ export class OsmoceanMarineModels {
     const modelId=MARINE_MODEL_BY_SPECIES[species];
     if(!modelId) return null;
     const gltf=await this.load(modelId);
+    if(!Array.isArray(gltf.animations)||!gltf.animations.length) {
+      throw new Error('Animated marine model has no embedded animation clips: '+modelId);
+    }
     const visual=cloneSkeleton(gltf.scene);
     visual.updateMatrixWorld(true);
     const bounds=new this.THREE.Box3().setFromObject(visual);
@@ -46,12 +44,14 @@ export class OsmoceanMarineModels {
     visual.updateMatrixWorld(true);
     const scaled=new this.THREE.Box3().setFromObject(visual);
     visual.position.sub(scaled.getCenter(new this.THREE.Vector3()));
-    const mixer=gltf.animations?.length?new this.THREE.AnimationMixer(visual):null;
-    if(mixer){
-      const clip=gltf.animations.find(item=>/swim|idle|move/i.test(item.name))??gltf.animations[0];
-      mixer.clipAction(clip).play();
-    }
-    return {species,modelId,visual,mixer,animations:(gltf.animations??[]).map(clip=>clip.name),update(dt){mixer?.update(Math.max(0,Math.min(dt,.05)));},dispose(){mixer?.stopAllAction();}};
+    const mixer=new this.THREE.AnimationMixer(visual);
+    const clip=gltf.animations.find(item=>/swim|idle|move/i.test(item.name))??gltf.animations[0];
+    mixer.clipAction(clip).play();
+    return {
+      species,modelId,visual,mixer,animations:gltf.animations.map(clip=>clip.name),
+      update(dt){mixer.update(Math.max(0,Math.min(dt,.05)));},
+      dispose(){mixer.stopAllAction();}
+    };
   }
   dispose(){this.cache.clear();}
 }
