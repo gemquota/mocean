@@ -67,7 +67,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ### P6-3 · Open-source asset integration
 
-**Asset pipeline established:** `ASSET_SOURCES.md` records reviewed environment-asset sources and licence constraints. The Pages workflow stages the pinned Quaternius Animated Fish Bundle (35 GLBs with its CC0 licence); selected models are mapped into the live habitat's Three.js overlay. Environment props and materials still require individual licence review, optimisation and visual acceptance.
+**Naturalistic marine model pipeline established:** `ASSET_SOURCES.md` records the twelve species-matched CC0 smooth-shaded GLBs now used by the live habitat. The Pages workflow downloads them from stable 3DAssets.dev CDN URLs and validates their glTF structure. They are static posed studies, so the Three.js overlay adds procedural body, tail, ray-wing and jellyfish-bell motion. The old Quaternius/Gobkit cartoon packs are no longer staged or rendered. Environment props and materials still require individual licence review, optimisation and visual acceptance.
 
 - [x] Identify a preferred CC0 source and verify its redistribution terms (`https://polyhaven.com/license`).
 - [x] Record initial model/texture candidates and reject raw assets that exceed a sensible browser budget (`ASSET_SOURCES.md`).
@@ -165,9 +165,9 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 - The same density field is attached to each school and queried after each simulation step. Benthic agents are initially seated on the nearest upward-facing voxel surface, remain there between steps, and are re-seated only if they drift clear; all non-burrowing creatures are projected out of solid terrain. Sand eels remain exempt so their existing burrowing behaviour survives.
 - The standalone `voxel-terrain-study.html` remains available for isolated inspection. The integrated habitat uses a single world mesh, not yet streamed chunks; worker generation and LOD remain future optimisation work.
 
-### Osmocean animated model integration
+### Naturalistic marine model integration
 
-- Audited the pinned Osmocean asset source `Vitexus/ishtaria-client@f42095c120c29a892c0c221bdc8357ac982ccfca`. Its Quaternius Animated Fish Bundle includes 35 low-poly animated fish GLBs and a CC0 licence.
+- Replaced the stylized Quaternius/Gobkit live creature models with twelve species-exact CC0 GLBs from 3DAssets.dev's Ocean Animals and Ocean Giants packs. The selected GLBs are static smooth-shaded studies rather than rigged clips; procedural vertex deformation now supplies the swim cycle. Eighteen species remain disabled until suitable naturalistic models are sourced.
 - The Pages build now stages the complete fish bundle and original licence under `assets/models/osmocean/species/`.
 - Added `src/phase6/osmocean-marine-models.js`: cached GLTF loading, skeleton-safe cloning, longest-axis normalisation, per-instance animation mixers and species-to-model mapping.
 - The live `schooling.html` now mounts a transparent Three.js overlay. Suitable fish models follow the simulation's live position and forward vector; animation playback speed is scaled by swimming speed. The procedural 2D fish remains visible until its GLB has loaded, then yields to the model.
