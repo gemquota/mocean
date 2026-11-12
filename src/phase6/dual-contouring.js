@@ -25,8 +25,9 @@ function solve3(a,b) {
   return [m[0][3],m[1][3],m[2][3]];
 }
 
-export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[32,16,32],sampleDistance}) {
+export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[32,16,32],sampleDistance,sampleColumn}) {
   if(typeof sampleDistance!=='function') throw new TypeError('sampleDistance must be a function');
+  if(sampleColumn!==undefined&&typeof sampleColumn!=='function') throw new TypeError('sampleColumn must be a function');
   if(!Array.isArray(min)||!Array.isArray(max)||!Array.isArray(cells)||min.length!==3||max.length!==3||cells.length!==3) throw new TypeError('min, max and cells must be three-element arrays');
   const [nx,ny,nz]=cells.map(v=>Math.floor(v));
   if(nx<2||ny<2||nz<2||cells.some(v=>!Number.isFinite(v)||v!==Math.floor(v))||min.some((v,i)=>!Number.isFinite(v)||!Number.isFinite(max[i])||max[i]<=v)) throw new RangeError('Invalid voxel bounds or resolution');
@@ -34,10 +35,17 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
   const sx=nx+1,sy=ny+1,sz=nz+1;
   const values=new Float32Array(sx*sy*sz);
   const point=(x,y,z)=>[min[0]+x*step[0],min[1]+y*step[1],min[2]+z*step[2]];
-  for(let z=0;z<sz;z++)for(let y=0;y<sy;y++)for(let x=0;x<sx;x++){
-    const p=point(x,y,z),d=sampleDistance(p[0],p[1],p[2]);
-    if(!Number.isFinite(d))throw new TypeError('sampleDistance returned a non-finite value');
-    values[key(x,y,z,sx,sy)]=d;
+  // Traverse vertical columns together. Fields that expose sampleColumn
+  // can reuse surface height/gradient work for every y sample in a column.
+  for(let z=0;z<sz;z++)for(let x=0;x<sx;x++){
+    const px=min[0]+x*step[0],pz=min[2]+z*step[2];
+    const column=sampleColumn?.(px,pz);
+    if(column!==undefined&&typeof column!=='function')throw new TypeError('sampleColumn must return a function');
+    for(let y=0;y<sy;y++){
+      const py=min[1]+y*step[1],d=column?column(py):sampleDistance(px,py,pz);
+      if(!Number.isFinite(d))throw new TypeError('sampleDistance returned a non-finite value');
+      values[key(x,y,z,sx,sy)]=d;
+    }
   }
   // Precompute normalized lattice gradients once and interpolate them at
   // edge crossings. Re-sampling the signed-distance field six times for every
