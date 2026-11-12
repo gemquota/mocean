@@ -2,7 +2,7 @@
 
 ## Live Schooling models
 
-The live habitat no longer uses the Quaternius or Gobkit cartoon-style models. It now stages twelve species-matched, smooth-shaded marine GLBs from 3DAssets.dev's *Ocean Animals: Whales, Sharks and Fish* collection. The bottlenose dolphin comes from the companion *Ocean Giants: Whales, Dolphins, Sharks and Reef Life* collection.
+The live habitat no longer uses the Quaternius or Gobkit cartoon-style models. It now stages thirteen species-matched, smooth-shaded marine GLBs from 3DAssets.dev's *Ocean Animals: Whales, Sharks and Fish* collection. The bottlenose dolphin comes from the companion *Ocean Giants: Whales, Dolphins, Sharks and Reef Life* collection.
 
 These are natural-colour, untextured, smooth-shaded posed studies, not photoreal scans. The source pages describe them as static and explicitly list no rig or baked animation. The GLBs are CC0 1.0 Universal and are staged from their stable CDN URLs by the Pages workflow.
 
@@ -20,6 +20,7 @@ These are natural-colour, untextured, smooth-shaded posed studies, not photoreal
 | Sperm whale | Sperm whale | 5860 | Vertical body/tail wave |
 | Dolphin | Bottlenose dolphin | 39330 | Vertical body/tail wave |
 | Jellyfish | Moon jellyfish | 5889 | Bell pulse |
+| Turtle | Loggerhead turtle | 39340 | Procedural front-flipper wave |
 
 Source packs:
 
@@ -42,7 +43,7 @@ The current model catalogue is generated at deployment by `scripts/verify-natura
 
 ## Temporarily disabled species
 
-Eighteen species remain disabled because the reviewed naturalistic collections do not currently provide a suitable model and motion treatment for them: regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish, turtle and sand eel.
+Seventeen species remain disabled because the reviewed naturalistic collections do not currently provide a suitable model and motion treatment for them: regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish, turtle and sand eel.
 
 They remain in the simulation's species catalogue and behaviour code, but their prevalence is forced to zero and their controls are disabled. No Quaternius, Gobkit, static reef-study or unrelated animal stand-in is used to make them appear enabled.
 
@@ -54,4 +55,4 @@ These models are a clear step away from the cartoon asset packs, but they are st
 
 [Grab3D](https://grab3d.com/) also publishes CC0 high-detail PBR marine models with 1K light variants. Examples include a [great white shark](https://grab3d.com/models/animals/great-white-shark/), [bottlenose dolphin](https://grab3d.com/models/animals/dolphin/), [clownfish](https://grab3d.com/models/animals/clownfish/), [jellyfish](https://grab3d.com/models/animals/jellyfish/) and [sea turtle](https://grab3d.com/models/animals/sea-turtle/). The light shark is still about 83,500 triangles; the light clownfish, jellyfish and turtle are roughly 259k, 400k and 389k triangles respectively. These are static poses, not rigged swim assets.
 
-They are the better route for close-up PBR quality, but not a sensible unoptimised replacement for every creature in a 150-agent mobile simulation. A later high-fidelity pass should decimate them into distance-based LODs, resize/compress textures and instance shared geometry before introducing them into the live school. The current 3DAssets.dev models keep the live draw cost predictable while removing the cartoon style.
+They are the better route for close-up PBR quality, but not a sensible unoptimised replacement for every creature in a 150-agent mobile simulation. A later high-fidelity pass should decimate them into distance-based LODs, resize/compress textures and instance shared geometry before introducing them into the live school. The current 3DAssets.dev models, including the loggerhead turtle, keep the live draw cost predictable while removing the cartoon style.
