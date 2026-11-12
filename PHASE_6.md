@@ -1,14 +1,14 @@
 # Phase 6 · 3D Environment, Seabed and Water
 
 **Status:** In progress · authorised 11 November 2026.  
-**Active branch:** `phase-6-spatial-terrain`  
+**Production baseline:** `main` · the terrain and animated-model integration has been merged.  
 **Scope authority:** The user explicitly authorised Phase 6 after requesting open-source 3D assets, complex seabed geometry (elevations, rocks, ledges, overhangs and crevasses), realistic underwater water effects and lighting/bloom.
 
 ## Goal
 
 Turn the mixed-species habitat into a convincing underwater environment without degrading creature simulation, locomotion, interaction, or ordinary-browser performance. The environment must be a real spatial scene, not a flat backdrop decorated with fake depth cues.
 
-The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creature geometry is drawn in screen space from projected world coordinates; the simulation and seabed-height function live in `src/schooling.js`. There is no WebGL renderer, 3D asset pipeline, material system, or post-processing pipeline in the current habitat. A true 3D environment therefore requires a deliberate rendering integration, not simply importing GLB files into the existing Canvas context.
+`schooling.html` retains its Canvas-based habitat and species renderers, now augmented by a volumetric voxel terrain projection and a transparent Three.js overlay for selected animated fish models. `src/schooling.js` owns creature state and the fixed-step simulation; `src/phase6/voxel-field.js` supplies the shared signed-distance field used by terrain extraction and creature contact. This is a staged hybrid renderer, not yet a fully unified 3D scene: cross-renderer depth ordering, water/light integration and performance on ordinary hardware remain open.
 
 ## Non-negotiable constraints
 
@@ -18,38 +18,37 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - Environment geometry may be static or procedurally generated, but must support real depth, occlusion, overhangs and caves.
 - Prefer openly licensed assets with verified per-asset licences. Record source, licence and attribution requirements. Do not assume every model on an asset site has the same licence.
 - Progressive quality tiers and bounded geometry/effect budgets are required. Reduced-motion/reduced-quality fallback must not stop the simulation.
-- Do not add user-facing configuration panels. Environment parameters are predefined.
+- Keep habitat controls explicit and honest: configuration controls must change real simulation parameters, and defaults must remain usable without opening the panel.
 - Tests are necessary but not sufficient: verify the actual scene, depth ordering, visual quality, frame time and preservation of existing creatures.
 
 ## Baseline audit · P6-0
 
 **Assistant complete · 11 November 2026.**
 
-- `schooling.html` owns the current fixed-camera Canvas 2D drawing loop and inline species renderers.
-- `src/schooling.js` owns creature state and a deterministic analytic `seabedHeight(x, z)`; benthic agents use this function for ground contact.
-- Existing reefs, coral, anemones, seagrass, kelp and plankton are drawn with Canvas primitives.
-- The repository has no runtime dependency or bundler in `package.json`; its only script is Node's built-in test runner.
-- The current renderer has no mesh/material/light/shadow/post-processing abstractions. A WebGL/Three.js integration must be evaluated against GitHub Pages static hosting and the existing single-file habitat entry point.
-- Existing performance work reduced habitat drawing to 24 Hz and capped device pixel ratio at 2. The new renderer must be profiled against this baseline.
+- `schooling.html` owns the live fixed-camera habitat, Canvas world layer, inline species renderers and transparent Three.js creature overlay.
+- `src/schooling.js` owns creature state, group behaviour and the fixed-step simulation. The shared voxel density field in `src/phase6/voxel-field.js` now supplies visible terrain extraction and creature contact.
+- Reefs, coral, anemones, seagrass, kelp and plankton remain part of the Canvas habitat layer; suitable imported fish models use the Three.js overlay.
+- The repository remains dependency-light: browser modules load pinned Three.js from jsDelivr, while Node's built-in test runner handles automated tests.
+- The hybrid renderer must be profiled on ordinary hardware. Cross-renderer depth ordering and a fully unified material/lighting pipeline remain unresolved.
 
 ## Subgoals and atomic tasks
 
 ### P6-1 · Renderer architecture and compatibility spike
 
-**Implementation decision (provisional): staged WebGL scene, with the existing Canvas habitat retained as the fallback and regression baseline.** A separate spike page avoids destabilising the live habitat while the renderer, camera and geometry budgets are evaluated. If the spike validates, the next integration step is a shared scene/camera contract with the current Canvas creature layer before migrating species one group at a time.
+**Implementation decision: staged hybrid rendering.** The live Canvas habitat remains the fallback and regression baseline, while a transparent Three.js overlay handles selected imported fish models. Separate spike and terrain-study pages remain available for isolated renderer and geometry work.
 
 - [x] Compare single-scene migration with staged integration; select staged integration for the first compatibility spike.
 - [x] Define a camera/projection contract matching the current habitat's camera position, target, world-up and focal-length rule (`src/phase6/renderer.js`).
 - [x] Add explicit WebGL2 capability detection and an isolated fallback message (`phase6-spike.html`).
 - [ ] Browser-verify WebGL initialisation and graceful fallback on unsupported devices.
 - [ ] Establish a reproducible baseline for startup time, frame time, memory/geometry budget and creature counts.
-- [x] Keep all work isolated on this branch; the existing live habitat entry point remains unchanged.
+- [x] Keep the initial renderer and terrain studies isolated until selected modules pass integration checks; the live habitat entry point now includes the voxel terrain and selected animated-model overlay.
 
 **Spike implementation:** `phase6-spike.html` loads pinned Three.js r180 from jsDelivr and renders a deterministic heightfield, irregular rock clusters and half-ring arch formations with directional and hemisphere lighting. `src/phase6/renderer.js` owns camera and renderer lifecycle only; it does not import or mutate simulation state. `src/phase6/terrain.js` generates seeded, bounded rock/arch placements and exposes a preliminary arch-aperture query. `tests/phase6-renderer.test.js` and `tests/phase6-terrain.test.js` cover camera projection, capability detection, renderer lifecycle, deterministic layout and feature bounds. PR #44 was merged to main as `6f755e7`; its core-test and GitHub Pages deployment workflows both succeeded. Browser visual verification and performance profiling have not yet been performed.
 
 ### P6-2 · Spatial seabed and terrain
 
-**Prototype extended:** the isolated renderer spike now contains a seeded heightfield, irregular rock clusters, arch meshes, raised shelf slabs and smooth depressed sand channels. The channels are part of the generated heightfield, with sediment shading and a matching floor query. Shelf undersides remain open water and are represented as solid oriented boxes in the spatial query. This is scene-prototype geometry only; the live habitat's ground-contact model is unchanged.
+**Prototype and live integration:** isolated terrain studies contain seeded heightfields, irregular rock clusters, arch meshes, raised shelves and depressed sand channels. The live habitat now extracts a volumetric terrain mesh from a shared signed-distance field and uses that same field for creature contact. The richer terrain study remains a separate review surface; the live hybrid renderer still needs visual and performance acceptance.
 
 - [ ] Replace the simple analytic floor presentation with irregular 3D terrain at multiple elevations.
 - [x] Add seeded raised rock shelves with finite solid volume and queryable top/underside normals.
@@ -62,7 +61,7 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 - [x] Use deterministic generation/seeds for initial rock and arch placement (`src/phase6/terrain.js`).
 - [ ] Integrate spatial contact/navigation with benthic species, eels and sheltering creatures only after visual/query agreement is demonstrated.
 
-**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The current query uses the same composed analytic floor as the rendered heightfield, ellipsoid approximations for rocks, oriented box volumes for shelves and a finite-depth half-torus approximation for arches. It is not yet used by the live simulation. The prototype now renders faceted sphere-based boulders using the same ellipsoidal scale parameters as the query. Raised shelves are rendered as instanced-shape box geometry (shared geometry/materials) and use matching oriented-box distance queries. The seabed heightfield and generated rock/arch placement both use the same smoothed crevasse depression function. The query remains a smooth signed-distance approximation to the triangulated mesh, so final collision integration still requires a measured surface-error tolerance.
+**Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The live voxel field is used for terrain extraction and creature contact. The earlier analytic-floor/ellipsoid/box/arch query remains a separate prototype and should not be confused with the integrated voxel-field path. The prototype now renders faceted sphere-based boulders using the same ellipsoidal scale parameters as the query. Raised shelves are rendered as instanced-shape box geometry (shared geometry/materials) and use matching oriented-box distance queries. The seabed heightfield and generated rock/arch placement both use the same smoothed crevasse depression function. The query remains a smooth signed-distance approximation to the triangulated mesh, so final collision integration still requires a measured surface-error tolerance.
 
 **Visual rework candidate · 11 November 2026:** the first renderer spike was intentionally rejected as visually weak: its flat low-resolution heightfield, ellipsoid boulders, box shelves and decorative half-torus arches did not read as a coherent reef. The replacement study in `phase6-spike.html` uses a 240 × 172 multi-scale heightfield, broad reef ridges and broken ledges, smooth crevasse cuts, displaced faceted boulder meshes with clustered talus, irregular extruded shelf geometry, and hollow extruded rock arches. A subtle animated sediment/caustic texture, shadowed directional lighting, a bounded 720-point water column and restrained bloom add depth cues. The pure surface builder lives in `src/phase6/terrain-surface.js` and has independent topology, bounds, determinism and finite-value tests. This remains a terrain-only renderer study: it does not yet contain the 30-species habitat, and visual/browser/performance verification remains pending. No phase subgoal is being marked complete from source inspection alone.
 
@@ -98,10 +97,10 @@ The current `schooling.html` uses one 2D Canvas renderer for the habitat. Creatu
 
 ### P6-6 · Creature/render integration
 
-- [ ] Integrate the current 30-species simulation with the spatial scene without changing simulation authority.
-- [ ] Drive 3D creature orientation and deformation from existing state; retain species-specific locomotion.
-- [ ] Preserve depth ordering, scale, occlusion and benthic contact.
-- [ ] Compare representative species and population settings against the Canvas baseline.
+- [x] Integrate the live 30-species simulation with shared voxel terrain contact without changing simulation authority.
+- [x] Add a Three.js overlay for suitable animated fish models driven by live creature position, heading and swimming speed; retain dedicated renderers for species without matching rigs.
+- [ ] Resolve cross-renderer depth ordering, scale and occlusion across the full habitat.
+- [ ] Compare representative species and population settings against the Canvas baseline on ordinary hardware.
 
 ### P6-7 · Verification and acceptance
 
@@ -144,19 +143,19 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 - The habitat keeps its established Canvas projection for coral, invertebrates and species without matching rigs. A transparent Three.js layer now composites animated fish GLBs over that view; cross-renderer depth ordering remains a known limitation.
 - The original `seabedHeight(x, z)` remains as the broad base profile, but the visible seabed is now extracted from a signed-distance volume. Creature contact uses the same volume field; full path planning through cave networks is not yet implemented.
-- A 30-species migration is a substantial compatibility task. Start with environment geometry and a small representative creature set; do not port all renderers in one untestable change.
+- The habitat already contains 30 species, but only suitable fish use the imported animated-model overlay. Other species retain their dedicated Canvas renderers; do not replace them with unrelated GLBs merely to increase model coverage.
 - Visual fidelity is not evidence of physical correctness. Keep simulation and rendering responsibilities separate.
 
 ## Phase gate
 
 **Authorised to begin:** 11 November 2026.  
-**Assistant completion:** pending subgoal evidence.  
+**Assistant completion:** partial · terrain/contact and selected animated-model integration merged; remaining water, lighting, depth-ordering and performance criteria are open.  
 **User confirmation:** pending independent review.  
 **Phase 7:** not authorised by this document.
 
 ## Volumetric terrain and Osmocean model port · 12 November 2026
 
-**Active implementation branch:** `phase-6-voxel-and-osmocean-models`.
+**Merged integration baseline:** PR #48, followed by the terrain geology and habitat vegetation integrations in PRs #49 and #50.
 
 ### Integrated volumetric terrain
 
