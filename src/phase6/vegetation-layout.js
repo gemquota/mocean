@@ -78,15 +78,15 @@ export function createVegetationLayout(field,worldSize={x:41,z:31},seed=73421){
  }
  // Additional growth forms reuse validated surface anchors, avoiding another
  // expensive pass over the voxel field during layout construction.
- const sponges=grass.filter(anchor=>anchor.id%4===0).map(anchor=>({
+ const sponges=grass.filter(anchor=>anchor.id%5===0).map(anchor=>({
   ...anchor,biome:classifyHabitatBiome(anchor.x,anchor.z,{y:anchor.y,normalY:anchor.normal.y}),
   radius:.16+hash(anchor.x,anchor.z,seed+31)*.16,height:.38+hash(anchor.z,anchor.x,seed+37)*.62
  }));
- const softCoral=kelp.filter(anchor=>anchor.id%2===0).map(anchor=>({
+ const softCoral=kelp.filter(anchor=>anchor.id%3===0).map(anchor=>({
   ...anchor,biome:classifyHabitatBiome(anchor.x,anchor.z,{y:anchor.y,normalY:anchor.normal.y}),
   height:1.1+hash(anchor.x,anchor.z,seed+41)*1.25
  }));
- const seaFans=walls.filter(anchor=>anchor.id%2===0&&anchor.normal.y<.52).map(anchor=>({
+ const seaFans=walls.filter(anchor=>anchor.id%3===0&&anchor.normal.y<.52).map(anchor=>({
   ...anchor,biome:classifyHabitatBiome(anchor.x,anchor.z,{y:anchor.y,normalY:anchor.normal.y}),
   height:1.3+hash(anchor.x,anchor.z,seed+47)*1.2
  }));
