@@ -50,7 +50,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 **Prototype and live integration:** isolated terrain studies contain seeded heightfields, irregular rock clusters, arch meshes, raised shelves and depressed sand channels. The live habitat now extracts a volumetric terrain mesh from a shared signed-distance field and uses that same field for creature contact. The richer terrain study remains a separate review surface; the live hybrid renderer still needs visual and performance acceptance.
 
-- [ ] Replace the simple analytic floor presentation with irregular 3D terrain at multiple elevations.
+- [x] Replace the simple analytic floor presentation with a volumetric terrain mesh extracted from the shared signed-distance field at multiple elevations.
 - [x] Add seeded raised rock shelves with finite solid volume and queryable top/underside normals.
 - [x] Add smooth, rotated, finite-length depressed sand channels, sediment colour cues, and use the composed floor for the terrain mesh, spatial queries and feature placement.
 - [ ] Extend the prototype to coherent overhangs, crevasses with steeper walls, and larger connected cave systems.
@@ -59,7 +59,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 - [x] Add oriented box signed-distance queries for raised shelves, including top and underside clearance.
 - [ ] Validate query distances against the exact rendered mesh geometry, including faceted boulder geometry and arch transforms.
 - [x] Use deterministic generation/seeds for initial rock and arch placement (`src/phase6/terrain.js`).
-- [ ] Integrate spatial contact/navigation with benthic species, eels and sheltering creatures only after visual/query agreement is demonstrated.
+- [x] Integrate voxel contact with benthic and other creatures using the shared density field; preserve the sand-eel burrowing exception. Full path planning through caves remains open.
 
 **Spatial-query boundary:** positive signed distance means open water; negative means inside a terrain solid. The live voxel field is used for terrain extraction and creature contact. The earlier analytic-floor/ellipsoid/box/arch query remains a separate prototype and should not be confused with the integrated voxel-field path. The prototype now renders faceted sphere-based boulders using the same ellipsoidal scale parameters as the query. Raised shelves are rendered as instanced-shape box geometry (shared geometry/materials) and use matching oriented-box distance queries. The seabed heightfield and generated rock/arch placement both use the same smoothed crevasse depression function. The query remains a smooth signed-distance approximation to the triangulated mesh, so final collision integration still requires a measured surface-error tolerance.
 
