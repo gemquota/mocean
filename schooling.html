@@ -44,6 +44,7 @@ import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3
 import { drawHabitatVoxelTerrain } from './src/phase6/habitat-voxel-terrain.js';
 import { createHabitatVoxelField } from './src/phase6/voxel-field.js';
 import { createVegetationLayout, sampleTerrainTop } from './src/phase6/vegetation-layout.js';
+import { classifyHabitatBiome } from './src/phase6/biomes.js';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
@@ -51,7 +52,7 @@ const populationSlider=document.getElementById('population'),populationValue=doc
 const speciesMix=filterToAnimatedSpecies(SCHOOLING_SPECIES_PERCENTAGES),worldSize={x:100,y:100,z:100};
 let vegetationField=null,vegetationLayout=null,coralColonies=[],anemoneSites=[];
 const mixRoot=document.getElementById('species-mix'),configPanel=document.getElementById('config-panel'),configToggle=document.getElementById('config-toggle');
-const speciesLabels={fish:'Regular fish',schoolFish:'Dedicated shoaling fish',grouper:'Giant Queensland grouper',moorishIdol:'Moorish idol',barracuda:'Great barracuda',clownfish:'Clownfish',parrotfish:'Parrotfish',blueTang:'Blue tang',angelfish:'Angelfish',butterflyfish:'Butterflyfish',wobbegong:'Wobbegong shark',marlin:'Marlin',tuna:'Tuna',eel:'Moray eels',crab:'Crabs',lobster:'Lobsters',mantis:'Mantis shrimp',manta:'Manta rays',stingray:'Stingrays',shark:'Reef sharks',whaleShark:'Whale sharks',mola:'Mola mola',orca:'Orcas',spermWhale:'Sperm whales',seal:'Seals',starfish:'Starfish',dolphin:'Dolphins',turtle:'Sea turtles',jellyfish:'Jellyfish',sandEel:'Burrowing sand eels'};
+const speciesLabels={fish:'Regular fish',schoolFish:'Dedicated shoaling fish',grouper:'Giant Queensland grouper',moorishIdol:'Moorish idol',barracuda:'Great barracuda',clownfish:'Clownfish',parrotfish:'Parrotfish',blueTang:'Blue tang',angelfish:'Angelfish',butterflyfish:'Butterflyfish',wobbegong:'Wobbegong shark',marlin:'Marlin',tuna:'Tuna',eel:'Moray eels',crab:'Crabs',lobster:'Lobsters',mantis:'Mantis shrimp',manta:'Manta rays',stingray:'Stingrays',shark:'Reef sharks',whaleShark:'Whale sharks',mola:'Mola mola',orca:'Orcas',spermWhale:'Sperm whales',seal:'Seals',starfish:'Starfish',dolphin:'Dolphins',turtle:'Sea turtles',jellyfish:'Jellyfish',sandEel:'Burrowing sand eels',seahorse:'Lined seahorses',seaDragon:'Leafy seadragons'};
 const speciesSettings=Object.fromEntries(Object.keys(speciesLabels).map(key=>[key,{speed:1,size:1,minSize:.8,maxSize:1.2,aggression:1}]));
 function applySpeciesBodySettings(fish){const setting=speciesSettings[fish.species]??speciesSettings.fish,base=fish._baseBodyScale??fish.bodyScale??1;fish._baseBodyScale=base;const variation=((fish.id*0.61803398875)%1);fish.bodyScale=base*setting.size*(setting.minSize+variation*(setting.maxSize-setting.minSize));fish.aggression=setting.aggression;}
 function initialiseFishVisualState(nextSchool){for(const fish of nextSchool.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;fish._appliedSpeed=1;applySpeciesBodySettings(fish);}}
@@ -164,8 +165,9 @@ const cameraForward=normalize3(sub(camera.target,camera.p));
 const cameraRight=normalize3(cross3(cameraForward,worldUp));
 const cameraUp=normalize3(cross3(cameraRight,cameraForward));
 const modelCanvas=document.createElement('canvas');modelCanvas.id='school-models';modelCanvas.setAttribute('aria-hidden','true');canvas.after(modelCanvas);
-let THREE=null,modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null,MARINE_MODEL_BY_SPECIES={},MARINE_MODEL_VARIANTS_BY_SPECIES={},MARINE_MODEL_ORIENTATION={};
-const marineModelEntries=new Map(),marinePending=new WeakSet(),marineFailedSpecies=new Set();
+let THREE=null,modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null,modelDirection=null,MARINE_MODEL_BY_SPECIES={},MARINE_MODEL_VARIANTS_BY_SPECIES={},MARINE_MODEL_ORIENTATION={};
+const marineModelEntries=new Map(),marinePending=new WeakSet(),marineFailedSpecies=new Set(),marineRenderedFish=new Set();
+const MAX_VISIBLE_3D_MODELS=72;
 const MODELLED_SPECIES=new Set(ANIMATED_MODEL_SPECIES);
 let modelViewportWidth=0,modelViewportHeight=0,modelLayerLost=false;
 function disableMarineModelLayer(error){
@@ -180,9 +182,9 @@ async function initialiseMarineModelLayer(){
  try{
   const loaded=await Promise.all([import('three'),import('./src/phase6/osmocean-marine-models.js')]);
   if(modelLayerLost)return;
-  THREE=loaded[0];const adapter=loaded[1];MARINE_MODEL_BY_SPECIES=adapter.MARINE_MODEL_BY_SPECIES;MARINE_MODEL_VARIANTS_BY_SPECIES=adapter.MARINE_MODEL_VARIANTS_BY_SPECIES;MARINE_MODEL_ORIENTATION=adapter.MARINE_MODEL_ORIENTATION;
-  modelRenderer=new THREE.WebGLRenderer({canvas:modelCanvas,alpha:true,antialias:true,powerPreference:'low-power'});
-  modelRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));modelRenderer.setClearColor(0x000000,0);modelRenderer.outputColorSpace=THREE.SRGBColorSpace;
+  THREE=loaded[0];modelDirection=new THREE.Vector3();const adapter=loaded[1];MARINE_MODEL_BY_SPECIES=adapter.MARINE_MODEL_BY_SPECIES;MARINE_MODEL_VARIANTS_BY_SPECIES=adapter.MARINE_MODEL_VARIANTS_BY_SPECIES;MARINE_MODEL_ORIENTATION=adapter.MARINE_MODEL_ORIENTATION;
+  modelRenderer=new THREE.WebGLRenderer({canvas:modelCanvas,alpha:true,antialias:false,powerPreference:'low-power'});
+  modelRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));modelRenderer.setClearColor(0x000000,0);modelRenderer.outputColorSpace=THREE.SRGBColorSpace;
   modelScene=new THREE.Scene();modelScene.add(new THREE.HemisphereLight(0xc8e8e4,0x263b3a,1.45));
   const modelKey=new THREE.DirectionalLight(0xffedcf,2.0);modelKey.position.set(-18,25,20);modelScene.add(modelKey);
   const modelFill=new THREE.DirectionalLight(0x5aa6b3,.65);modelFill.position.set(15,3,-18);modelScene.add(modelFill);
@@ -212,18 +214,42 @@ function ensureMarineModel(fish){
 }
 function syncMarineModels(ordered,dt){
  if(!modelRenderer||!marineModels||modelLayerLost)return;
- const active=new Set();
+ const population=new Set(school.fish),candidates=[];
+ marineRenderedFish.clear();
  for(const fish of ordered){
   if(!MODELLED_SPECIES.has(fish.species)||!MARINE_MODEL_BY_SPECIES[fish.species])continue;
-  active.add(fish);ensureMarineModel(fish);
+  const screen=project(fish.p);
+  if(screen.depth<2.5||screen.x<-80||screen.x>viewWidth+80||screen.y<-80||screen.y>viewHeight+80)continue;
+  candidates.push({fish,depth:screen.depth});
+ }
+ // Keep the nearest visible model instances on the GPU. Every other creature
+ // still has its animated Canvas renderer, so the budget never hides animals.
+ candidates.sort((a,b)=>a.depth-b.depth);
+ const selected=new Set(candidates.slice(0,MAX_VISIBLE_3D_MODELS).map(item=>item.fish));
+ for(const [fish,entry] of marineModelEntries){
+  if(!population.has(fish)){modelScene.remove(entry.root);entry.dispose();marineModelEntries.delete(fish);}
+  else entry.root.visible=selected.has(fish);
+ }
+ for(const {fish} of candidates.slice(0,MAX_VISIBLE_3D_MODELS)){
+  if(!marineModelEntries.has(fish)&&marineModelEntries.size>=MAX_VISIBLE_3D_MODELS){
+   const victim=[...marineModelEntries].find(([other])=>!selected.has(other));
+   if(victim){modelScene.remove(victim[1].root);victim[1].dispose();marineModelEntries.delete(victim[0]);}
+  }
+  ensureMarineModel(fish);
   const entry=marineModelEntries.get(fish);if(!entry)continue;
+  marineRenderedFish.add(fish);entry.root.visible=true;
   entry.root.position.set(fish.p.x,fish.p.y,fish.p.z);
-  const direction=new THREE.Vector3(fish.forward.x,fish.forward.y,fish.forward.z).normalize();
-  if(MARINE_MODEL_ORIENTATION[fish.species]==='vertical'){const yaw=Math.atan2(fish.forward.x,fish.forward.z);entry.root.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);}else entry.root.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),direction);
+  if(MARINE_MODEL_ORIENTATION[fish.species]==='vertical'){
+   const yaw=Math.atan2(fish.forward.x,fish.forward.z);
+   modelDirection.set(0,1,0);
+   entry.root.quaternion.setFromAxisAngle(modelDirection,yaw);
+  }else{
+   modelDirection.set(fish.forward.x,fish.forward.y,fish.forward.z).normalize();
+   entry.root.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),modelDirection);
+  }
   const bodyScale=fish.bodyScale??1;entry.visual.scale.setScalar(entry.baseScale*bodyScale/Math.max(.001,entry.initialBodyScale));
   entry.update(dt);
  }
- for(const [fish,entry] of marineModelEntries){if(active.has(fish))continue;modelScene.remove(entry.root);entry.dispose();marineModelEntries.delete(fish);}
 }
 let viewWidth=1,viewHeight=1;
 initialiseFishVisualState(school);
@@ -667,7 +693,7 @@ function drawWobbegong(fish){
  const eye=point(.72,.12,.16);if(eye.depth>2.5){ctx.beginPath();ctx.arc(eye.x,eye.y,Math.max(1,centre.size*.02),0,TAU);ctx.fillStyle='#171a16';ctx.fill();}ctx.restore();
 }
 function drawFish(fish){
- if(MODELLED_SPECIES.has(fish.species))return;
+ if(MODELLED_SPECIES.has(fish.species)&&marineRenderedFish.has(fish))return;
  if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
  if(['clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','barracuda','marlin','tuna'].includes(fish.species)){drawReefFish(fish);return;}
  if(fish.species==='wobbegong'){drawWobbegong(fish);return;}
@@ -826,10 +852,19 @@ function render(){
  drawCoral();
  drawAnemones();
  drawSeagrassAndKelp();
+ drawSpongeGardens();
+ drawSoftCorals();
+ drawSeaFans();
  drawPlankton();
- const ordered=school.fish.slice().sort((a,b)=>project(b.p).depth-project(a.p).depth);
+ const renderEntries=[];
+ for(const fish of school.fish){
+  const screen=project(fish.p);
+  if(screen.depth>2.5&&screen.x>-100&&screen.x<viewWidth+100&&screen.y>-100&&screen.y<viewHeight+100)renderEntries.push({fish,depth:screen.depth});
+ }
+ renderEntries.sort((a,b)=>b.depth-a.depth);
+ const ordered=renderEntries.map(item=>item.fish);
  updateMarineCamera();syncMarineModels(ordered,1/24);
- for(const fish of ordered){
+ for(const {fish} of renderEntries){
   try { drawFish(fish); }
   catch(error) {
    const species=fish.species??'unknown';
