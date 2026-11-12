@@ -16,6 +16,9 @@ export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
+// SCHOOLING_LIMITS are legacy half-extents; worldSize is expressed as full XYZ dimensions.
+export const SCHOOLING_DEFAULT_WORLD_SIZE = Object.freeze({ x: 82, y: 31, z: 62 });
+export const SCHOOLING_WORLD_EDGE_MARGIN = 0.1;
 // Relative per-individual model volume, adult mass, and ecological prevalence.
 // Values are comparative proxies, not validated measurements. Ecological prevalence
 // is a temperate Australian coastal-reef suitability/encounter index (1 = uncommon,
@@ -181,6 +184,27 @@ function collisionSegment(agent) {
   const offset = { x: direction.x * scaledHalf, y: direction.y * scaledHalf, z: direction.z * scaledHalf };
   return [subtract(agent.p, offset), add(agent.p, offset)];
 }
+function worldBodyRadius(agent) {
+  const [a, b] = collisionSegment(agent);
+  const halfLength = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) * 0.5;
+  return halfLength + 0.42 * (agent.bodyScale ?? 1);
+}
+function constrainAgentToWorld(agent, worldSize) {
+  const radius = worldBodyRadius(agent);
+  for (const axis of ['x', 'y', 'z']) {
+    const halfExtent = Math.max(0, worldSize[axis] * (0.5 - SCHOOLING_WORLD_EDGE_MARGIN) - radius);
+    if (agent.p[axis] > halfExtent) {
+      agent.p[axis] = halfExtent;
+      if (agent.v[axis] > 0) agent.v[axis] = -Math.max(0.025, agent.v[axis] * 0.32);
+      if (agent.forward[axis] > 0) agent.forward[axis] = -Math.abs(agent.forward[axis]);
+    } else if (agent.p[axis] < -halfExtent) {
+      agent.p[axis] = -halfExtent;
+      if (agent.v[axis] < 0) agent.v[axis] = Math.max(0.025, Math.abs(agent.v[axis]) * 0.32);
+      if (agent.forward[axis] < 0) agent.forward[axis] = Math.abs(agent.forward[axis]);
+    }
+  }
+  agent.forward = normalize(agent.forward);
+}
 function resolveCollisions(fish, grid) {
   let collisions = 0;
   for (let i = 0; i < fish.length; i++) {
@@ -337,7 +361,8 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
     };
   });
   for (const agent of fish) if (['crab','lobster','mantis','starfish','sandEel'].includes(agent.species)) agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
-  const worldSize = { ...(options.worldSize ?? SCHOOLING_LIMITS) };
+  const worldSize = { ...(options.worldSize ?? SCHOOLING_DEFAULT_WORLD_SIZE) };
+  for (const agent of fish) constrainAgentToWorld(agent, worldSize);
   const terrainField = createHabitatVoxelField(worldSize, seabedHeight);
   for (const agent of fish) {
     if (['crab','lobster','mantis','starfish'].includes(agent.species)) {
@@ -489,13 +514,17 @@ export function stepSchool(school, dt) {
       self.feedingCooldown = Math.max(0, (self.feedingCooldown ?? 0) - step);
     }
 
-    const limits = school.worldSize ?? SCHOOLING_LIMITS;
-    const boundary = Math.hypot(self.p.x / limits.x, self.p.y / limits.y, self.p.z / limits.z);
-    if (boundary > 0.72) {
-      const pressure = (boundary - 0.72) * 1.35;
-      ax -= self.p.x / (limits.x ** 2) * pressure * 5.2;
-      ay -= self.p.y / (limits.y ** 2) * pressure * 5.2;
-      az -= self.p.z / (limits.z ** 2) * pressure * 5.2;
+    const limits = school.worldSize ?? SCHOOLING_DEFAULT_WORLD_SIZE;
+    const bodyRadius = worldBodyRadius(self);
+    const safeX = Math.max(0.01, limits.x * (0.5 - SCHOOLING_WORLD_EDGE_MARGIN) - bodyRadius);
+    const safeY = Math.max(0.01, limits.y * (0.5 - SCHOOLING_WORLD_EDGE_MARGIN) - bodyRadius);
+    const safeZ = Math.max(0.01, limits.z * (0.5 - SCHOOLING_WORLD_EDGE_MARGIN) - bodyRadius);
+    const boundary = Math.hypot(self.p.x / safeX, self.p.y / safeY, self.p.z / safeZ);
+    if (boundary > 0.68) {
+      const pressure = (boundary - 0.68) * 1.35;
+      ax -= self.p.x / (safeX ** 2) * pressure * 5.2;
+      ay -= self.p.y / (safeY ** 2) * pressure * 5.2;
+      az -= self.p.z / (safeZ ** 2) * pressure * 5.2;
     }
     // Slow, individual heading drift replaces high-frequency random steering.
     if (self.species !== 'crab' && self.species !== 'lobster' && self.species !== 'mantis' && self.species !== 'starfish') {
@@ -752,6 +781,7 @@ export function stepSchool(school, dt) {
       if (grounded) agent.v.y = 0;
     }
   }
+  for (const agent of survivors) constrainAgentToWorld(agent, limits);
   school.time += step;
   school.metrics = {
     averageSpeed: speedTotal / Math.max(1, fish.length),
