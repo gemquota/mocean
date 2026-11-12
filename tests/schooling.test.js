@@ -101,7 +101,7 @@ test('100-fish school remains finite and speed-bounded over sustained simulation
   assert.ok(metrics.averageNeighbours > 0);
 });
 
-test('seventeen-plus species have distinct collision envelopes and benthic species spawn on the seabed', () => {
+test('thirty-three species have distinct collision envelopes and benthic species spawn on the seabed', () => {
   assert.equal(SCHOOLING_FISH_SCALE, 0.25);
   assert.ok(SCHOOLING_COLLISION.halfLength > 0.18 && SCHOOLING_COLLISION.halfLength < 0.23);
   assert.ok(SCHOOLING_COLLISION.radius > 0.06 && SCHOOLING_COLLISION.radius < 0.09);
@@ -438,7 +438,7 @@ test('default allocation retains at least one individual of every enabled specie
 
 test('species prevalence blends model volume, adult mass and ecological prevalence equally', () => {
   const species = Object.keys(SCHOOLING_SPECIES_VOLUME);
-  assert.equal(species.length, 30);
+  assert.equal(species.length, 33);
   for (const key of species) {
     assert.ok(SCHOOLING_SPECIES_ADULT_MASS_KG[key] > 0);
     assert.ok(SCHOOLING_SPECIES_ECOLOGY[key] > 0);
