@@ -65,3 +65,25 @@ test('completed visible terrain chunks are projected and cached for the Canvas h
     stream.dispose();
   });
 });
+
+test('visible chunk rasterisation is spread across frames to avoid a large main-thread burst',()=>{
+  withBrowserGlobals(()=>{
+    const stream=createHabitatVoxelTerrainStream({workerCount:3});
+    const jobs=FakeWorker.instances.map(worker=>worker.messages[0]);
+    const mesh={
+      positions:new Float32Array([0,-8,0,1,-8,0,0,-8,1]),
+      normals:new Float32Array([0,1,0,0,1,0,0,1,0]),
+      indices:new Uint32Array([0,1,2]),vertexCount:3,triangleCount:1
+    };
+    for(let index=0;index<jobs.length;index++){
+      const job=jobs[index];
+      FakeWorker.instances[index].listeners.message({data:{type:'complete',key:job.key,token:job.token,mesh}});
+    }
+    const context={drawImage(){}},project=point=>({x:50+point.x,y:50+point.z,depth:20,size:2});
+    const first=stream.draw(context,project,100,100,1);
+    const second=stream.draw(context,project,100,100,1);
+    assert.equal(first.visible,2);
+    assert.equal(second.visible,3);
+    stream.dispose();
+  });
+});
