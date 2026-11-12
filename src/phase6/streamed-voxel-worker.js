@@ -74,12 +74,12 @@ function buildChunk({ seed, chunkX, chunkZ, chunkSize, worldSize = WORLD_SIZE, m
     throw new RangeError('Chunk dimensions must align to the voxel cell size.');
   }
   const minX = chunkX * size, minZ = chunkZ * size;
-  // One-cell halo on all horizontal sides makes boundary quads available to
-  // both adjacent workers. A centroid ownership rule assigns every triangle
+  // Two-cell halo also gives boundary lattice gradients a full central-difference
+  // stencil in both workers. A centroid ownership rule assigns every triangle
   // to exactly one chunk, eliminating cracks and duplicate faces.
-  const min = [minX - cell, minY, minZ - cell];
-  const max = [minX + size + cell, maxY, minZ + size + cell];
-  const cells = [size / cell + 2, (maxY - minY) / cell, size / cell + 2];
+  const min = [minX - cell * 2, minY, minZ - cell * 2];
+  const max = [minX + size + cell * 2, maxY, minZ + size + cell * 2];
+  const cells = [size / cell + 4, (maxY - minY) / cell, size / cell + 4];
   const sampleDistance = makeChunkField(seed, chunkX, chunkZ, worldSize, includeStreamRocks);
   const full = buildDualContourSurface({ min, max, cells, sampleDistance });
   const kept = [];
