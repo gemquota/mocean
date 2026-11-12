@@ -87,7 +87,7 @@ Then open [http://localhost:8000](http://localhost:8000). The main simulation is
 
 ## Deployment
 
-GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow stages all 35 pinned Quaternius animated-fish GLBs and their CC0 licence, plus a pinned rigged PolyFish dolphin and its MIT licence. It verifies embedded animation clips and generates a model catalogue before deployment. Core tests run separately through [test.yml](.github/workflows/test.yml).
+GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow stages all 35 pinned Quaternius animated-fish GLBs and their CC0 licence, plus a pinned rigged PolyFish dolphin and its MIT licence. It verifies the Quaternius embedded swim clips, the PolyFish dolphin rig and its procedural swim path, then generates a model catalogue before deployment. Core tests run separately through [test.yml](.github/workflows/test.yml).
 
 ## Scope and model limitations
 
