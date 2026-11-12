@@ -190,7 +190,7 @@ test('habitat enforces the inner-world boundary and ties minimum camera zoom to 
 });
 
 test('only exact animated-model species can spawn and unsupported species are disabled in the prevalence controls', () => {
-  assert.equal(ANIMATED_MODEL_SPECIES.length, 12);
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 15);
   for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','butterflyfish','grouper','moorishIdol','tuna','shark','mola','dolphin','jellyfish','seal','spermWhale']) {
     assert.ok(ANIMATED_MODEL_SPECIES.includes(species), species + ' should have a matching animated model');
   }
