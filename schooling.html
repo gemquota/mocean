@@ -65,7 +65,7 @@ addSpeciesSlider('species-size','size',40,200,100);
 addSpeciesSlider('species-aggression','aggression',0,200,100);
 const sizeRangeRoot=document.getElementById('species-size-range');
 for(const [species,label] of Object.entries(speciesLabels)){const row=document.createElement('div');row.className='species-range';row.innerHTML=`<span>${label}</span><input type="range" min="30" max="150" value="80" aria-label="${label} minimum size"><output>80%</output><input type="range" min="50" max="250" value="120" aria-label="${label} maximum size"><output>120%</output>`;const [minSlider,minOutput,maxSlider,maxOutput]=row.querySelectorAll('input,output');const update=()=>{let min=Number(minSlider.value),max=Number(maxSlider.value);if(min>max){if(document.activeElement===minSlider){max=min;maxSlider.value=String(max);}else{min=max;minSlider.value=String(min);}}minOutput.textContent=min+'%';maxOutput.textContent=max+'%';speciesSettings[species].minSize=min/100;speciesSettings[species].maxSize=max/100;for(const fish of school.fish)if(fish.species===species)applySpeciesBodySettings(fish);};minSlider.addEventListener('input',update);maxSlider.addEventListener('input',update);sizeRangeRoot.append(row);}
-let school=createSchool(150);
+let school=createSchool(150,73421,{speciesPercentages:speciesMix,worldSize});
 initialiseFishVisualState(school);
 function setPopulation(value){
  const count=Math.max(Number(populationSlider.min),Math.min(Number(populationSlider.max),Math.round(Number(value)/10)*10));
