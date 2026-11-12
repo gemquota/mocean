@@ -161,3 +161,16 @@ Model/animation review page: [creature-model-review.html](creature-model-review.
 - [ ] Verify that clips do not introduce root motion or degrade simulated locomotion.
 
 These are assistant implementation candidates only. No P6 subgoal or phase is marked complete, and no user acceptance is inferred.
+
+
+### P6-10 · Animated-only habitat migration (temporary)
+
+- [x] Add a transparent Three.js creature layer over the existing habitat environment pass.
+- [x] Synchronise GLB model roots from simulation position, heading and pitch; leave movement and behaviour in the existing school simulation.
+- [x] Retain only regular fish, dedicated schooling fish, parrotfish, grouper, tuna, reef sharks and mola mola, using five Quaternius baked-animation species and the shared PolyFish procedural-swim model.
+- [x] Suppress static-only and unmapped species at initial population creation and disable their prevalence controls without deleting their simulation definitions.
+- [x] Add regression tests for the temporary species filter and update the habitat renderer assertions.
+- [ ] Visually verify model load, animation playback, scale, orientation, depth ordering and performance in the browser.
+- [ ] Confirm existing school motion and habitat rendering remain stable before merging/deploying.
+
+The seven-species restriction is explicitly temporary. Restore species only when suitable animated models are sourced and reviewed. The 30-species simulation definitions remain intact. The latest automated run passed 169/169 tests; browser visual verification remains outstanding.
