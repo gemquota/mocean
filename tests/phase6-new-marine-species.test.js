@@ -15,6 +15,7 @@ test('seahorse and leafy seadragon use species-matched CC0 model assets', () => 
   assert.equal(SPECIES_MODEL_MAP.anglerfish.assetId, '5890');
   assert.equal(SPECIES_MODEL_MAP.anglerfish.id, 'anglerfish');
   assert.ok(ANIMATED_MODEL_SPECIES.includes('anglerfish'));
+  assert.ok(!SPECIES_WITHOUT_REVIEWED_MODEL.includes('anglerfish'));
 });
 
 test('the naturalistic model roster expands without duplicate species or model IDs', () => {
