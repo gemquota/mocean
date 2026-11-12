@@ -222,3 +222,9 @@ test('jellyfish keep a vertical body axis while yaw follows horizontal heading',
   assert.match(adapter,/mapping\.orientation!=='vertical'/);
   assert.match(script,/setFromAxisAngle\(new THREE\.Vector3\(0,1,0\),yaw\)/);
 });
+
+test('Gobkit marine models play only their idle subclip, not attack or death frames', () => {
+  const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
+  assert.match(adapter,/GOBKIT_MASTER_TIMELINE_MODELS = new Set\(\['jellyfish','seal','whale'\]\)/);
+  assert.match(adapter,/AnimationUtils\.subclip\(animations\[0\],'idle',0,29,24\)/);
+});
