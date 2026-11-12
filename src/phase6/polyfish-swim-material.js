@@ -201,7 +201,7 @@ export function applySwimMaterial(meshRoot, creatureType) {
     uMaskFloor: { value: config.maskFloor ?? 0.15 },
     uHeadPhase: { value: config.headPhase ?? 0.5 },
     uWaveMode: { value: config.waveMode ?? 0 },
-    uWingMax: { value: wingMax || 1 },\n    uWaveMode: { value: config.waveMode ?? 0 },\n    uWingMax: { value: wingMax || 1 },
+    uWingMax: { value: wingMax || 1 },
   };
 
   // Patch all materials in the hierarchy
