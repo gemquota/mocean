@@ -132,7 +132,13 @@ function buildScene(count){
  if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU'){
   phaseDelta=uniform(0);
   const value=phaseBuffer.element(instanceIndex);
-  computeNode=Fn(()=>{value.assign(value.add(phaseDelta));})().compute(count);
+  const phase=value.x;
+  const update=Fn(()=>{
+   value.x.assign(phase.add(phaseDelta.mul(1.1)));
+   value.y.assign(value.y.add(cos(phase).mul(phaseDelta).mul(.12)));
+   value.z.assign(value.z.add(sin(phase).mul(phaseDelta).mul(.08)));
+  })();
+  computeNode=update.compute(count);
  }
 }
 async function initialise(){
