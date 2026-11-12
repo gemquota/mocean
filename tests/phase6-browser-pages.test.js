@@ -46,6 +46,11 @@ test('creature model review has valid import map and parseable browser module', 
   assert.ok(html.includes('PROCEDURAL SWIM'));
 });
 
+test('live habitat inline module has valid JavaScript syntax', () => {
+  const html=readPage('schooling.html');
+  assert.doesNotThrow(() => new vm.Script(moduleSource(html, 'live habitat')));
+});
+
 test('live habitat wires biome flora, new modelled species and bounded 3D rendering', () => {
   const html=readPage('schooling.html');
   assert.ok(html.includes("from './src/phase6/biomes.js'"));
