@@ -109,7 +109,7 @@ test('one creature renderer fault cannot stop the habitat frame or hide every la
   assert.match(script, /for\(const fish of ordered\)\{[\s\S]*?try \{ drawFish\(fish\); \}[\s\S]*?catch\(error\)/);
   assert.match(script, /const renderFaults=new Map\(\)/);
   assert.match(script, /RENDER WARN/);
-  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*ANIMATED SPECIES/);
+  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*30 SPECIES/);
 });
 
 test('coral renderer reads terrain-height anchors from its precomputed colony collection', () => {
