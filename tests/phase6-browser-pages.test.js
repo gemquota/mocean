@@ -23,11 +23,18 @@ function assertImportMap(html, name) {
   assert.ok(start < html.indexOf('<script type="module">'), name + ' import map precedes module execution');
 }
 
-test('voxel terrain study has valid import map and parseable browser module', () => {
+test('voxel terrain study has valid import map, parseable module and constrained camera controls', () => {
   const html = readPage('voxel-terrain-spike.html');
   assertImportMap(html, 'voxel terrain study');
   assert.doesNotThrow(() => new vm.Script(moduleSource(html, 'voxel terrain study')));
-  assert.ok(html.includes("new Worker('./src/phase6/voxel-worker.js'"));
+  assert.ok(html.includes("from './src/phase6/streamed-voxel-terrain.js'"));
+  assert.ok(html.includes('controls.touches.ONE=THREE.TOUCH.PAN'));
+  assert.ok(html.includes('controls.touches.TWO=THREE.TOUCH.DOLLY_ROTATE'));
+  assert.ok(html.includes('controls.maxPolarAngle=1.36'));
+  assert.ok(html.includes('controls.maxDistance=76'));
+  assert.ok(html.includes('keepCameraAboveSeabed'));
+  assert.ok(html.includes('radius:3,prefetchRadius:4,maxChunks:81'));
+  assert.ok(html.includes('href="./schooling.html"'));
 });
 
 test('creature model review has valid import map and parseable browser module', () => {
