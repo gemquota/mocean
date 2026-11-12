@@ -13,6 +13,8 @@ test('geological field is deterministic and describes connected formations', () 
   assert.ok(layout.ridges.every(f=>f.points.length>=2));
   assert.ok(layout.ravines.every(f=>f.points.length>=2));
   assert.ok(layout.caves.every(f=>f.points.length>=2));
+  assert.ok(layout.caves.every(f=>f.branches.length>0&&f.branches[0][0]===f.points[5]),
+    'branch passages share an exact junction with their main tunnel');
 });
 test('macro relief has meaningful range and cave paths carve water space', () => {
   const field=createGeologicalField({seed:7}),heights=[];
