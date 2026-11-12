@@ -8,7 +8,7 @@ export const SPECIES_MODEL_MAP = Object.freeze({
   schoolFish: { collection: 'animated', id: 'tetra', variants: ['tetra','cardinal_fish'], animation: 'clip', scale: 0.25 },
   clownfish: { collection: 'animated', id: 'clownfish', variants: ['clownfish','zebra_clown_fish'], animation: 'clip' },
   parrotfish: { collection: 'animated', id: 'parrot_fish', variants: ['parrot_fish','gobkit_parrotfish'], animation: 'clip' },
-  blueTang: { collection: 'animated', id: 'blue_tang', variants: ['blue_tang','tang','yellow_tang','gobkit_bluetang'], animation: 'clip' },
+  blueTang: { collection: 'animated', id: 'blue_tang', variants: ['blue_tang','gobkit_bluetang'], animation: 'clip' },
   butterflyfish: { collection: 'animated', id: 'butterfly_fish', animation: 'clip' },
   grouper: { collection: 'animated', id: 'coral_grouper', animation: 'clip' },
   moorishIdol: { collection: 'animated', id: 'moorish_idol', variants: ['moorish_idol','gobkit_moorishidol'], animation: 'clip' },
