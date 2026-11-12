@@ -176,7 +176,6 @@ test('voxel and WebGL failures preserve the procedural habitat fallback',()=>{
   assert.match(script,/initialiseMarineModelLayer\(\)/);
   assert.match(script,/webglcontextlost/);
   assert.match(script,/Naturalistic GLB layer disabled; unsupported species keep their native renderers/);
-  assert.match(script,/Naturalistic GLB layer disabled; unsupported species keep their native renderers/);
 });
 
 
