@@ -4,16 +4,16 @@
  * suitable animated model is available. No static or merely similar animal is used.
  */
 export const SPECIES_MODEL_MAP = Object.freeze({
-  fish: { collection: 'animated', id: 'blue_goldfish', animation: 'clip' },
-  schoolFish: { collection: 'animated', id: 'tetra', animation: 'clip', scale: 0.25 },
-  clownfish: { collection: 'animated', id: 'clownfish', animation: 'clip' },
-  parrotfish: { collection: 'animated', id: 'parrot_fish', animation: 'clip' },
-  blueTang: { collection: 'animated', id: 'blue_tang', animation: 'clip' },
+  fish: { collection: 'animated', id: 'blue_goldfish', variants: ['blue_goldfish','goldfish','koi'], animation: 'clip' },
+  schoolFish: { collection: 'animated', id: 'tetra', variants: ['tetra','cardinal_fish'], animation: 'clip', scale: 0.25 },
+  clownfish: { collection: 'animated', id: 'clownfish', variants: ['clownfish','zebra_clown_fish'], animation: 'clip' },
+  parrotfish: { collection: 'animated', id: 'parrot_fish', variants: ['parrot_fish','gobkit_parrotfish'], animation: 'clip' },
+  blueTang: { collection: 'animated', id: 'blue_tang', variants: ['blue_tang','tang','yellow_tang','gobkit_bluetang'], animation: 'clip' },
   butterflyfish: { collection: 'animated', id: 'butterfly_fish', animation: 'clip' },
   grouper: { collection: 'animated', id: 'coral_grouper', animation: 'clip' },
-  moorishIdol: { collection: 'animated', id: 'moorish_idol', animation: 'clip' },
+  moorishIdol: { collection: 'animated', id: 'moorish_idol', variants: ['moorish_idol','gobkit_moorishidol'], animation: 'clip' },
   tuna: { collection: 'animated', id: 'tuna', animation: 'clip' },
-  shark: { collection: 'animated', id: 'shark', animation: 'clip' },
+  shark: { collection: 'animated', id: 'shark', variants: ['shark','gobkit_shark'], animation: 'clip' },
   mola: { collection: 'animated', id: 'sunfish', animation: 'clip' },
   dolphin: { collection: 'animated', id: 'dolphin_rigged', animation: 'procedural-swim' },
   jellyfish: { collection: 'animated', id: 'jellyfish', animation: 'clip', orientation: 'vertical' },
