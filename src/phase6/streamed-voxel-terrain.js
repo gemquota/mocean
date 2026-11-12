@@ -14,7 +14,7 @@ export function selectTerrainChunks({
   radius = TERRAIN_STREAM_RADIUS,
   prefetchRadius = TERRAIN_PREFETCH_RADIUS
 } = {}) {
-  if (!(chunkSize > 0) || !Number.isInteger(radius) || radius < 0
+  if (!Number.isInteger(chunkSize) || chunkSize < 8 || !Number.isInteger(radius) || radius < 0
     || !Number.isInteger(prefetchRadius) || prefetchRadius < radius) {
     throw new RangeError('Invalid terrain chunk dimensions or radii.');
   }
@@ -52,6 +52,9 @@ export function createTerrainChunkStream({
   }
   if (!Number.isInteger(workerCount) || workerCount < 1 || workerCount > 4) {
     throw new RangeError('workerCount must be between one and four.');
+  }
+  if (!Number.isInteger(chunkSize) || chunkSize < 8 || !Number.isInteger(maxChunks) || maxChunks < 1) {
+    throw new RangeError('chunkSize must be an integer of at least eight and maxChunks must be positive.');
   }
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff, vertexColors: true, roughness: 0.96, metalness: 0.01
@@ -162,9 +165,15 @@ export function createTerrainChunkStream({
         chunks.delete(key);
       }
     }
-    // Drop obsolete queued work before it can delay chunks in the new view.
+    // Drop obsolete jobs and refresh priorities as the camera turns.
+    const desiredByKey = new Map(desired.map(request => [request.key, request]));
     for (let i = queue.length - 1; i >= 0; i--) {
-      if (!keep.has(queue[i].key)) queue.splice(i, 1);
+      const request = desiredByKey.get(queue[i].key);
+      if (!request) queue.splice(i, 1);
+      else {
+        queue[i].priority = request.priority;
+        queue[i].visible = request.visible;
+      }
     }
     for (const request of desired) {
       let item = chunks.get(request.key);
