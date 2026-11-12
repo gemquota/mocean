@@ -15,7 +15,9 @@ const models=[
   {species:'spermWhale',file:'sperm_whale.glb',assetId:'5860'},
   {species:'dolphin',file:'bottlenose_dolphin.glb',assetId:'39330'},
   {species:'jellyfish',file:'moon_jellyfish.glb',assetId:'5889'},
-  {species:'turtle',file:'loggerhead_turtle.glb',assetId:'39340'}
+  {species:'turtle',file:'loggerhead_turtle.glb',assetId:'39340'},
+  {species:'seahorse',file:'lined_seahorse.glb',assetId:'39345'},
+  {species:'seaDragon',file:'leafy_seadragon.glb',assetId:'39346'}
 ];
 const entries=[];
 for(const model of models){
