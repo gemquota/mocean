@@ -385,7 +385,7 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
  * A spatial hash bounds local interactions and capsules handle body contact.
  */
 export function stepSchool(school, dt) {
-  const limits = school.worldSize ?? SCHOOLING_LIMITS;
+  const limits = school.worldSize ?? SCHOOLING_DEFAULT_WORLD_SIZE;
   if (!school.terrainField || school.terrainFieldWorldSize?.x !== limits.x || school.terrainFieldWorldSize?.y !== limits.y || school.terrainFieldWorldSize?.z !== limits.z) {
     school.terrainField = createHabitatVoxelField(limits, seabedHeight);
     school.terrainFieldWorldSize = { ...limits };
