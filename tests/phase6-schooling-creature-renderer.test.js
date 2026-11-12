@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from '../src/phase6/schooling-creature-renderer.js';
+import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from '../src/phase6/animated-species-filter.js';
 
 test('only species with rigged or procedural animated models remain eligible', () => {
   assert.deepEqual(ANIMATED_MODEL_SPECIES, ['fish', 'schoolFish', 'parrotfish', 'grouper', 'tuna', 'shark', 'mola']);
