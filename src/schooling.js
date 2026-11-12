@@ -184,14 +184,16 @@ function collisionSegment(agent) {
   const offset = { x: direction.x * scaledHalf, y: direction.y * scaledHalf, z: direction.z * scaledHalf };
   return [subtract(agent.p, offset), add(agent.p, offset)];
 }
-function worldBodyRadius(agent) {
+function worldBodyRadius(agent, axis) {
   const [a, b] = collisionSegment(agent);
-  const halfLength = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) * 0.5;
-  return halfLength + 0.42 * (agent.bodyScale ?? 1);
+  // The body occupies only its projected half-length on each world axis.
+  // Using the full 3D length for every axis needlessly pins long horizontal
+  // creatures away from the seabed and shrinks their usable vertical space.
+  return Math.abs(b[axis] - a[axis]) * 0.5 + 0.42 * (agent.bodyScale ?? 1);
 }
 function constrainAgentToWorld(agent, worldSize) {
-  const radius = worldBodyRadius(agent);
   for (const axis of ['x', 'y', 'z']) {
+    const radius = worldBodyRadius(agent, axis);
     const halfExtent = Math.max(0, worldSize[axis] * (0.5 - SCHOOLING_WORLD_EDGE_MARGIN) - radius);
     if (agent.p[axis] > halfExtent) {
       agent.p[axis] = halfExtent;
