@@ -4,10 +4,9 @@ import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from '../src/phase6/a
 import { SCHOOLING_SPECIES_PERCENTAGES } from '../src/schooling.js';
 
 test('animated species list is derived from the exact model map', () => {
-  assert.equal(ANIMATED_MODEL_SPECIES.length, 15);
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 13);
   assert.deepEqual(new Set(ANIMATED_MODEL_SPECIES), new Set([
-    'fish','schoolFish','clownfish','parrotfish','blueTang','butterflyfish',
-    'grouper','moorishIdol','tuna','shark','mola','dolphin','jellyfish','seal','spermWhale'
+    'barracuda','marlin','tuna','shark','whaleShark','mola','manta','stingray','orca','spermWhale','dolphin','jellyfish','turtle'
   ]));
 });
 
@@ -22,9 +21,9 @@ test('initial population shares exclude every species without a reviewed animate
 });
 
 test('population-share filtering renormalizes only supported species after edits', () => {
-  const filtered = filterToAnimatedSpecies({ fish: 25, schoolFish: 25, dolphin: 50, eel: 100, crab: 100 });
-  assert.equal(filtered.fish, 25);
-  assert.equal(filtered.schoolFish, 25);
+  const filtered = filterToAnimatedSpecies({ tuna: 25, barracuda: 25, dolphin: 50, eel: 100, crab: 100 });
+  assert.equal(filtered.tuna, 25);
+  assert.equal(filtered.barracuda, 25);
   assert.equal(filtered.dolphin, 50);
   assert.equal(filtered.eel, 0);
   assert.equal(filtered.crab, 0);
