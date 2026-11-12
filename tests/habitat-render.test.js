@@ -159,15 +159,16 @@ test('live habitat integrates a real voxel surface and animated Osmocean GLB mod
   assert.match(script,/function syncMarineModels\(ordered,dt\)/);
   assert.match(script,/entry\.update\(dt\)/);
   assert.match(script,/entry\.root\.quaternion\.setFromUnitVectors/);
-  assert.match(script,/if\(marineModelEntries\.has\(fish\)\)return/);
+  assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)\)return/);
   assert.match(script,/modelRenderer\.render\(modelScene,modelCamera\)/);
   assert.match(script,/catch\(error\)\{modelRenderer=null;marineModels=null;console\.warn\('Naturalistic model layer unavailable; modelled species will not use cartoon fallbacks/);
 });
-test('habitat preserves procedural species fallbacks for animals without matching fish rigs',()=>{
+test('disabled species retain native procedural renderers without cartoon substitutions',()=>{
   assert.match(script,/if\(fish\.species==='eel'\)\{drawEel\(fish\);return;\}/);
   assert.match(script,/if\(fish\.species==='crab'\|\|fish\.species==='lobster'\)\{drawCrustacean\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='starfish'\)\{drawStarfish\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='sandEel'\)\{drawSandEel\(fish\);return;\}/);
   assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)\)return/);
-  assert.match(script,/if\(fish\.species==='orca'\)\{drawOrca\(fish\);return;\}/);
 });
 
 test('voxel and WebGL failures preserve the procedural habitat fallback',()=>{
