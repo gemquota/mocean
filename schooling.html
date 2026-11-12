@@ -148,7 +148,7 @@ school.worldSize={...worldSize};
 setPopulation(populationSlider.value);
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1;
-function minimumCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x,baseCameraPosition.y,baseCameraPosition.z);return Math.min(4.5,Math.max(0.22,baseDistance/worldExtent));}
+function minimumCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x,baseCameraPosition.y,baseCameraPosition.z);return Math.max(0.22,baseDistance/worldExtent);}
 function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(4.5,minimum),zoom));camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
 applyZoom();
 const activePointers=new Map();let pinchDistance=0;
