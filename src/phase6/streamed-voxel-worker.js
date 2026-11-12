@@ -34,8 +34,9 @@ const smoothMin = (a, b, k) => {
   return b * (1 - h) + a * h - k * h * (1 - h);
 };
 
-function makeChunkField(seed, chunkX, chunkZ) {
-  const base = createHabitatVoxelField(WORLD_SIZE, floorAt);
+function makeChunkField(seed, chunkX, chunkZ, worldSize = WORLD_SIZE, includeStreamRocks = true) {
+  const base = createHabitatVoxelField(worldSize, floorAt);
+  if (!includeStreamRocks) return base;
   const rocks = [];
   // Include neighbouring feature cells so a boulder that straddles a chunk
   // boundary is sampled identically by both chunk workers.
@@ -66,17 +67,20 @@ function makeChunkField(seed, chunkX, chunkZ) {
   };
 }
 
-function buildChunk({ seed, chunkX, chunkZ, chunkSize }) {
+function buildChunk({ seed, chunkX, chunkZ, chunkSize, worldSize = WORLD_SIZE, minY = -18, maxY = 0, cellSize = 1, includeStreamRocks = true }) {
   const size = chunkSize || CHUNK_SIZE;
-  const cell = 1;
+  const cell = cellSize;
+  if (!(cell > 0) || !Number.isInteger(size / cell) || !(maxY > minY) || !Number.isInteger((maxY - minY) / cell)) {
+    throw new RangeError('Chunk dimensions must align to the voxel cell size.');
+  }
   const minX = chunkX * size, minZ = chunkZ * size;
   // One-cell halo on all horizontal sides makes boundary quads available to
   // both adjacent workers. A centroid ownership rule assigns every triangle
   // to exactly one chunk, eliminating cracks and duplicate faces.
-  const min = [minX - cell, -18, minZ - cell];
-  const max = [minX + size + cell, 0, minZ + size + cell];
-  const cells = [size / cell + 2, 18, size / cell + 2];
-  const sampleDistance = makeChunkField(seed, chunkX, chunkZ);
+  const min = [minX - cell, minY, minZ - cell];
+  const max = [minX + size + cell, maxY, minZ + size + cell];
+  const cells = [size / cell + 2, (maxY - minY) / cell, size / cell + 2];
+  const sampleDistance = makeChunkField(seed, chunkX, chunkZ, worldSize, includeStreamRocks);
   const full = buildDualContourSurface({ min, max, cells, sampleDistance });
   const kept = [];
   for (let i = 0; i < full.indices.length; i += 3) {
