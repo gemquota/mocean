@@ -54,3 +54,18 @@ test('ravines form connected tributary networks rather than parallel isolated cu
   assert.ok(field.sampleHeight(junction.x,junction.z)<control.sampleHeight(junction.x,junction.z)-2,
     'ravine network measurably lowers the terrain at its connected junction');
 });
+
+test('cave chambers retain a solid roof and floor while opening through the study sidewall', () => {
+  const field=createGeologicalField({seed:88,ridgeCount:0,ravineCount:0,caveCount:1});
+  const cave=field.describe().caves[0],junction=cave.points[5],bounds=field.describe().bounds;
+  assert.ok(field.sampleDistance(junction.x,junction.y,junction.z)>0,
+    'chamber centre is navigable water');
+  assert.ok(field.sampleDistance(junction.x,junction.y+cave.chamber.radius+.5,junction.z)<0,
+    'rock remains above the chamber');
+  assert.ok(field.sampleDistance(junction.x,junction.y-cave.chamber.radius-.5,junction.z)<0,
+    'rock remains below the chamber');
+  const mouthY=cave.points.reduce((best,p)=>Math.abs(p.x-bounds.minX)<Math.abs(best.x-bounds.minX)?p:best).y;
+  const mouthZ=cave.points.reduce((best,p)=>Math.abs(p.x-bounds.minX)<Math.abs(best.x-bounds.minX)?p:best).z;
+  assert.ok(field.sampleDistance(bounds.minX,mouthY,mouthZ)>0,
+    'tunnel intersects the clipped sidewall as an open mouth');
+});
