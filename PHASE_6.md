@@ -200,7 +200,8 @@ Merged in PR #48 (commit `f9a2051c993102c8dff26d7e723b2fad1f45d247`) and deploye
 
 - [ ] Instrument and record simulation, Canvas terrain/render, Three.js model sync/render, frame-time p50/p95 and worker queue metrics at 10/50/100/200 creatures.
 - [ ] Run representative desktop and mobile-class browser profiles and record browser, OS, GPU and power mode.
-- [ ] Build an isolated WebGPU/Three.js TSL model-transform/deformation and culling prototype with WebGL2 fallback; verify the selected backend after initialisation.
+- [x] Build an isolated WebGPU/Three.js TSL instance-motion and deformation prototype with WebGL2 fallback and explicit backend reporting. Prototype implementation is present at [webgpu-lab.html](webgpu-lab.html); runtime comparison and visual review remain outstanding.
+- [ ] Extend the prototype to production GLB models and evaluate batched GPU visibility/LOD after the first benchmark.
 - [ ] Measure GPU-resident terrain generation/rendering only if the full path can avoid CPU readback and preserve voxel/contact parity.
 - [ ] Reconsider GPU simulation only if profiling shows the CPU simulation is the dominant bottleneck; retain a CPU reference and deterministic parity tests.
 - [ ] Adopt no GPU path without a measured material improvement, low-end fallback, visual parity and user review.
