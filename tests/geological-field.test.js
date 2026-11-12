@@ -64,8 +64,13 @@ test('cave chambers retain a solid roof and floor while opening through the stud
     'rock remains above the chamber');
   assert.ok(field.sampleDistance(junction.x,junction.y-cave.chamber.radius-.5,junction.z)<0,
     'rock remains below the chamber');
-  const mouthY=cave.points.reduce((best,p)=>Math.abs(p.x-bounds.minX)<Math.abs(best.x-bounds.minX)?p:best).y;
-  const mouthZ=cave.points.reduce((best,p)=>Math.abs(p.x-bounds.minX)<Math.abs(best.x-bounds.minX)?p:best).z;
+  const segment=cave.points.find((p,i)=>i<cave.points.length-1
+    &&p.x<=bounds.minX&&cave.points[i+1].x>=bounds.minX);
+  assert.ok(segment,'main passage crosses the study sidewall');
+  const next=cave.points[cave.points.indexOf(segment)+1];
+  const u=(bounds.minX-segment.x)/(next.x-segment.x);
+  const mouthY=segment.y+(next.y-segment.y)*u;
+  const mouthZ=segment.z+(next.z-segment.z)*u;
   assert.ok(field.sampleDistance(bounds.minX,mouthY,mouthZ)>0,
     'tunnel intersects the clipped sidewall as an open mouth');
 });
