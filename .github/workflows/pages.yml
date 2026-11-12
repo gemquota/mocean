@@ -28,7 +28,7 @@ jobs:
             assets/quaternius/animated-fish-bundle/License.txt
           sparse-checkout-cone-mode: false
           persist-credentials: false
-      - name: Checkout pinned PolyFish animated dolphin model
+      - name: Checkout pinned PolyFish rigged dolphin model
         uses: actions/checkout@v7
         with:
           repository: unclemattmakes/polyfish
@@ -41,12 +41,17 @@ jobs:
           persist-credentials: false
       - name: Stage animated marine models and original licences
         run: |
-          mkdir -p assets/models/osmocean/species
+          mkdir -p assets/models/osmocean/species _upstream
           cp _upstream/fish-assets/assets/quaternius/animated-fish-bundle/Models/*.glb assets/models/osmocean/species/
           cp _upstream/fish-assets/assets/quaternius/animated-fish-bundle/License.txt assets/models/osmocean/species/QUATERNIUS-CC0-LICENSE.txt
           cp _upstream/polyfish/assets/models/dolphin_rigged.glb assets/models/osmocean/species/
           cp _upstream/polyfish/LICENSE assets/models/osmocean/species/POLYFISH-MIT-LICENSE.txt
-          node scripts/verify-animated-marine-models.mjs assets/models/osmocean/species
+          curl -fsSL https://gobkit.com/api/free -o _upstream/gobkit-free-manifest.json
+          curl -fsSL https://gobkit.com/freebies/animal/Jellyfish.glb -o assets/models/osmocean/species/jellyfish.glb
+          curl -fsSL https://gobkit.com/freebies/animalB/Seal.glb -o assets/models/osmocean/species/seal.glb
+          curl -fsSL https://gobkit.com/freebies/animalB/Whale.glb -o assets/models/osmocean/species/whale.glb
+          curl -fsSL https://raw.githubusercontent.com/Ariescar/gobkit-free-assets/4e73c68fa6e8ca9d948fcc0ce7215c830a022c3b/LICENSE -o assets/models/osmocean/species/GOBKIT-CC0-LICENSE.txt
+          node scripts/verify-animated-marine-models.mjs assets/models/osmocean/species _upstream/gobkit-free-manifest.json
       - name: Configure Pages
         uses: actions/configure-pages@v6
       - name: Upload site
