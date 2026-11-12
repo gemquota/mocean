@@ -17,7 +17,8 @@ const models=[
   {species:'jellyfish',file:'moon_jellyfish.glb',assetId:'5889'},
   {species:'turtle',file:'loggerhead_turtle.glb',assetId:'39340'},
   {species:'seahorse',file:'lined_seahorse.glb',assetId:'39345'},
-  {species:'seaDragon',file:'leafy_seadragon.glb',assetId:'39346'}
+  {species:'seaDragon',file:'leafy_seadragon.glb',assetId:'39346'},
+  {species:'anglerfish',file:'anglerfish.glb',assetId:'5890'}
 ];
 const entries=[];
 for(const model of models){
