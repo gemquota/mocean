@@ -64,7 +64,7 @@ export function createGeologicalField({
       return Object.freeze({x:mix(junction.x,endX,t),y:0,z:mix(junction.z,endZ,t)+bend});
     }));
     return Object.freeze({
-      id:'ravine-'+i,points,branches:Object.freeze([branch]),
+      id:'ravine-'+i,points,junctionIndex,branches:Object.freeze([branch]),
       width:2.8+random()*2.2,depth:3.5+random()*2.8
     });
   });
