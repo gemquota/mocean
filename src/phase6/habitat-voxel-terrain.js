@@ -35,7 +35,20 @@ function shade(normal,position){
 }
 
 /** Draw the volumetric seabed into the habitat's fixed-camera canvas. */
-export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize){
+export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize,stream=null){
+ if(stream){
+  const streamed=stream.draw(ctx,project,width,height,zoom);
+  if(streamed.visible>0)return streamed;
+  // A temporary floor silhouette prevents a blank seabed while worker chunks
+  // are being generated; it is replaced by the shared voxel surface as soon
+  // as the first visible chunk arrives.
+  const hx=worldSize.x*.5+4,hz=worldSize.z*.5+4;
+  const corners=[project({x:-hx,y:-8.65,z:-hz}),project({x:hx,y:-8.65,z:-hz}),project({x:hx,y:-8.65,z:hz}),project({x:-hx,y:-8.65,z:hz})];
+  ctx.beginPath();ctx.moveTo(corners[0].x,corners[0].y);
+  for(let index=1;index<corners.length;index++)ctx.lineTo(corners[index].x,corners[index].y);
+  ctx.closePath();ctx.fillStyle='#263d37';ctx.fill();
+  return streamed;
+ }
  const key=[worldSize.x,worldSize.y,worldSize.z,width,height,zoom].join(':');
  if(!terrainCache||terrainCache.worldSize.x!==worldSize.x||terrainCache.worldSize.y!==worldSize.y||terrainCache.worldSize.z!==worldSize.z){
   terrainCache=createHabitatVoxelTerrain(worldSize);projectionCache=null;
