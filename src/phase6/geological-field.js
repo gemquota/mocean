@@ -61,8 +61,16 @@ export function createGeologicalField({
     const caveBounds={...bounds,minX:bounds.minX-10,maxX:bounds.maxX+10};
     const points=makePath(random,caveBounds,10,t=>baseDepth+3.5-Math.sin(t*Math.PI)*4,
       (i-(caveCount-1)*.5)*span*.16);
-    return Object.freeze({id:'cave-'+i,points,radius:1.25+random()*.7,
-      chamber:Object.freeze({x:points[4].x,y:points[4].y,z:points[4].z,radius:2.8+random()*1.2})});
+    const junction=points[5],direction=i%2===0?1:-1;
+    const branchEndZ=clamp(junction.z+direction*7,bounds.minZ+3,bounds.maxZ-3);
+    const branch=Object.freeze([
+      junction,
+      Object.freeze({x:junction.x+2.5,y:junction.y-.25,z:mix(junction.z,branchEndZ,.35)}),
+      Object.freeze({x:junction.x+5.5,y:junction.y-.65,z:mix(junction.z,branchEndZ,.72)}),
+      Object.freeze({x:junction.x+8,y:junction.y-1,z:branchEndZ})
+    ]);
+    return Object.freeze({id:'cave-'+i,points,branches:Object.freeze([branch]),radius:1.25+random()*.7,
+      chamber:Object.freeze({x:junction.x,y:junction.y,z:junction.z,radius:2.8+random()*1.2})});
   });
   const pathDistance=(x,z,points)=>{
     let d=Infinity;
@@ -97,6 +105,8 @@ export function createGeologicalField({
       let tunnel=Infinity;
       for(let i=1;i<cave.points.length;i++)
         tunnel=Math.min(tunnel,distance3({x,y,z},cave.points[i-1],cave.points[i])-cave.radius);
+      for(const branch of cave.branches||[]) for(let i=1;i<branch.length;i++)
+        tunnel=Math.min(tunnel,distance3({x,y,z},branch[i-1],branch[i])-cave.radius*.82);
       const c=cave.chamber;
       const chamber=Math.hypot(x-c.x,y-c.y,z-c.z)-c.radius;
       distance=Math.max(distance,-Math.min(tunnel,chamber));
