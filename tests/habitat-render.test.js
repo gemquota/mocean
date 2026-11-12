@@ -27,6 +27,17 @@ test('population control defaults to 10–200 while retaining saved bounds for o
  assert.match(script,/setPopulation\(populationSlider\.value\)/);
 });
 
+test('world dimensions default to 100 on every axis and allow a maximum of 1000',()=>{
+ for(const axis of ['x','y','z']){
+  assert.match(html,new RegExp('id="world-'+axis+'-value">100'));
+  assert.match(html,new RegExp('id="world-'+axis+'" type="range" min="1" max="1000" step="1" value="100"'));
+ }
+ assert.match(script,/const speciesMix=\{\.\.\.SCHOOLING_SPECIES_PERCENTAGES\},worldSize=\{x:100,y:100,z:100\}/);
+ assert.match(script,/const WORLD_RANGE_VERSION_KEY='mocean\\.worldRange\\.v1'/);
+ assert.match(script,/delete savedSliderBounds\['world-x'\];delete savedSliderBounds\['world-y'\];delete savedSliderBounds\['world-z'\]/);
+ assert.match(script,/localStorage\.setItem\(WORLD_RANGE_VERSION_KEY,'1-1000-default-100'\)/);
+});
+
 test('each species gets controls on speed, size, min/max size and aggression tabs', () => {
   for (const id of ['species-speed', 'species-size', 'species-size-range', 'species-aggression']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing species control group: ' + id);
