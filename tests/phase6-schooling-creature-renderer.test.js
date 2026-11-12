@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from '../src/phase6/animated-species-filter.js';
 
 test('only species with rigged or procedural animated models remain eligible', () => {
-  assert.deepEqual(ANIMATED_MODEL_SPECIES, ['fish', 'schoolFish', 'parrotfish', 'grouper', 'tuna', 'shark', 'mola']);
+  assert.deepEqual(ANIMATED_MODEL_SPECIES, ['fish', 'schoolFish', 'clownfish', 'parrotfish', 'blueTang', 'butterflyfish', 'grouper', 'moorishIdol', 'tuna', 'shark', 'mola', 'dolphin', 'jellyfish', 'seal', 'spermWhale']);
 });
 
 test('unsupported and static-only species are suppressed and supported weights renormalise', () => {
