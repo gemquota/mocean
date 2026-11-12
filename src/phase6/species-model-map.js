@@ -16,7 +16,8 @@ export const SPECIES_MODEL_MAP = Object.freeze({
   orca: { collection: 'naturalistic', id: 'orca', assetId: '5861', motion: 'vertical-body-wave' },
   spermWhale: { collection: 'naturalistic', id: 'sperm_whale', assetId: '5860', motion: 'vertical-body-wave' },
   dolphin: { collection: 'naturalistic', id: 'bottlenose_dolphin', assetId: '39330', motion: 'vertical-body-wave' },
-  jellyfish: { collection: 'naturalistic', id: 'moon_jellyfish', assetId: '5889', motion: 'pulse', orientation: 'vertical' }
+  jellyfish: { collection: 'naturalistic', id: 'moon_jellyfish', assetId: '5889', motion: 'pulse', orientation: 'vertical' },
+  turtle: { collection: 'naturalistic', id: 'loggerhead_turtle', assetId: '39340', motion: 'wing-wave' }
 });
 
 export const CREATURE_REVIEW_MODEL_MAP = Object.freeze({});
@@ -24,7 +25,7 @@ export const CREATURE_REVIEW_MODEL_MAP = Object.freeze({});
 export const SPECIES_WITHOUT_REVIEWED_MODEL = Object.freeze([
   'fish', 'schoolFish', 'clownfish', 'parrotfish', 'blueTang', 'angelfish',
   'butterflyfish', 'grouper', 'moorishIdol', 'wobbegong', 'eel', 'crab',
-  'lobster', 'mantis', 'seal', 'starfish', 'turtle', 'sandEel'
+  'lobster', 'mantis', 'seal', 'starfish', 'sandEel'
 ]);
 
 export function getSpeciesModel(species) {
