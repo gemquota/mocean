@@ -527,6 +527,65 @@ function drawSeagrassAndKelp(){
   ctx.restore();
  }
 }
+function drawSpongeGardens(){
+ const layout=vegetationLayout;if(!layout?.sponges)return;
+ const palettes={'sponge-garden':['#c47a55','#d3a06a'],'coral-reef':['#c58b67','#a9a06e'],'kelp-forest':['#8d9c5f','#b1a46a'],'seagrass-meadow':['#b59a6d','#8eaa82'],'rocky-ravine':['#b27b58','#8d9d83']};
+ for(const anchor of layout.sponges){
+  const {x,y,z,id,biome='sponge-garden'}=anchor,root=project(vec3(x,y+.035,z));
+  if(root.depth<2.5||root.size<2.2)continue;
+  const colours=palettes[biome]??palettes['sponge-garden'];ctx.save();ctx.lineCap='round';
+  const tubes=2+(id%3);
+  for(let tube=0;tube<tubes;tube++){
+   const angle=tube/tubes*TAU+id*.31,offset=.12+(tube%2)*.08,height=anchor.height*(.72+(tube%3)*.14);
+   const bx=x+Math.cos(angle)*offset,bz=z+Math.sin(angle)*offset;
+   const base=project(vec3(bx,y+.04,bz)),top=project(vec3(bx+Math.cos(angle)*.08,y+height,bz+Math.sin(angle)*.08));
+   if(base.depth<2.5||top.depth<2.5)continue;
+   ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo(base.x+root.size*.025,top.y+root.size*.1,top.x,top.y);
+   ctx.strokeStyle=colours[tube%2];ctx.lineWidth=Math.max(2,root.size*.075);ctx.stroke();
+   ctx.beginPath();ctx.ellipse(top.x,top.y,Math.max(1.5,root.size*.055),Math.max(1.5,root.size*.04),0,0,TAU);
+   ctx.fillStyle=colours[(tube+1)%2];ctx.fill();
+   for(let pore=0;pore<3;pore++){const px=top.x+(pore-1)*root.size*.025;ctx.beginPath();ctx.arc(px,top.y,Math.max(.5,root.size*.009),0,TAU);ctx.fillStyle='rgba(34,49,43,.55)';ctx.fill();}
+  }
+  ctx.restore();
+ }
+}
+function drawSoftCorals(){
+ const layout=vegetationLayout;if(!layout?.softCoral)return;
+ const colours=['#d18b91','#d2a77c','#9dba9c','#a88eb7'];
+ for(const anchor of layout.softCoral){
+  const {x,y,z,id}=anchor,root=project(vec3(x,y+.04,z));if(root.depth<2.5||root.size<2.4)continue;
+  const sway=Math.sin(school.time*.52+id*1.31)*.18,stems=3+(id%3);ctx.save();ctx.lineCap='round';
+  for(let stem=0;stem<stems;stem++){
+   const spread=(stem-(stems-1)/2)*.12,height=anchor.height*(.78+(stem%3)*.1);
+   const a=project(vec3(x+spread*.3,y+.12,z)),b=project(vec3(x+spread+sway*.35,y+height*.58,z+spread*.16)),tip=project(vec3(x+spread+sway,y+height,z+spread*.28));
+   if(a.depth<2.5||b.depth<2.5||tip.depth<2.5)continue;
+   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(b.x,b.y,tip.x,tip.y);
+   ctx.strokeStyle=colours[id%colours.length];ctx.lineWidth=Math.max(1,root.size*.035);ctx.stroke();
+   for(let polyp=0;polyp<3;polyp++){const t=.45+polyp*.17,p=project(vec3(x+spread+sway*t,y+height*t,z+spread*.2));if(p.depth<2.5)continue;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.7,root.size*.018),0,TAU);ctx.fillStyle='#e5c0a7';ctx.fill();}
+  }
+  ctx.restore();
+ }
+}
+function drawSeaFans(){
+ const layout=vegetationLayout;if(!layout?.seaFans)return;
+ const colours=['#c58c88','#8eaf9b','#c3a17d','#9a8eb5'];
+ for(const anchor of layout.seaFans){
+  const {x,y,z,id,normal}=anchor,root=project(vec3(x+normal.x*.05,y+normal.y*.05,z+normal.z*.05));
+  if(root.depth<2.5||root.size<2.6)continue;
+  const sway=Math.sin(school.time*.36+id)*.12,height=anchor.height,side={x:-normal.z,z:normal.x};
+  ctx.save();ctx.lineCap='round';ctx.strokeStyle=colours[id%colours.length];ctx.lineWidth=Math.max(.8,root.size*.018);
+  const stemTop=project(vec3(x+normal.x*.12+sway,y+height,z+normal.z*.12));
+  if(stemTop.depth>2.5){ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo((root.x+stemTop.x)*.5+root.size*.05,(root.y+stemTop.y)*.5,stemTop.x,stemTop.y);ctx.stroke();}
+  for(let branch=0;branch<9;branch++){
+   const t=.18+branch*.075,spread=(branch-4)*.22;
+   const base=project(vec3(x+normal.x*.1+side.x*spread*.35,y+height*t,z+normal.z*.1+side.z*spread*.35));
+   const tip=project(vec3(x+normal.x*.13+side.x*spread+sway*t,y+height*(t+.22),z+normal.z*.13+side.z*spread));
+   if(base.depth<2.5||tip.depth<2.5)continue;
+   ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo((base.x+tip.x)*.5+side.x*root.size*.015,(base.y+tip.y)*.5-root.size*.025,tip.x,tip.y);ctx.stroke();
+  }
+  ctx.restore();
+ }
+}
 function drawPlankton(){
  ctx.save();ctx.globalCompositeOperation='screen';
  for(const particle of planktonParticles){
