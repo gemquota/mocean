@@ -14,23 +14,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Checkout pinned animated fish assets
-        uses: actions/checkout@v7
-        with:
-          repository: Vitexus/ishtaria-client
-          ref: f42095c120c29a892c0c221bdc8357ac982ccfca
-          path: _upstream/fish-assets
-          sparse-checkout: |
-            assets/quaternius/animated-fish-bundle/Models
-            assets/quaternius/animated-fish-bundle/License.txt
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
-      - name: Validate marine model bundle
-        run: |
-          count=$(find _upstream/fish-assets/assets/quaternius/animated-fish-bundle/Models -maxdepth 1 -name '*.glb' | wc -l)
-          test "$count" -ge 30
-          test -f _upstream/fish-assets/assets/quaternius/animated-fish-bundle/License.txt
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+      - name: Stage naturalistic CC0 marine models
+        run: |
+          set -euo pipefail
+          mkdir -p assets/models/osmocean/naturalistic
+          base='https://cdn.3dassets.dev/assets'
+          curl -fsSL "$base/5875/v1/model.glb" -o assets/models/osmocean/naturalistic/barracuda.glb
+          curl -fsSL "$base/5873/v1/model.glb" -o assets/models/osmocean/naturalistic/blue_marlin.glb
+          curl -fsSL "$base/5870/v1/model.glb" -o assets/models/osmocean/naturalistic/bluefin_tuna.glb
+          curl -fsSL "$base/5867/v1/model.glb" -o assets/models/osmocean/naturalistic/great_white_shark.glb
+          curl -fsSL "$base/5864/v1/model.glb" -o assets/models/osmocean/naturalistic/whale_shark.glb
+          curl -fsSL "$base/5866/v1/model.glb" -o assets/models/osmocean/naturalistic/ocean_sunfish.glb
+          curl -fsSL "$base/5878/v1/model.glb" -o assets/models/osmocean/naturalistic/manta_ray.glb
+          curl -fsSL "$base/5877/v1/model.glb" -o assets/models/osmocean/naturalistic/southern_stingray.glb
+          curl -fsSL "$base/5861/v1/model.glb" -o assets/models/osmocean/naturalistic/orca.glb
+          curl -fsSL "$base/5860/v1/model.glb" -o assets/models/osmocean/naturalistic/sperm_whale.glb
+          curl -fsSL "$base/39330/v1/model.glb" -o assets/models/osmocean/naturalistic/bottlenose_dolphin.glb
+          curl -fsSL "$base/5889/v1/model.glb" -o assets/models/osmocean/naturalistic/moon_jellyfish.glb
+          node scripts/verify-naturalistic-marine-models.mjs assets/models/osmocean/naturalistic
       - run: npm test
