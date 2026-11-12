@@ -1,38 +1,30 @@
 /**
- * Exact-match mappings to reviewed, animated GLB assets staged by the Pages build.
- * Unsupported species are intentionally excluded from the live population until a
- * suitable animated model is available. No static or merely similar animal is used.
+ * Species-exact naturalistic marine models from 3DAssets.dev.
+ * The source GLBs are static posed studies; the renderer supplies procedural
+ * body/wing deformation. No cartoon stand-ins or unrelated species mappings.
+ * All source assets are CC0 1.0 and staged by the Pages workflow.
  */
 export const SPECIES_MODEL_MAP = Object.freeze({
-  fish: { collection: 'animated', id: 'blue_goldfish', variants: ['blue_goldfish','goldfish','koi'], animation: 'clip' },
-  schoolFish: { collection: 'animated', id: 'tetra', variants: ['tetra','cardinal_fish'], animation: 'clip', scale: 0.25 },
-  clownfish: { collection: 'animated', id: 'clownfish', variants: ['clownfish','zebra_clown_fish'], animation: 'clip' },
-  parrotfish: { collection: 'animated', id: 'parrot_fish', variants: ['parrot_fish','gobkit_parrotfish'], animation: 'clip' },
-  blueTang: { collection: 'animated', id: 'blue_tang', variants: ['blue_tang','gobkit_bluetang'], animation: 'clip' },
-  butterflyfish: { collection: 'animated', id: 'butterfly_fish', animation: 'clip' },
-  grouper: { collection: 'animated', id: 'coral_grouper', animation: 'clip' },
-  moorishIdol: { collection: 'animated', id: 'moorish_idol', variants: ['moorish_idol','gobkit_moorishidol'], animation: 'clip' },
-  tuna: { collection: 'animated', id: 'tuna', animation: 'clip' },
-  shark: { collection: 'animated', id: 'shark', variants: ['shark','gobkit_shark'], animation: 'clip' },
-  mola: { collection: 'animated', id: 'sunfish', animation: 'clip' },
-  dolphin: { collection: 'animated', id: 'dolphin_rigged', animation: 'procedural-swim' },
-  jellyfish: { collection: 'animated', id: 'jellyfish', animation: 'clip', orientation: 'vertical' },
-  seal: { collection: 'animated', id: 'seal', animation: 'clip' },
-  spermWhale: { collection: 'animated', id: 'whale', animation: 'clip', note: 'generic whale model, not species-specific' }
+  barracuda: { collection: 'naturalistic', id: 'barracuda', assetId: '5875', motion: 'body-wave' },
+  marlin: { collection: 'naturalistic', id: 'blue_marlin', assetId: '5873', motion: 'body-wave' },
+  tuna: { collection: 'naturalistic', id: 'bluefin_tuna', assetId: '5870', motion: 'body-wave' },
+  shark: { collection: 'naturalistic', id: 'great_white_shark', assetId: '5867', motion: 'body-wave' },
+  whaleShark: { collection: 'naturalistic', id: 'whale_shark', assetId: '5864', motion: 'body-wave' },
+  mola: { collection: 'naturalistic', id: 'ocean_sunfish', assetId: '5866', motion: 'vertical-body-wave' },
+  manta: { collection: 'naturalistic', id: 'manta_ray', assetId: '5878', motion: 'wing-wave' },
+  stingray: { collection: 'naturalistic', id: 'southern_stingray', assetId: '5877', motion: 'wing-wave' },
+  orca: { collection: 'naturalistic', id: 'orca', assetId: '5861', motion: 'vertical-body-wave' },
+  spermWhale: { collection: 'naturalistic', id: 'sperm_whale', assetId: '5860', motion: 'vertical-body-wave' },
+  dolphin: { collection: 'naturalistic', id: 'bottlenose_dolphin', assetId: '39330', motion: 'vertical-body-wave' },
+  jellyfish: { collection: 'naturalistic', id: 'moon_jellyfish', assetId: '5889', motion: 'pulse', orientation: 'vertical' }
 });
 
-// Review-only assets remain discoverable but are deliberately excluded from the
-// live animated population. Static geometry is not an animated species model.
-export const CREATURE_REVIEW_MODEL_MAP = Object.freeze({
-  fish: { collection: 'polyfish', id: 'polyfish-rigged' },
-  parrotfish: { collection: 'animated', id: 'parrot_fish' },
-  manta: { collection: 'static', id: '5878' },
-  jellyfish: { collection: 'static', id: '5889' }
-});
+export const CREATURE_REVIEW_MODEL_MAP = Object.freeze({});
 
 export const SPECIES_WITHOUT_REVIEWED_MODEL = Object.freeze([
-  'angelfish', 'barracuda', 'wobbegong', 'marlin', 'eel', 'crab', 'lobster',
-  'mantis', 'manta', 'stingray', 'whaleShark', 'orca', 'starfish', 'turtle', 'sandEel'
+  'fish', 'schoolFish', 'clownfish', 'parrotfish', 'blueTang', 'angelfish',
+  'butterflyfish', 'grouper', 'moorishIdol', 'wobbegong', 'eel', 'crab',
+  'lobster', 'mantis', 'seal', 'starfish', 'turtle', 'sandEel'
 ]);
 
 export function getSpeciesModel(species) {
