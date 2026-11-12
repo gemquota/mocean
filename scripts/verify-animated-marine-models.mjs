@@ -51,7 +51,7 @@ function readGlb(file){
   if(jsonType!==0x4e4f534a||20+jsonLength>bytes.length) {
     throw new Error('GLB JSON chunk is missing or malformed');
   }
-  return JSON.parse(bytes.toString('utf8',20,20+jsonLength).replace(/\\0+$/,'').trim());
+  return JSON.parse(bytes.toString('utf8',20,20+jsonLength).trim());
 }
 
 const entries=[];
