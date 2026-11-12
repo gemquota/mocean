@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from '../src/phase6/animated-species-filter.js';
 
 test('only species with naturalistic models and procedural swimming remain eligible', () => {
-  assert.deepEqual(ANIMATED_MODEL_SPECIES, ['barracuda','marlin','tuna','shark','whaleShark','mola','manta','stingray','orca','spermWhale','dolphin','jellyfish','turtle']);
+  assert.deepEqual(ANIMATED_MODEL_SPECIES, ['barracuda','marlin','tuna','shark','whaleShark','mola','manta','stingray','orca','spermWhale','dolphin','jellyfish','turtle','seahorse','seaDragon','anglerfish']);
 });
 
 test('unsupported species are suppressed and supported weights renormalise', () => {
