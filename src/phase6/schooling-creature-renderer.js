@@ -4,8 +4,6 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { CreatureModelBank } from './creature-model-bank.js';
 import { getSpeciesModel } from './species-model-map.js';
 
-import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from './animated-species-filter.js';
-
 /**
  * Transparent WebGL layer for animated GLB creatures. Simulation state remains
  * authoritative: this renderer reads position/forward/velocity and never writes
@@ -36,7 +34,7 @@ export class SchoolingCreatureRenderer {
     this.disposed = false;
   }
 
-  hasInstance(id) { return this.instances.has(id); }
+  hasInstance(id, species = null) { const instance = this.instances.get(id); return Boolean(instance && (!species || instance.species === species)); }
 
   resize(width, height) {
     const w = Math.max(1, width), h = Math.max(1, height);
@@ -81,6 +79,12 @@ export class SchoolingCreatureRenderer {
     const live = new Set();
     for (const agent of agents) {
       live.add(agent.id);
+      const existing = this.instances.get(agent.id);
+      if (existing && existing.species !== agent.species) {
+        this.bank.disposeInstance(existing);
+        this.instances.delete(agent.id);
+        this.failed.delete(agent.id);
+      }
       this.ensureInstance(agent);
       const instance = this.instances.get(agent.id);
       if (!instance) continue;
