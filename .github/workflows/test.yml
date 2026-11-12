@@ -1,15 +1,35 @@
 name: Core tests
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: core-tests-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned animated fish assets
+        uses: actions/checkout@v4
+        with:
+          repository: Vitexus/ishtaria-client
+          ref: f42095c120c29a892c0c221bdc8357ac982ccfca
+          path: _upstream/fish-assets
+          sparse-checkout: |
+            assets/quaternius/animated-fish-bundle/Models
+            assets/quaternius/animated-fish-bundle/License.txt
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Validate marine model bundle
+        run: |
+          count=$(find _upstream/fish-assets/assets/quaternius/animated-fish-bundle/Models -maxdepth 1 -name '*.glb' | wc -l)
+          test "$count" -ge 30
+          test -f _upstream/fish-assets/assets/quaternius/animated-fish-bundle/License.txt
       - uses: actions/setup-node@v4
         with:
           node-version: 22

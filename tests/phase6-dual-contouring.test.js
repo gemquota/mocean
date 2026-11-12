@@ -1,70 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSeabedDensityField, sampleDensityGradient } from '../src/phase6/voxel-field.js';
-import { buildDualContourMesh } from '../src/phase6/dual-contouring.js';
+import { buildDualContourSurface, sphereSdf, smoothUnion } from '../src/phase6/dual-contouring.js';
 
-test('seabed density is deterministic and separates rock from water', () => {
-  const a = createSeabedDensityField({ seed: 42 });
-  const b = createSeabedDensityField({ seed: 42 });
-  assert.equal(a(0, -14, 0), b(0, -14, 0));
-  assert.ok(a(0, -14, 0) < 0, 'deep point is solid');
-  assert.ok(a(0, 3, 0) > 0, 'water column is empty');
-  assert.throws(() => a(NaN, 0, 0), /finite/);
+test('dual contouring extracts a finite closed sphere surface inside the grid',()=>{
+ const mesh=buildDualContourSurface({min:[-2,-2,-2],max:[2,2,2],cells:[24,24,24],sampleDistance:(x,y,z)=>sphereSdf(x,y,z,0,0,0,1.25)});
+ assert.ok(mesh.vertexCount>100);
+ assert.ok(mesh.triangleCount>100);
+ assert.equal(mesh.positions.length,mesh.normals.length);
+ assert.ok([...mesh.positions,...mesh.normals].every(Number.isFinite));
+ assert.ok([...mesh.indices].every(i=>i<mesh.vertexCount));
+ assert.ok(mesh.positions.every((v,i)=>Math.abs(v)<=1.6));
+ const edges=new Map();
+ for(let i=0;i<mesh.indices.length;i+=3){
+  const tri=[mesh.indices[i],mesh.indices[i+1],mesh.indices[i+2]];
+  const a=tri[0]*3,b=tri[1]*3,c=tri[2]*3;
+  const ux=mesh.positions[b]-mesh.positions[a],uy=mesh.positions[b+1]-mesh.positions[a+1],uz=mesh.positions[b+2]-mesh.positions[a+2];
+  const vx=mesh.positions[c]-mesh.positions[a],vy=mesh.positions[c+1]-mesh.positions[a+1],vz=mesh.positions[c+2]-mesh.positions[a+2];
+  const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+  const normalX=mesh.normals[a]+mesh.normals[b]+mesh.normals[c],normalY=mesh.normals[a+1]+mesh.normals[b+1]+mesh.normals[c+1],normalZ=mesh.normals[a+2]+mesh.normals[b+2]+mesh.normals[c+2];
+  assert.ok(nx*normalX+ny*normalY+nz*normalZ>0,'triangle winding must face outward');
+  for(const [u,v] of [[tri[0],tri[1]],[tri[1],tri[2]],[tri[2],tri[0]]]){const key=u<v?u+':'+v:v+':'+u;edges.set(key,(edges.get(key)||0)+1);}
+ }
+ assert.ok([...edges.values()].every(count=>count===2),'closed sphere must be watertight');
 });
-
-test('subtractive tunnel cuts through otherwise solid seabed', () => {
-  const density = createSeabedDensityField();
-  assert.ok(density(4.5, -10.45, 0) > 0, 'tunnel centre is water');
-  assert.ok(density(4.5, -13, 0) < 0, 'rock remains below tunnel');
-  assert.ok(density(13, -10.45, 0) < 0, 'terrain outside the tunnel remains solid');
-  assert.ok(density(-7.5, -5, 1.5) < 0, 'arch crown is solid');
-  assert.ok(density(-7.5, -8.45, 1.5) > 0, 'arch aperture remains open');
+test('dual contouring supports hollow caves and overhang-like density fields',()=>{
+ const field=(x,y,z)=>smoothUnion(sphereSdf(x,y,z,0,-1,0,2),- (Math.hypot(x,z)-.48),.35);
+ const mesh=buildDualContourSurface({min:[-3,-3,-3],max:[3,3,3],cells:[30,30,30],sampleDistance:field});
+ assert.ok(mesh.vertexCount>0&&mesh.triangleCount>0);
 });
-
-test('density gradients are finite and normalised', () => {
-  const density = createSeabedDensityField();
-  const normal = sampleDensityGradient(density, 0, -8.6, 0);
-  assert.ok([normal.x, normal.y, normal.z].every(Number.isFinite));
-  assert.ok(Math.abs(Math.hypot(normal.x, normal.y, normal.z) - 1) < 1e-8);
-});
-
-test('dual contouring extracts a finite indexed sphere surface', () => {
-  const sphere = (x, y, z) => Math.hypot(x, y, z) - 1.25;
-  const mesh = buildDualContourMesh({
-    sample: sphere,
-    origin: { x: -2, y: -2, z: -2 },
-    cells: { x: 16, y: 16, z: 16 },
-    cellSize: 0.25
-  });
-  assert.ok(mesh.vertexCount > 0);
-  assert.ok(mesh.triangleCount > 0);
-  assert.equal(mesh.positions.length, mesh.normals.length);
-  assert.ok([...mesh.positions, ...mesh.normals].every(Number.isFinite));
-  assert.ok([...mesh.indices].every(index => index < mesh.vertexCount));
-  assert.ok(mesh.bounds.minX < -1 && mesh.bounds.maxX > 1);
-});
-
-test('dual contouring rejects non-finite density samples', () => {
-  assert.throws(() => buildDualContourMesh({
-    sample: () => NaN,
-    origin: { x: -2, y: -2, z: -2 },
-    cells: { x: 4, y: 4, z: 4 },
-    cellSize: 1
-  }), /finite values/);
-});
-
-test('dual contouring returns an empty mesh for an all-water volume', () => {
-  const mesh = buildDualContourMesh({
-    sample: () => 1,
-    origin: { x: -2, y: -2, z: -2 },
-    cells: { x: 4, y: 4, z: 4 },
-    cellSize: 1
-  });
-  assert.equal(mesh.vertexCount, 0);
-  assert.equal(mesh.triangleCount, 0);
-});
-
-test('dual contouring rejects invalid dimensions and oversized grids', () => {
-  assert.throws(() => buildDualContourMesh({ sample: () => 1, cells: { x: 1, y: 2, z: 2 } }), /Invalid/);
-  assert.throws(() => buildDualContourMesh({ sample: () => 1, cells: { x: 200, y: 200, z: 200 } }), /safety limit/);
+test('dual contouring rejects invalid bounds, resolution and density samples',()=>{
+ assert.throws(()=>buildDualContourSurface({cells:[1,2,2],sampleDistance:()=>1}),RangeError);
+ assert.throws(()=>buildDualContourSurface({sampleDistance:()=>NaN}),/non-finite/);
+ assert.throws(()=>buildDualContourSurface({sampleDistance:null}),TypeError);
 });

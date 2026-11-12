@@ -1,3 +1,4 @@
+import { createHabitatVoxelField, resolveVoxelTerrainContact, sampleVoxelSurfaceHeight } from './phase6/voxel-field.js';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const length = v => Math.hypot(v.x, v.y, v.z);
 const normalize = v => {
@@ -58,7 +59,7 @@ export const SCHOOLING_SPECIES_PERCENTAGES = Object.freeze(Object.fromEntries(
   Object.entries(SCHOOLING_SPECIES_BALANCE).map(([species, score]) => [species, (1 / score) / inverseBalanceTotal * 100])
 ));
 export const REEF_ANEMONE_SITES = Object.freeze([
-  Object.freeze({ x: -34.2, z: -14.8 }), Object.freeze({ x: -27.4, z: 7.2 }), Object.freeze({ x: -10.8, z: -12.6 }), Object.freeze({ x: 3.8, z: 8.4 }), Object.freeze({ x: 16.6, z: -16.8 }), Object.freeze({ x: 29.4, z: 9.6 }), Object.freeze({ x: 36.4, z: -6.2 }), Object.freeze({ x: -2.4, z: 19.6 }), Object.freeze({ x: -18.6, z: 17.4 }), Object.freeze({ x: 21.4, z: 22.2 })
+  Object.freeze({ x: -17.2, z: -13.2 }), Object.freeze({ x: -12.0, z: 5.2 }), Object.freeze({ x: -7.2, z: -14.0 }), Object.freeze({ x: 1.2, z: 8.2 }), Object.freeze({ x: 14.0, z: -13.1 }), Object.freeze({ x: 17.1, z: 9.2 }), Object.freeze({ x: 18.0, z: -5.1 }), Object.freeze({ x: -1.2, z: 15.0 }), Object.freeze({ x: -15.0, z: 13.0 }), Object.freeze({ x: 8.0, z: 14.0 })
 ]);
 export const SCHOOLING_FISH_SCALE = 0.25;
 export const SCHOOLING_COLLISION = Object.freeze({ halfLength: 0.205, radius: 0.073 });
@@ -336,7 +337,21 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
     };
   });
   for (const agent of fish) if (['crab','lobster','mantis','starfish','sandEel'].includes(agent.species)) agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
-  return { fish, time: 0, worldSize: { ...(options.worldSize ?? SCHOOLING_LIMITS) }, speciesPercentages: { ...mix }, metrics: { averageSpeed: 0, averageNeighbours: 0, collisions: 0, candidateChecks: 0 } };
+  const worldSize = { ...(options.worldSize ?? SCHOOLING_LIMITS) };
+  const terrainField = createHabitatVoxelField(worldSize, seabedHeight);
+  for (const agent of fish) {
+    if (['crab','lobster','mantis','starfish'].includes(agent.species)) {
+      const surface = sampleVoxelSurfaceHeight(agent.p.x, agent.p.z, agent.p.y, terrainField);
+      if (surface !== null) agent.p.y = surface;
+    }
+  }
+  const school = { fish, time: 0, worldSize, speciesPercentages: { ...mix }, metrics: { averageSpeed: 0, averageNeighbours: 0, collisions: 0, candidateChecks: 0 } };
+  // Keep implementation details out of deterministic school snapshots.
+  Object.defineProperties(school, {
+    terrainField: { value: terrainField, writable: true, configurable: true, enumerable: false },
+    terrainFieldWorldSize: { value: { ...worldSize }, writable: true, configurable: true, enumerable: false }
+  });
+  return school;
 }
 
 /**
@@ -345,6 +360,17 @@ export function createSchool(count = SCHOOLING_DEFAULT_COUNT, seed = 73421, opti
  * A spatial hash bounds local interactions and capsules handle body contact.
  */
 export function stepSchool(school, dt) {
+  const limits = school.worldSize ?? SCHOOLING_LIMITS;
+  if (!school.terrainField || school.terrainFieldWorldSize?.x !== limits.x || school.terrainFieldWorldSize?.y !== limits.y || school.terrainFieldWorldSize?.z !== limits.z) {
+    school.terrainField = createHabitatVoxelField(limits, seabedHeight);
+    school.terrainFieldWorldSize = { ...limits };
+    for (const agent of school.fish) {
+      if (['crab','lobster','mantis','starfish'].includes(agent.species)) {
+        const surface = sampleVoxelSurfaceHeight(agent.p.x, agent.p.z, agent.p.y, school.terrainField);
+        if (surface !== null) agent.p.y = surface;
+      }
+    }
+  }
   const step = clamp(dt, 0, 0.05);
   if (step === 0) return school.metrics;
   const fish = school.fish, grid = buildGrid(fish);
@@ -575,7 +601,7 @@ export function stepSchool(school, dt) {
       const desired = { x: agent.forward.x * drift, z: agent.forward.z * drift };
       agent.v.x += clamp((desired.x - agent.v.x) * 0.5, -0.035, 0.035) * step;
       agent.v.z += clamp((desired.z - agent.v.z) * 0.5, -0.035, 0.035) * step;
-      agent.v.y = 0; agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step; agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
+      agent.v.y = 0; agent.p.x += agent.v.x * step; agent.p.z += agent.v.z * step;
       agent.forward = turnDirection(agent.forward, normalize({x: agent.v.x || agent.forward.x,y:0,z: agent.v.z || agent.forward.z}),0.12*step);
       agent.groundPhase += step * 0.22; agent.phase += step * 0.12; speedTotal += length(agent.v); continue;
     }
@@ -650,7 +676,6 @@ export function stepSchool(school, dt) {
       agent.v.y = 0;
       agent.p.x += agent.v.x * step;
       agent.p.z += agent.v.z * step;
-      agent.p.y = -8.55;
       agent.groundPhase += step * (agent.species === 'crab' ? (agent.sheltering ? 0.35 : 11.5) : agent.species === 'mantis' ? 8.2 : 4.1);
       agent.phase += step * 1.2;
       speedTotal += length(agent.v);
@@ -697,9 +722,13 @@ export function stepSchool(school, dt) {
   const collisions = resolveCollisions(survivors, collisionGrid);
   for (const agent of survivors) {
     if (agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish') {
-      agent.p.y = seabedHeight(agent.p.x, agent.p.z) + .06;
+      // Keep the projected ground position between frames; the shared voxel
+      // contact solver adjusts it only when horizontal locomotion meets rock.
       agent.v.y = 0;
-      if (agent.species === 'starfish') agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.08);
+      if (agent.species === 'starfish') {
+        const horizontalSpeed = Math.hypot(agent.v.x, agent.v.z);
+        if (horizontalSpeed > 0.08) { agent.v.x *= 0.08 / horizontalSpeed; agent.v.z *= 0.08 / horizontalSpeed; }
+      }
     } else if (agent.species === 'sandEel') {
       agent.p.y = Math.max(agent.p.y, seabedHeight(agent.p.x, agent.p.z) + .02);
       agent.v.y = 0;
@@ -707,6 +736,20 @@ export function stepSchool(school, dt) {
       agent.p.y = -7.92;
       agent.v.y = 0;
       agent.v = limit({ x: agent.v.x, y: 0, z: agent.v.z }, 0.82);
+    }
+  }
+  // The same signed-distance field that generates the visible voxel mesh also
+  // prevents creatures entering solid rock. Burrowing sand eels are exempt.
+  for (const agent of survivors) {
+    agent.terrainContact = false;
+    if (agent.species !== 'sandEel') {
+      const grounded = agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis' || agent.species === 'starfish';
+      if (grounded && school.terrainField(agent.p.x,agent.p.y,agent.p.z) > 0.18) {
+        const surface = sampleVoxelSurfaceHeight(agent.p.x,agent.p.z,agent.p.y,school.terrainField,{range:2.5});
+        if (surface !== null) agent.p.y = surface;
+      }
+      resolveVoxelTerrainContact(agent, school.terrainField);
+      if (grounded) agent.v.y = 0;
     }
   }
   school.time += step;

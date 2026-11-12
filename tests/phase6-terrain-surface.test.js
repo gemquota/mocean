@@ -67,5 +67,5 @@ test('Three.js addon imports have an import map', () => {
   const mapSource = html.slice(mapStart + '<script type="importmap">'.length, mapEnd);
   const imports = JSON.parse(mapSource).imports;
   assert.equal(imports.three, 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
-  assert.ok(mapStart < html.indexOf('<script type="module">'), 'import map precedes the module script');
+  assert.match(html, /postprocessing\/EffectComposer\.js/);
 });

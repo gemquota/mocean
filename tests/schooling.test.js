@@ -122,7 +122,7 @@ test('fifteen species have distinct collision envelopes and benthic species spaw
   assert.ok(eels.length >= 1 && eels.length <= 5, 'equal-volume prevalence should keep larger eels uncommon but represented');
   for (const species of ['crab','lobster','mantis','starfish','sandEel']) {
     const ground = school.fish.filter(agent => agent.species === species);
-    assert.ok(ground.every(agent => Math.abs(agent.p.y - seabedHeight(agent.p.x,agent.p.z) - .06)<1e-8 && agent.v.y === 0));
+    assert.ok(ground.every(agent => (species === 'sandEel' ? Math.abs(agent.p.y - seabedHeight(agent.p.x,agent.p.z) - .06)<1e-8 : school.terrainField(agent.p.x,agent.p.y,agent.p.z)>=.04) && agent.v.y === 0));
   }
 });
 
@@ -187,10 +187,10 @@ test('dedicated schooling fish are one quarter scale and form persistent, separa
 
 test('starfish remain benthic and dolphins travel in social pods', () => {
   const school=createSchool(1000,73421),stars=school.fish.filter(f=>f.species==='starfish'),dolphins=school.fish.filter(f=>f.species==='dolphin');
-  assert.ok(stars.length>20 && stars.every(f=>Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8));
+  assert.ok(stars.length>20 && stars.every(f=>school.terrainField(f.p.x,f.p.y,f.p.z)>=.04));
   assert.ok(dolphins.length>=1 && dolphins.every(f=>f.socialGroupId>=0));
   const before=dolphins.map(f=>({...f.p}));for(let i=0;i<240;i++)stepSchool(school,1/60);
-  assert.ok(stars.every(f=>Math.abs(f.p.y-seabedHeight(f.p.x,f.p.z)-.06)<1e-8 && Math.hypot(f.v.x,f.v.z)<=.080001));
+  assert.ok(stars.every(f=>school.terrainField(f.p.x,f.p.y,f.p.z)>=.04 && Math.hypot(f.v.x,f.v.z)<=.080001 && f.v.y===0));
   assert.ok(dolphins.every(f=>Math.hypot(f.v.x,f.v.y,f.v.z)<=2.21));
   assert.ok(dolphins.some((f,i)=>Math.hypot(f.p.x-before[i].x,f.p.y-before[i].y,f.p.z-before[i].z)>1));
 });
@@ -232,7 +232,7 @@ test('benthic crustaceans and mantis shrimp use bounded grounded locomotion', ()
   const ground = school.fish.filter(agent => agent.species === 'crab' || agent.species === 'lobster' || agent.species === 'mantis');
   const before = ground.map(agent => ({...agent.p}));
   for (let i = 0; i < 600; i++) stepSchool(school, 1 / 60);
-  assert.ok(ground.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
+  assert.ok(ground.every(agent => school.terrainField(agent.p.x,agent.p.y,agent.p.z)>=.04 && agent.v.y === 0));
   assert.ok(ground.every(agent => [agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
   assert.ok(ground.every(agent => Math.hypot(agent.v.x,agent.v.z) <= 1.6));
   assert.ok(ground.some((agent,i) => Math.hypot(agent.p.x-before[i].x,agent.p.z-before[i].z) > 0.25));
@@ -350,10 +350,10 @@ test('mantis shrimp stay on the seabed and make short, high-acceleration dashes'
   const school = createSchool(1000, 73421, { speciesPercentages: { mantis: 100 } });
   const mantis = school.fish.filter(agent => agent.species === 'mantis');
   assert.equal(mantis.length, 1000);
-  assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && agent.v.y === 0));
+  assert.ok(mantis.every(agent => school.terrainField(agent.p.x,agent.p.y,agent.p.z)>=.04 && agent.v.y === 0));
   const before = mantis.map(agent => ({ ...agent.p }));
   for (let i = 0; i < 300; i++) stepSchool(school, 1 / 60);
-  assert.ok(mantis.every(agent => Math.abs(agent.p.y-seabedHeight(agent.p.x,agent.p.z)-.06)<1e-8 && Number.isFinite(agent.v.x) && Number.isFinite(agent.v.z)));
+  assert.ok(mantis.every(agent => school.terrainField(agent.p.x,agent.p.y,agent.p.z)>=.04 && Number.isFinite(agent.v.x) && Number.isFinite(agent.v.z) && agent.v.y===0));
   assert.ok(mantis.some((agent, i) => Math.hypot(agent.p.x - before[i].x, agent.p.z - before[i].z) > 0.4));
 });
 
@@ -445,4 +445,18 @@ test('species prevalence blends model volume, adult mass and ecological prevalen
   const total = expected.reduce((sum, value) => sum + value, 0);
   for (const key of species) assert.ok(Math.abs(SCHOOLING_SPECIES_PERCENTAGES[key] - expected[species.indexOf(key)] / total * 100) < 1e-10);
   assert.ok(Math.abs(Object.values(SCHOOLING_SPECIES_PERCENTAGES).reduce((sum, value) => sum + value, 0) - 100) < 1e-9);
+});
+
+test('live agents collide against the same voxel density field used by the seabed mesh',()=>{
+ const school=createSchool(1,12345,{speciesPercentages:{fish:100},worldSize:{...SCHOOLING_LIMITS}});
+ const fish=school.fish[0];
+ assert.equal(typeof school.terrainField,'function');
+ fish.p={x:16,y:-8.35,z:-7};fish.v={x:0,y:-.2,z:0};fish.forward={x:1,y:0,z:0};
+ stepSchool(school,1/60);
+ assert.equal(fish.terrainContact,true);
+ assert.ok(school.terrainField(fish.p.x,fish.p.y,fish.p.z)>.02,'fish centre must be pushed out of solid rock');
+ const previousField=school.terrainField;
+ school.worldSize={x:60,y:20,z:45};
+ stepSchool(school,1/60);
+ assert.notEqual(school.terrainField,previousField,'terrain field must follow world dimension changes');
 });

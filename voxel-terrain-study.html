@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mocean · Voxel seabed study</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061923;color:#d8eee8;font:12px ui-monospace,monospace}canvas{display:block}#hud{position:fixed;top:14px;left:16px;padding:10px 13px;background:#061923d9;border:1px solid #8acbb555;line-height:1.7}#hud small{display:block;color:#a7c9c0}</style></head><body><div id="hud"><b>MOCEAN / PHASE 6 · VOLUMETRIC SEABED</b><small>Dual Contouring · signed-distance field · caves and overhangs</small><small id="stats">Generating voxel surface…</small></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {buildDualContourSurface,sphereSdf,smoothUnion} from './src/phase6/dual-contouring.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color('#082a36');scene.fog=new THREE.FogExp2('#123b43',.018);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,180);camera.position.set(25,22,34);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.append(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,-2,0);controls.enableDamping=true;
+scene.add(new THREE.HemisphereLight('#b9e7e3','#1a2925',1.5));const sun=new THREE.DirectionalLight('#c7eaff',2.8);sun.position.set(-18,32,15);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const floor=(x,z)=>-2.4+Math.sin(x*.16+z*.07)*.8+Math.sin(z*.31-x*.045)*.35+Math.cos(x*.075+z*.19)*.24+Math.max(0,1-Math.abs(x)/15)*.8;
+const cave=(x,y,z)=>Math.min(sphereSdf(x,y,z,-5,-2,0,3.3),sphereSdf(x,y,z,0,-1.4,0,2.8),sphereSdf(x,y,z,4,-2,-1,3.1));
+const field=(x,y,z)=>{const solid=y-floor(x,z);const cavity=-cave(x,y,z);return Math.max(solid,cavity);};
+const meshData=buildDualContourSurface({min:[-18,-9,-15],max:[18,7,15],cells:[96,42,80],sampleDistance:field});
+const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(meshData.positions,3));geometry.setAttribute('normal',new THREE.BufferAttribute(meshData.normals,3));geometry.setIndex(new THREE.BufferAttribute(meshData.indices,1));
+const colors=[];for(let i=0;i<meshData.positions.length;i+=3){const y=meshData.positions[i+1],n=meshData.normals[i+1];const sand=Math.max(0,Math.min(1,(n+.1)*.75));colors.push(.19+sand*.22,.25+sand*.19,.21+sand*.12);}
+geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98,side:THREE.DoubleSide});const terrain=new THREE.Mesh(geometry,material);terrain.castShadow=true;terrain.receiveShadow=true;scene.add(terrain);
+const water=new THREE.Mesh(new THREE.BoxGeometry(36,16,30),new THREE.MeshBasicMaterial({color:'#0d5264',transparent:true,opacity:.07,side:THREE.BackSide,depthWrite:false}));water.position.y=2;scene.add(water);
+document.querySelector('#stats').textContent=meshData.vertexCount.toLocaleString()+' vertices · '+meshData.triangleCount.toLocaleString()+' triangles · '+meshData.cells.join(' × ')+' cells';
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);}animate();
+</script></body></html>

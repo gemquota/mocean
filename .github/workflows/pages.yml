@@ -2,6 +2,7 @@ name: Deploy Mocean to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,11 +17,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Node.js for model asset intake
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Checkout pinned Quaternius animated fish models
+      - name: Checkout pinned Quaternius animated fish assets
         uses: actions/checkout@v4
         with:
           repository: Vitexus/ishtaria-client
@@ -31,29 +28,11 @@ jobs:
             assets/quaternius/animated-fish-bundle/License.txt
           sparse-checkout-cone-mode: false
           persist-credentials: false
-        continue-on-error: true
-      - name: Checkout pinned PolyFish rigged model
-        uses: actions/checkout@v4
-        with:
-          repository: unclemattmakes/polyfish
-          ref: 1c0d7636f2c71fd81d001a597c13554f9cbdd417
-          path: _upstream/polyfish
-          sparse-checkout: |
-            assets/models/fish_rigged.glb
-            LICENSE
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
-        continue-on-error: true
-      - name: Assemble reviewed marine creature assets
-        timeout-minutes: 10
-        continue-on-error: true
+      - name: Stage selected CC0 animated marine models
         run: |
-          node scripts/copy-osmocean-animated-models.mjs || echo "::warning::Animated fish asset intake failed; continuing without that catalogue."
-          node scripts/copy-osmocean-polyfish-model.mjs || echo "::warning::PolyFish asset intake failed; continuing without that model."
-          node scripts/download-osmocean-static-models.mjs || echo "::warning::Static marine asset intake failed; continuing without that catalogue."
-      - name: Remove temporary upstream sources
-        if: always()
-        run: rm -rf _upstream
+          mkdir -p assets/models/osmocean/species
+          cp _upstream/fish-assets/assets/quaternius/animated-fish-bundle/Models/*.glb assets/models/osmocean/species/
+          cp _upstream/fish-assets/assets/quaternius/animated-fish-bundle/License.txt assets/models/osmocean/species/QUATERNIUS-CC0-LICENSE.txt
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site
@@ -61,6 +40,7 @@ jobs:
         with:
           path: .
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

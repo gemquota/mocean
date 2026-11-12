@@ -20,6 +20,26 @@ test('habitat browser module parses and initializes every fish before rendering'
   assert.match(script, /function initialiseFishVisualState\(nextSchool\)[\s\S]*?fish\.gait=createGait\(\)/);
 });
 
+test('population control defaults to 10–200 while retaining saved bounds for other sliders',()=>{
+ assert.match(html,/id="population" type="range" min="10" max="200" step="10" value="150"/);
+ assert.match(html,/id="population-min">10 CREATURES/);
+ assert.match(script,/const POPULATION_RANGE_VERSION_KEY='mocean\.populationRange\.v1'/);
+ assert.match(script,/if\(populationRangeVersion!=='10-200'\)/);
+ assert.match(script,/localStorage\.setItem\(POPULATION_RANGE_VERSION_KEY,'10-200'\)/);
+ assert.match(script,/setPopulation\(populationSlider\.value\)/);
+});
+
+test('world dimensions default to 100 on every axis and allow a maximum of 1000',()=>{
+ for(const axis of ['x','y','z']){
+  assert.match(html,new RegExp('id="world-'+axis+'-value">100'));
+  assert.match(html,new RegExp('id="world-'+axis+'" type="range" min="1" max="1000" step="1" value="100"'));
+ }
+ assert.match(script,/const speciesMix=\{\.\.\.SCHOOLING_SPECIES_PERCENTAGES\},worldSize=\{x:100,y:100,z:100\}/);
+ assert.match(script,/const WORLD_RANGE_VERSION_KEY='mocean\\.worldRange\\.v1'/);
+ assert.match(script,/delete savedSliderBounds\['world-x'\];delete savedSliderBounds\['world-y'\];delete savedSliderBounds\['world-z'\]/);
+ assert.match(script,/localStorage\.setItem\(WORLD_RANGE_VERSION_KEY,'1-1000-default-100'\)/);
+});
+
 test('each species gets controls on speed, size, min/max size and aggression tabs', () => {
   for (const id of ['species-speed', 'species-size', 'species-size-range', 'species-aggression']) {
     assert.ok(html.includes('id="' + id + '"'), 'missing species control group: ' + id);
@@ -36,7 +56,7 @@ test('reef habitat includes mola mola, irregular reef formations, seagrass, kelp
   assert.match(html, /mola:'Mola mola'/);
   assert.match(script, /function drawMola\(fish\)/);
   assert.match(script, /function drawSeagrassAndKelp\(\)/);
-  assert.match(script, /reefRidges=/);
+  assert.match(script, /drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize\)/);
   assert.match(script, /i%12/);
   assert.match(script, /drawSeagrassAndKelp\(\)/);
 });
@@ -88,13 +108,13 @@ test('one creature renderer fault cannot stop the habitat frame or hide every la
   assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*ANIMATED SPECIES/);
 });
 
-test('coral renderer reads from its precomputed colony collection', () => {
-  assert.match(script, /function drawCoral\(\)[\s\S]*?const \[x,z,type\]=coralColonies\[index\]/);
+test('coral renderer reads terrain-height anchors from its precomputed colony collection', () => {
+  assert.match(script, /function drawCoral\(\)[\s\S]*?const \[x,z,type,floor\]=coralColonies\[index\]/);
   assert.doesNotMatch(script, /const \[x,z,type\]=colonies\[index\]/);
 });
 
 test('habitat rendering keeps static reef geometry out of the frame loop and bounds particle workload', () => {
-  assert.match(script, /const coralColonies=Array\.from\(\{length:320\}/);
+  assert.match(script, /coralColonies=Array\.from\(\{length:320\}/);
   assert.match(script, /for\(let index=0;index<coralColonies\.length;index\+\+\)/);
   assert.doesNotMatch(script, /function drawCoral\(\)[\s\S]{0,500}Array\.from/);
   assert.match(script, /planktonParticles=Array\.from\(\{length:480\}/);
@@ -123,4 +143,31 @@ test('every habitat range slider supports long-press min/max editing persisted i
   assert.match(script, /document\.querySelectorAll\('input\[type="range"\]'\)/);
   assert.match(script, /slider\.dataset\.rangeKey=key/);
   assert.match(script, /savedSliderBounds\[slider\.dataset\.rangeKey\]/);
+});
+
+test('live habitat integrates a real voxel surface and animated Osmocean GLB models',()=>{
+  assert.match(html,/three@0\.180\.0\/build\/three\.module\.js/);
+  assert.match(script,/drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize\)/);
+  assert.match(script,/await Promise\.all\(\[import\('three'\),import\('\.\/src\/phase6\/osmocean-marine-models\.js'\)\]\)/);
+  assert.match(script,/new adapter\.OsmoceanMarineModels\(THREE/);
+  assert.match(script,/function syncMarineModels\(ordered,dt\)/);
+  assert.match(script,/entry\.mixer\.timeScale=/);
+  assert.match(script,/entry\.root\.quaternion\.setFromUnitVectors/);
+  assert.match(script,/if\(marineModelEntries\.has\(fish\)\)return/);
+  assert.match(script,/modelRenderer\.render\(modelScene,modelCamera\)/);
+  assert.match(script,/catch\(error\)\{modelRenderer=null;marineModels=null;console\.warn\('Mocean animated model layer unavailable/);
+});
+test('habitat preserves procedural species fallbacks for animals without matching fish rigs',()=>{
+  assert.match(script,/if\(fish\.species==='eel'\)\{drawEel\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='crab'\|\|fish\.species==='lobster'\)\{drawCrustacean\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='manta'\)\{drawMantaRay\(fish\);return;\}/);
+  assert.match(script,/if\(fish\.species==='orca'\)\{drawOrca\(fish\);return;\}/);
+});
+
+test('voxel and WebGL failures preserve the procedural habitat fallback',()=>{
+  assert.match(script,/Voxel seabed failed; using safe heightfield fallback/);
+  assert.match(script,/if\(!voxelFallbackWarned\)/);
+  assert.match(script,/initialiseMarineModelLayer\(\)/);
+  assert.match(script,/webglcontextlost/);
+  assert.match(script,/Animated GLB layer disabled; procedural species renderers remain active/);
 });
