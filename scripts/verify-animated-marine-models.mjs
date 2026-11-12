@@ -59,13 +59,15 @@ for(const file of required){
   const bytes=await fs.readFile(path.join(directory,file));
   const gltf=readGlb(bytes);
   const animations=(gltf.animations??[]).map((clip,index)=>clip.name||'Animation '+(index+1));
-  if(!animations.length) throw new Error(file+' contains no embedded animation clips');
   const quaterniusAsset=quaternius.includes(file);
+  const proceduralDolphin=file==='dolphin_rigged.glb'&&Array.isArray(gltf.skins)&&gltf.skins.length>0;
+  if(!animations.length&&(quaterniusAsset||!proceduralDolphin)) throw new Error(file+' contains neither embedded clips nor a reviewed procedural swim rig');
   entries.push({
     id:path.basename(file,'.glb'),
     file,
     animations,
     animationCount:animations.length,
+    animationMode:animations.length?'baked-clips':'procedural-swim',
     source:quaterniusAsset
       ? 'Quaternius Animated Fish Bundle / Vitexus ishtaria-client'
       : 'PolyFish / unclemattmakes-polyfish',
@@ -80,4 +82,4 @@ const catalogue={
   species:entries
 };
 await fs.writeFile(path.join(directory,'catalog.json'),JSON.stringify(catalogue,null,2)+'\\n');
-console.log('Verified '+entries.length+' animated marine GLBs and '+catalogue.totalAnimationClips+' embedded clips.');
+console.log('Verified '+entries.length+' animated marine GLBs ('+catalogue.totalAnimationClips+' baked clips plus procedural dolphin swim).');
