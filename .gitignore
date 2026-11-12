@@ -7,6 +7,10 @@ build/
 # Downloaded upstream assets used by local scripts and CI
 _upstream/
 
+# Generated local copies of the pinned marine model bundle
+assets/models/osmocean/animated/
+assets/models/osmocean/species/
+
 # Local environment and secrets
 .env
 .env.*
