@@ -92,17 +92,23 @@ export function createHabitatVoxelTerrainStream({
     }
     slot.key=null;dispatch();
   }
-  for(let index=0;index<workerCount;index++){
-    const worker=new Worker(new URL('./streamed-voxel-worker.js',import.meta.url),{type:'module'});
-    const slot={worker,busy:false,failed:false,key:null};
-    worker.addEventListener('message',event=>handleMessage(slot,event));
-    worker.addEventListener('error',event=>{
-      slot.busy=false;slot.failed=true;
-      const item=slot.key?chunks.get(slot.key):null;
-      if(item)item.error=event.message||'Habitat terrain worker failed';
-      slot.key=null;dispatch();
-    });
-    workers.push(slot);
+  try{
+    for(let index=0;index<workerCount;index++){
+      const worker=new Worker(new URL('./streamed-voxel-worker.js',import.meta.url),{type:'module'});
+      const slot={worker,busy:false,failed:false,key:null};
+      worker.addEventListener('message',event=>handleMessage(slot,event));
+      worker.addEventListener('error',event=>{
+        slot.busy=false;slot.failed=true;
+        const item=slot.key?chunks.get(slot.key):null;
+        if(item)item.error=event.message||'Habitat terrain worker failed';
+        slot.key=null;dispatch();
+      });
+      workers.push(slot);
+    }
+  }catch(error){
+    for(const slot of workers)slot.worker.terminate();
+    workers.length=0;
+    throw error;
   }
 
   function update({x=0,z=0,forwardX=0,forwardZ=0}={}){
