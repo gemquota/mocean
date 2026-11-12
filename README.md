@@ -44,7 +44,7 @@ The original [single-creature swimmer](https://gemquota.github.io/mocean/) remai
 
 The live Schooling habitat is the main simulation. The separate locomotion and Phase 6 engineering tracks continue to develop supporting mechanics, rendering and environment technology. Their prototypes are not automatically part of the live habitat simply because their modules or review pages exist.
 
-See the [engineering roadmap](ROADMAP.md) for phase history and task status, and [Phase 6](PHASE_6.md) for the 3D environment, seabed and water work. Status labels in those records distinguish implemented work from visual acceptance and user approval.
+See the [engineering roadmap](ROADMAP.md) for phase history and task status, and [Phase 6](PHASE_6.md) for the 3D environment, seabed and water work.
 
 ## Project documentation
 
@@ -53,7 +53,7 @@ See the [engineering roadmap](ROADMAP.md) for phase history and task status, and
 - [Phase 0 architecture and coordinate conventions](PHASE_0.md)
 - [Phases 2–4 movement primitives and sequences](PHASE_2_4.md)
 - [Phase 6 environment, seabed and water](PHASE_6.md)
-- [Asset sources and licences](ASSET_SOURCES.md)
+- [Marine model sources and licences](ASSET_SOURCES.md)
 - [Tap-to-swim navigation experiment](EXPERIMENT_TAP_TO_SWIM.md)
 
 ## Engineering previews
@@ -87,11 +87,13 @@ Then open [http://localhost:8000](http://localhost:8000). The main simulation is
 
 ## Deployment
 
-GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow stages all 35 pinned Quaternius animated-fish GLBs and their CC0 licence, plus a pinned rigged PolyFish dolphin, seven CC0 Gobkit marine models and their licences. It verifies Quaternius and Gobkit animation clips, the PolyFish dolphin rig and its procedural swim path, then generates a model catalogue before deployment. Core tests run separately through [test.yml](.github/workflows/test.yml).
+GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow downloads and validates twelve CC0 naturalistic marine GLBs from 3DAssets.dev, then generates a model catalogue before deployment. It no longer stages the Quaternius or Gobkit cartoon model packs. Core tests run separately through [test.yml](.github/workflows/test.yml).
 
 ## Scope and model limitations
 
 Mocean is an experimental real-time simulation, not a validated animal model, calibrated marine-ecology model or computational fluid-dynamics solver. Hydrodynamic and ecological coefficients are phenomenological approximations. Automated tests establish software and selected kinematic properties, not biological realism. Visual inspection, regression comparison and performance profiling remain necessary.
+
+The current naturalistic GLBs are smooth-shaded, untextured static studies, not photoreal scans or rigged animation assets. Shader-based body and wing deformation provides visible swimming, but detailed fin articulation and skeletal motion remain future work.
 
 ---
 
