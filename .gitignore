@@ -1,0 +1,22 @@
+# Local dependencies and generated output
+node_modules/
+coverage/
+dist/
+build/
+
+# Downloaded upstream assets used by local scripts and CI
+_upstream/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Operating-system and editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
