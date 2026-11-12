@@ -145,12 +145,12 @@ for(const slider of document.querySelectorAll('input[type="range"]')){
 // Apply restored world dimensions and population constraints to the live simulation.
 for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+axis);worldSize[axis]=Number(slider.value);document.getElementById('world-'+axis+'-value').textContent=slider.value;}
 school.worldSize={...worldSize};
-applyZoom();
 setPopulation(populationSlider.value);
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1;
 function minimumCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x,baseCameraPosition.y,baseCameraPosition.z);return Math.min(4.5,Math.max(0.22,baseDistance/worldExtent));}
 function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(4.5,minimum),zoom));camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
+applyZoom();
 const activePointers=new Map();let pinchDistance=0;
 function pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
 canvas.addEventListener("pointerdown",event=>{activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});canvas.setPointerCapture?.(event.pointerId);if(activePointers.size===2)pinchDistance=pointerDistance();});
