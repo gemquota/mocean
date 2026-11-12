@@ -45,12 +45,13 @@ import { drawHabitatVoxelTerrain } from './src/phase6/habitat-voxel-terrain.js';
 import { createHabitatVoxelField } from './src/phase6/voxel-field.js';
 import { createVegetationLayout, sampleTerrainTop } from './src/phase6/vegetation-layout.js';
 import { classifyHabitatBiome } from './src/phase6/biomes.js';
+import { createHabitatVoxelTerrainStream } from './src/phase6/habitat-terrain-stream.js';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
 const speciesMix=filterToAnimatedSpecies(SCHOOLING_SPECIES_PERCENTAGES),worldSize={x:100,y:100,z:100};
-let vegetationField=null,vegetationLayout=null,coralColonies=[],anemoneSites=[];
+let vegetationField=null,vegetationLayout=null,coralColonies=[],anemoneSites=[],habitatTerrainStream=null;
 const mixRoot=document.getElementById('species-mix'),configPanel=document.getElementById('config-panel'),configToggle=document.getElementById('config-toggle');
 const speciesLabels={fish:'Regular fish',schoolFish:'Dedicated shoaling fish',grouper:'Giant Queensland grouper',moorishIdol:'Moorish idol',barracuda:'Great barracuda',clownfish:'Clownfish',parrotfish:'Parrotfish',blueTang:'Blue tang',angelfish:'Angelfish',butterflyfish:'Butterflyfish',wobbegong:'Wobbegong shark',marlin:'Marlin',tuna:'Tuna',eel:'Moray eels',crab:'Crabs',lobster:'Lobsters',mantis:'Mantis shrimp',manta:'Manta rays',stingray:'Stingrays',shark:'Reef sharks',whaleShark:'Whale sharks',mola:'Mola mola',orca:'Orcas',spermWhale:'Sperm whales',seal:'Seals',starfish:'Starfish',dolphin:'Dolphins',turtle:'Sea turtles',jellyfish:'Jellyfish',sandEel:'Burrowing sand eels',seahorse:'Lined seahorses',seaDragon:'Leafy seadragons'};
 const speciesSettings=Object.fromEntries(Object.keys(speciesLabels).map(key=>[key,{speed:1,size:1,minSize:.8,maxSize:1.2,aggression:1}]));
@@ -602,7 +603,19 @@ function drawPlankton(){
  ctx.restore();
 }
 const coralReefs=[{x:-17,z:-13,rx:3.8,rz:3.0},{x:-12,z:5,rx:3.2,rz:4.1},{x:-7,z:-14,rx:3.5,rz:2.8},{x:1,z:8,rx:4.2,rz:3.3},{x:14,z:-13,rx:3.6,rz:2.8},{x:17,z:9,rx:3.8,rz:3.2},{x:18,z:-5,rx:2.8,rz:3.6},{x:-1,z:15,rx:3.1,rz:2.5},{x:-15,z:13,rx:3.4,rz:2.8},{x:8,z:14,rx:3.2,rz:2.5}];
+function rebuildHabitatTerrainStream(){
+ habitatTerrainStream?.dispose();
+ try{
+  habitatTerrainStream=createHabitatVoxelTerrainStream({
+   worldSize,workerCount:2,chunkSize:32,radius:2,prefetchRadius:3,maxChunks:49
+  });
+ }catch(error){
+  habitatTerrainStream=null;
+  console.warn('Streamed habitat terrain unavailable; using synchronous voxel fallback.',error);
+ }
+}
 function rebuildPlantLayout(){
+ rebuildHabitatTerrainStream();
  vegetationField=createHabitatVoxelField(worldSize,seabedHeight);
  vegetationLayout=createVegetationLayout(vegetationField,worldSize);
  coralColonies=Array.from({length:320},(_,i)=>{
@@ -641,7 +654,7 @@ function drawCoral(){
  }
 }
 function drawSeabed(){
- try{voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize);voxelTerrainError=null;}
+ try{voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,habitatTerrainStream);voxelTerrainError=null;}
  catch(error){
   voxelTerrainError=String(error?.message??error).slice(0,100);
   if(!voxelFallbackWarned){voxelFallbackWarned=true;console.warn('Voxel seabed failed; using safe heightfield fallback.',error);}
@@ -933,6 +946,7 @@ function render(){
  }
  if(modelRenderer&&!modelLayerLost){try{updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}}
 }
+addEventListener('pagehide',()=>habitatTerrainStream?.dispose(),{once:true});
 const renderFaults=new Map();
 let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null,voxelTerrainStats=null,voxelTerrainError=null,voxelFallbackWarned=false;
 function animate(now){
