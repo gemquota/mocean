@@ -1,5 +1,7 @@
 import { SPECIES_MODEL_MAP } from './species-model-map.js';
 
+// Kept under the existing export name for the habitat UI; entries now use
+// naturalistic static GLBs with procedural swimming deformation, not cartoon rigs.
 export const ANIMATED_MODEL_SPECIES = Object.freeze(Object.keys(SPECIES_MODEL_MAP));
 
 export function filterToAnimatedSpecies(percentages) {
