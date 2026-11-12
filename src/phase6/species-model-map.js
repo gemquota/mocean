@@ -19,7 +19,7 @@ export const SPECIES_MODEL_MAP = Object.freeze({
   jellyfish: { collection: 'naturalistic', id: 'moon_jellyfish', assetId: '5889', motion: 'pulse', orientation: 'vertical' },
   turtle: { collection: 'naturalistic', id: 'loggerhead_turtle', assetId: '39340', motion: 'wing-wave' },
   seahorse: { collection: 'naturalistic', id: 'lined_seahorse', assetId: '39345', motion: 'pulse', orientation: 'vertical' },
-  seaDragon: { collection: 'naturalistic', id: 'leafy_seadragon', assetId: '39346', motion: 'body-wave', orientation: 'vertical' },
+  seaDragon: { collection: 'naturalistic', id: 'leafy_seadragon', assetId: '39346', motion: 'vertical-body-axis-wave', orientation: 'vertical' },
   anglerfish: { collection: 'naturalistic', id: 'anglerfish', assetId: '5890', motion: 'body-wave' }
 });
 
