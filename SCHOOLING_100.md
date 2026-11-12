@@ -1,6 +1,8 @@
-# 1000-fish schooling experiment
+# Schooling · Main simulation
 
-**Status:** isolated prototype · not part of the production single-fish simulation.
+**Status:** Primary live Mocean simulation · published at [schooling.html](https://gemquota.github.io/mocean/schooling.html).
+
+The Schooling habitat is the main product experience, not an isolated experiment. It simulates a mixed-species underwater world with autonomous group movement, individual variation, population controls and a shared marine environment.
 
 ## Model
 
@@ -10,29 +12,33 @@ Each fish has independent 3D position, velocity, body-forward direction and gait
 - **Alignment:** velocity matching is deliberately damped so the school does not snap into one shared heading.
 - **Cohesion:** weak centroid attraction preserves a loose school without collapsing it into a ball.
 - **Inertia:** bounded acceleration and a gently regulated cruising speed replace per-frame speed snapping.
-- **Attitude:** the body-forward direction has a finite turn rate and lags velocity changes.
+- **Attitude:** body-forward direction has a finite turn rate and lags velocity changes.
 - **Collisions:** fish are approximated as short oriented capsules. Soft positional correction and a low-restitution velocity impulse prevent body-centreline intersections without hard, explosive bounces.
 - **Habitat pressure:** a smooth ellipsoidal force steers fish away from the soft boundary.
 - **Individual variation:** slow phase-offset drift prevents a rigid rotating formation.
 
-The rendered body is 25% of the previous schooling prototype's dimensions. The habitat extents are five times the previous experiment in all three axes, and the default population is 1,000 fish. Its gait and articulated geometry are shared with the single-fish body implementation. The schooling scene uses a lower polygon mesh and renders at 30 Hz while simulation continues at a 60 Hz fixed step.
+The default school contains 1,000 fish. The rendered body is 25% of the previous schooling prototype's dimensions, and the habitat extents are five times the previous experiment in all three axes. The gait and articulated geometry are shared with the single-creature body implementation. The schooling scene uses a lower-polygon mesh and renders at 30 Hz while simulation continues at a 60 Hz fixed step.
 
 ## Performance strategy
 
-The previous all-pairs neighbour scan was replaced by a uniform 3D spatial hash. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. Rendering uses a lower-resolution mesh and precomputed face shading rather than recomputing per-triangle lighting normals.
+A uniform 3D spatial hash replaces an all-pairs neighbour scan. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. Rendering uses a lower-resolution mesh and precomputed face shading rather than recomputing per-triangle lighting normals.
 
-This reduces work substantially for a spatially distributed school, but actual frame-time still depends on browser, screen resolution and device. The prototype has not yet been profiled on a range of ordinary hardware.
+This reduces work for a spatially distributed school, but actual frame time still depends on browser, screen resolution and device. Performance should be measured on representative hardware rather than inferred from algorithmic complexity alone.
 
-## Acceptance checks
+## Validation
+
+Automated coverage includes:
 
 - Deterministic initialisation.
-- Spatial-hash candidate work remains below all-pairs scanning for the 1,000-agent test distribution.
-- Close fish increase separation and overlapping capsules produce contact response.
-- Heading change is bounded by a finite angular rate.
-- State remains finite and speed bounded during sustained simulation.
-- Visual inspection must confirm fish do not visibly interpenetrate, jitter, or move as one rigid blob.
-- Browser frame-time must be measured on representative hardware before calling performance acceptable.
+- Spatial-hash candidate work below all-pairs scanning for the 1,000-agent test distribution.
+- Increased separation response as fish approach and contact response for overlapping capsules.
+- Bounded heading change from a finite angular rate.
+- Finite state and bounded speed during sustained simulation.
+
+Visual and performance acceptance still require real-browser checks for visible interpenetration, jitter, rigid-looking group motion, frame time and memory use.
 
 ## Known limits
 
-This remains a phenomenological group model, not a validated biological schooling model. Collision geometry is a capsule approximation of the body, not a continuously deforming collision mesh. It does not simulate fluid-mediated wakes, hydrodynamic schooling, or full independent rigid-body attitude dynamics for every fish. The production simulation remains a single fish.
+This is a phenomenological group model, not a validated biological schooling model. Collision geometry is a capsule approximation of each body, not a continuously deforming collision mesh. The simulation does not model fluid-mediated wakes, hydrodynamic schooling or full independent rigid-body attitude dynamics for every fish.
+
+The original [single-creature swimmer](https://gemquota.github.io/mocean/) remains a separate locomotion prototype and engineering reference.
