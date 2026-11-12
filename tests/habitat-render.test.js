@@ -185,6 +185,6 @@ test('habitat enforces the inner-world boundary and ties minimum camera zoom to 
   assert.match(src, /for \(const agent of survivors\) constrainAgentToWorld\(agent, limits\)/);
   assert.match(script, /function minimumCameraZoom\(\)/);
   assert.match(script, /baseDistance\/worldExtent/);
-  assert.match(script, /zoom=Math\.max\(minimum,Math\.min\(Math\.max\(4\.5,minimum\),zoom\)\)/);
+  assert.match(script, /zoom=Math\.max\(minimum,Math\.min\(Math\.max\(4\.5,minimum\*4\.5\),zoom\)\)/);
   assert.match(script, /applyZoom\(\);/);
 });
