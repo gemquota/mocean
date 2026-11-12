@@ -57,7 +57,7 @@ export class SchoolingCreatureRenderer {
     this.disposed = false;
   }
 
-  resize(width, height) {
+  hasInstance(id) { return this.instances.has(id); }\n\n  resize(width, height) {
     const w = Math.max(1, width), h = Math.max(1, height);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
