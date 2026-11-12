@@ -89,3 +89,19 @@ These are proposed project gates, not measured results.
 ## Current outcome
 
 **Recommendation: profile first, then prototype model deformation/transforms and culling.** Keep CPU simulation, current terrain workers and the live Canvas/WebGL path unchanged until measured evidence justifies a migration. No speedup is claimed by this assessment.
+
+
+## Isolated prototype added
+
+An experimental page now lives at [webgpu-lab.html](webgpu-lab.html). It is deliberately separate from the habitat and uses the repository's existing Three.js r180 version.
+
+The lab compares the same instanced fish-shaped mesh and deformation workload across:
+- **WebGLRenderer + CPU updates:** GLSL vertex deformation, with per-instance phase and XY offsets updated in JavaScript.
+- **WebGPURenderer + WebGL2 fallback + CPU updates:** TSL vertex deformation with the same CPU-updated instance state.
+- **Native WebGPU + compute updates:** a TSL compute kernel advances per-instance wave phase and XY offsets in a GPU storage buffer; the vertex shader consumes that buffer without CPU readback.
+
+It offers 72, 256, 512, 1,024, 2,048 and 4,096 instances. Each run has a 3-second warm-up and 10-second sample interval. It reports frame-interval p50/p95, CPU update p50/p95 and CPU render-submission p50/p95. The selected backend is checked after renderer initialisation; a WebGL2 fallback is explicitly labelled and never counted as native compute.
+
+**Scope limitation:** the first prototype uses a procedural fish silhouette, not the production GLB catalogue. It isolates the CPU-versus-GPU instance-state update and vertex-deformation pathway before taking on GLB material conversion, species-specific geometry, attitude transforms and the habitat's Canvas/Three.js compositing. The page does not modify the live habitat.
+
+**Measurement limitation:** the page's JavaScript timings are CPU-side measurements, not GPU execution timestamps. Use browser GPU tooling for GPU duration and repeat each configuration several times on the same device. No speedup is claimed until actual browser runs are collected.
