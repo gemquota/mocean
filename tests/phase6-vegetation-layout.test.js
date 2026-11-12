@@ -13,6 +13,9 @@ test('vegetation niches are generated from the terrain surface and are determini
  assert.ok(layout.grass.length>=12,'flat sediment plains should support seagrass beds');
  assert.ok(layout.kelp.length>=6,'rock ledges should support kelp');
  assert.ok(layout.walls.length>=4,'exposed vertical faces should support attached vegetation');
+ assert.ok(layout.sponges.length>=3,'flat sediment patches should support sponge colonies');
+ assert.ok(layout.softCoral.length>=2,'sloping reef ledges should support soft corals');
+ assert.ok(layout.seaFans.length>=1,'steep rock faces should support attached sea fans');
  assert.ok(layout.grass.every(p=>p.normal.y>.94&&p.y>-11.1&&p.y<-7.2));
  assert.ok(layout.kelp.every(p=>p.normal.y>.68&&p.normal.y<.94));
  assert.ok(layout.walls.every(p=>p.normal.y>=-.08&&p.normal.y<.68));
