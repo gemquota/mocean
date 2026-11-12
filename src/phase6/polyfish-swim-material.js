@@ -101,6 +101,7 @@ const SWIM_VERTEX_PARS = /* glsl */`
   uniform float uSwimAxis;
   uniform float uBodyMin;
   uniform float uBodyMax;
+  uniform float uBodyAxis;
   uniform float uMaskFloor;
   uniform float uHeadPhase;
   uniform float uWaveMode;
