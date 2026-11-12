@@ -21,7 +21,7 @@ The live page starts with 150 creatures and exposes a population slider from 10 
 
 ## Performance strategy
 
-A uniform 3D spatial hash replaces an all-pairs neighbour scan. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. The habitat uses a Canvas-based world layer plus a transparent Three.js overlay for all 12 active species. Their GLBs are selected from the complete 35-model Quaternius Animated Fish Bundle plus a rigged PolyFish dolphin. Species without an appropriate animated model are temporarily disabled rather than shown with unrelated stand-ins. The Canvas renderer remains a graceful loading/runtime fallback.
+A uniform 3D spatial hash replaces an all-pairs neighbour scan. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. The habitat uses a Canvas-based world layer plus a transparent Three.js overlay for all 12 active species. Their models are selected from the complete 35-model Quaternius Animated Fish Bundle plus a rigged PolyFish dolphin. Quaternius models use baked swim clips; the dolphin is animated by the adapted PolyFish vertex-swim shader. Species without an appropriate animated model are temporarily disabled rather than shown with unrelated stand-ins. The Canvas renderer remains a graceful loading/runtime fallback.
 
 This reduces work for a spatially distributed school, but actual frame time still depends on browser, screen resolution and device. Performance should be measured on representative hardware rather than inferred from algorithmic complexity alone.
 
