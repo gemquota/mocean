@@ -42,7 +42,11 @@ const quaternius=[
 const gobkit=[
   {file:'jellyfish.glb',url:'https://gobkit.com/freebies/animal/Jellyfish.glb',id:'jellyfish'},
   {file:'seal.glb',url:'https://gobkit.com/freebies/animalB/Seal.glb',id:'seal'},
-  {file:'whale.glb',url:'https://gobkit.com/freebies/animalB/Whale.glb',id:'whale'}
+  {file:'whale.glb',url:'https://gobkit.com/freebies/animalB/Whale.glb',id:'whale'},
+  {file:'gobkit_bluetang.glb',url:'https://gobkit.com/freebies/animal006/BlueTang.glb',id:'bluetang'},
+  {file:'gobkit_parrotfish.glb',url:'https://gobkit.com/freebies/animal008/Parrotfish.glb',id:'parrotfish'},
+  {file:'gobkit_moorishidol.glb',url:'https://gobkit.com/freebies/animal009/Moorishidol.glb',id:'moorishidol'},
+  {file:'gobkit_shark.glb',url:'https://gobkit.com/freebies/animal/Shark.glb',id:'shark'}
 ];
 const required=[...quaternius,'dolphin_rigged.glb',...gobkit.map(item=>item.file)];
 const manifestPath=process.argv[3];
