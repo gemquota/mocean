@@ -18,6 +18,15 @@ export const SPECIES_MODEL_MAP = Object.freeze({
   dolphin: { collection: 'animated', id: 'dolphin_rigged', animation: 'clip' }
 });
 
+// Review-only assets remain discoverable but are deliberately excluded from the
+// live animated population. Static geometry is not an animated species model.
+export const CREATURE_REVIEW_MODEL_MAP = Object.freeze({
+  fish: { collection: 'polyfish', id: 'polyfish-rigged' },
+  parrotfish: { collection: 'animated', id: 'parrot_fish' },
+  manta: { collection: 'static', id: '5878' },
+  jellyfish: { collection: 'static', id: '5889' }
+});
+
 export const SPECIES_WITHOUT_REVIEWED_MODEL = Object.freeze([
   'angelfish', 'barracuda', 'wobbegong', 'marlin', 'eel', 'crab', 'lobster',
   'mantis', 'manta', 'stingray', 'whaleShark', 'orca', 'spermWhale', 'seal',
@@ -26,4 +35,8 @@ export const SPECIES_WITHOUT_REVIEWED_MODEL = Object.freeze([
 
 export function getSpeciesModel(species) {
   return SPECIES_MODEL_MAP[species] ?? null;
+}
+
+export function getCreatureReviewModel(species) {
+  return CREATURE_REVIEW_MODEL_MAP[species] ?? null;
 }
