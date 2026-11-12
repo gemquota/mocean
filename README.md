@@ -61,7 +61,7 @@ See the [engineering roadmap](ROADMAP.md) for phase history and task status, and
 These are review surfaces and experiments, not alternate main simulations:
 
 - [3D renderer and terrain spike](phase6-spike.html)
-- [Volumetric voxel terrain spike](voxel-terrain-spike.html)
+- [Endless voxel terrain streaming study](voxel-terrain-spike.html)
 - [Voxel terrain study](voxel-terrain-study.html)
 - [Creature model and animation review](creature-model-review.html)
 - [Naturalistic marine model review](creature-model-review.html)
