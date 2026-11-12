@@ -12,6 +12,7 @@ const TERRAIN_SEED = 6102026;
 const CELL_SIZE = 0.5;
 const MIN_Y = -14.2;
 const MAX_Y = -5.2;
+const biomeCache = new Map();
 
 function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
 
@@ -20,7 +21,9 @@ function terrainColour(normal,position){
   const light=Math.max(0,normal[0]*-.28+normal[1]*.82+normal[2]*.49);
   const sediment=clamp((up-.68)*2.6,0,1);
   const height=clamp((position[1]+11.5)/5,0,1);
-  const biome=classifyHabitatBiome(position[0],position[2],{y:position[1],normalY:up});
+  const biomeKey=[Math.round(position[0]*.5),Math.round(position[2]*.5),Math.round(position[1]*2),Math.round(up*4)].join(':');
+  let biome=biomeCache.get(biomeKey);
+  if(!biome){biome=classifyHabitatBiome(position[0],position[2],{y:position[1],normalY:up});biomeCache.set(biomeKey,biome);if(biomeCache.size>8192)biomeCache.clear();}
   const palettes={
     'coral-reef':{rock:[58,75,64],sand:[139,126,94],deep:[27,43,40]},
     'kelp-forest':{rock:[48,75,57],sand:[111,128,82],deep:[19,39,35]},
