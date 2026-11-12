@@ -39,6 +39,9 @@ export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize,
  if(stream){
   const streamed=stream.draw(ctx,project,width,height,zoom);
   if(streamed.visible>0)return streamed;
+  if(streamed.failed>0&&streamed.pending===0&&streamed.loaded===0){
+   return drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize,null);
+  }
   // A temporary floor silhouette prevents a blank seabed while worker chunks
   // are being generated; it is replaced by the shared voxel surface as soon
   // as the first visible chunk arrives.
