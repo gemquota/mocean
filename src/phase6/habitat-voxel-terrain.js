@@ -37,11 +37,12 @@ function shade(normal,position){
 /** Draw the volumetric seabed into the habitat's fixed-camera canvas. */
 export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize,stream=null){
  if(stream){
-  const streamed=stream.draw(ctx,project,width,height,zoom);
-  if(streamed.visible>0)return streamed;
-  if(streamed.failed>0&&streamed.pending===0&&streamed.loaded===0){
+  const workerState=stream.stats;
+  if(workerState.failed>0&&workerState.pending===0){
    return drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize,null);
   }
+  const streamed=stream.draw(ctx,project,width,height,zoom);
+  if(streamed.visible>0)return streamed;
   // A temporary floor silhouette prevents a blank seabed while worker chunks
   // are being generated; it is replaced by the shared voxel surface as soon
   // as the first visible chunk arrives.
