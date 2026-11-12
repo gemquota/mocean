@@ -84,6 +84,12 @@ export const SWIM_CONFIGS = {
     idleAmplitude: 0.045, thrustAmplitude: 0.07, coastAmplitude: 0.018,
     idleSpeed: 2.7, thrustSpeed: 4.6, coastSpeed: 1.0,
   },
+  'vertical-body-axis-wave': {
+    frequency: 1.0, amplitude: 0.028, speed: 1.8, maskStart: 0.18,
+    maskFloor: 0.08, headPhase: 0.18, swimAxis: 0, bodyAxis: 'y',
+    idleAmplitude: 0.018, thrustAmplitude: 0.032, coastAmplitude: 0.006,
+    idleSpeed: 1.55, thrustSpeed: 2.4, coastSpeed: 0.65,
+  },
 };
 
 // Vertex shader chunk injected before the main() transform
@@ -106,9 +112,10 @@ const SWIM_VERTEX_PARS = /* glsl */`
 const SWIM_VERTEX_MAIN = /* glsl */`
   {
     float bodyRange = uBodyMax - uBodyMin;
+    float bodyCoordinate = uBodyAxis > 0.5 ? position.y : position.z;
     float body = uWaveMode > 0.5
       ? clamp(abs(position.x) / max(uWingMax, 0.001), 0.0, 1.0)
-      : (bodyRange > 0.001 ? clamp(1.0 - (position.z - uBodyMin) / bodyRange, 0.0, 1.0) : 0.5);
+      : (bodyRange > 0.001 ? clamp(1.0 - (bodyCoordinate - uBodyMin) / bodyRange, 0.0, 1.0) : 0.5);
 
     // Head region: all vertices sample wave at maskStart (rigid head, no eye sliding)
     float waveBody = max(body, uMaskStart);
@@ -174,13 +181,14 @@ export function applySwimMaterial(meshRoot, creatureType) {
 
   // ── First-time patch: compute bounding box, create uniforms, inject shader ──
   let bodyMin = Infinity, bodyMax = -Infinity, wingMax = 0;
+  const bodyAxis = config.bodyAxis === 'y' ? 'y' : 'z';
   meshRoot.updateMatrixWorld(true);
   meshRoot.traverse((child) => {
     if ((child.isMesh || child.isSkinnedMesh) && child.geometry) {
       child.geometry.computeBoundingBox();
       const box = child.geometry.boundingBox.clone().applyMatrix4(child.matrix);
-      bodyMin = Math.min(bodyMin, box.min.z);
-      bodyMax = Math.max(bodyMax, box.max.z);
+      bodyMin = Math.min(bodyMin, box.min[bodyAxis]);
+      bodyMax = Math.max(bodyMax, box.max[bodyAxis]);
       wingMax = Math.max(wingMax, Math.abs(box.min.x), Math.abs(box.max.x));
     }
   });
@@ -198,6 +206,7 @@ export function applySwimMaterial(meshRoot, creatureType) {
     uSwimAxis: { value: config.swimAxis },
     uBodyMin: { value: bodyMin },
     uBodyMax: { value: bodyMax },
+    uBodyAxis: { value: bodyAxis === 'y' ? 1 : 0 },
     uMaskFloor: { value: config.maskFloor ?? 0.15 },
     uHeadPhase: { value: config.headPhase ?? 0.5 },
     uWaveMode: { value: config.waveMode ?? 0 },
