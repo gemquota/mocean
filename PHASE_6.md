@@ -8,7 +8,7 @@
 
 Turn the mixed-species habitat into a convincing underwater environment without degrading creature simulation, locomotion, interaction, or ordinary-browser performance. The environment must be a real spatial scene, not a flat backdrop decorated with fake depth cues.
 
-`schooling.html` retains its Canvas-based habitat and species renderers, now augmented by a volumetric voxel terrain projection and a transparent Three.js overlay for twelve naturalistic marine models with procedural swimming. `src/schooling.js` owns creature state and the fixed-step simulation; `src/phase6/voxel-field.js` supplies the shared signed-distance field used by terrain extraction and creature contact. This is a staged hybrid renderer, not yet a fully unified 3D scene: cross-renderer depth ordering, water/light integration and performance on ordinary hardware remain open.
+`schooling.html` retains its Canvas-based habitat and species renderers, now augmented by a volumetric voxel terrain projection and a transparent Three.js overlay for thirteen naturalistic marine models with procedural swimming. `src/schooling.js` owns creature state and the fixed-step simulation; `src/phase6/voxel-field.js` supplies the shared signed-distance field used by terrain extraction and creature contact. This is a staged hybrid renderer, not yet a fully unified 3D scene: cross-renderer depth ordering, water/light integration and performance on ordinary hardware remain open.
 
 ## Non-negotiable constraints
 
