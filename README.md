@@ -87,7 +87,7 @@ Then open [http://localhost:8000](http://localhost:8000). The main simulation is
 
 ## Deployment
 
-GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow downloads and validates twelve CC0 naturalistic marine GLBs from 3DAssets.dev, then generates a model catalogue before deployment. It no longer stages the Quaternius or Gobkit cartoon model packs. Core tests run separately through [test.yml](.github/workflows/test.yml).
+GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow downloads and validates thirteen CC0 naturalistic marine GLBs from 3DAssets.dev, then generates a model catalogue before deployment. It no longer stages the Quaternius or Gobkit cartoon model packs. Core tests run separately through [test.yml](.github/workflows/test.yml).
 
 ## Scope and model limitations
 
