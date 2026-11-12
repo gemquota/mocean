@@ -145,7 +145,7 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 - The habitat keeps its established Canvas projection for coral, invertebrates and disabled species. A transparent Three.js layer now composites naturalistic marine GLBs with procedural swimming over that view; cross-renderer depth ordering remains a known limitation.
 - The original `seabedHeight(x, z)` remains as the broad base profile, but the visible seabed is now extracted from a signed-distance volume. Creature contact uses the same volume field; full path planning through cave networks is not yet implemented.
-- The habitat now contains 33 species, but only suitable fish use the imported animated-model overlay. Other species retain their dedicated Canvas renderers; do not replace them with unrelated GLBs merely to increase model coverage.
+- The species catalogue contains 33 species. The default live mix currently enables the 16 with reviewed naturalistic models; 17 remain disabled until suitable models and motion treatments are reviewed. Dedicated Canvas renderers remain as load/budget fallbacks and legacy species implementations; do not replace them with unrelated GLBs merely to increase model coverage.
 - Visual fidelity is not evidence of physical correctness. Keep simulation and rendering responsibilities separate.
 
 ## Phase gate
