@@ -217,7 +217,8 @@ test('dolphin uses the reviewed rigged model and procedural swim shader when no 
 
 test('jellyfish keep a vertical body axis while yaw follows horizontal heading', () => {
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
-  assert.match(adapter,/jellyfish.*orientation: 'vertical'/);
+  const mapping = readFileSync(new URL('../src/phase6/species-model-map.js', import.meta.url), 'utf8');
+  assert.match(mapping,/jellyfish: \{ collection: 'animated', id: 'jellyfish', animation: 'clip', orientation: 'vertical' \}/);
   assert.match(adapter,/mapping\.orientation!=='vertical'/);
   assert.match(script,/setFromAxisAngle\(new THREE\.Vector3\(0,1,0\),yaw\)/);
 });
