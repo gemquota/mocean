@@ -117,6 +117,7 @@ function buildScene(count){
  phaseData=new Float32Array(count*4);
  for(let i=0;i<count;i++)phaseData[i*4]=(i/count)*Math.PI*2;
  phaseAttribute=new THREE.InstancedBufferAttribute(phaseData,4);
+ geometry.setAttribute('instanceState',phaseAttribute);
  if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU')phaseBuffer=instancedArray(phaseData,'vec4');
  let material;
  if(activeMode==='webgl-cpu')material=createWebGLMaterial(phaseAttribute);
