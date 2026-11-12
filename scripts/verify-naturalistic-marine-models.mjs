@@ -14,7 +14,8 @@ const models=[
   {species:'orca',file:'orca.glb',assetId:'5861'},
   {species:'spermWhale',file:'sperm_whale.glb',assetId:'5860'},
   {species:'dolphin',file:'bottlenose_dolphin.glb',assetId:'39330'},
-  {species:'jellyfish',file:'moon_jellyfish.glb',assetId:'5889'}
+  {species:'jellyfish',file:'moon_jellyfish.glb',assetId:'5889'},
+  {species:'turtle',file:'loggerhead_turtle.glb',assetId:'39340'}
 ];
 const entries=[];
 for(const model of models){
