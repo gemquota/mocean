@@ -13,6 +13,9 @@ export const MARINE_MODEL_BY_SPECIES = Object.freeze(Object.fromEntries(
   Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.id])
 ));
 export const MARINE_MODEL_IDS = Object.freeze([...new Set(Object.values(MARINE_MODEL_BY_SPECIES))]);
+export const MARINE_MODEL_ORIENTATION = Object.freeze(Object.fromEntries(
+  Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.orientation ?? 'horizontal'])
+));
 
 export class OsmoceanMarineModels {
   constructor(THREE,{baseUrl='./assets/models/osmocean/species/',loader=new GLTFLoader()}={}) {
@@ -27,7 +30,8 @@ export class OsmoceanMarineModels {
     return this.cache.get(modelId);
   }
   async createInstance(species,{targetLength=1.2}={}) {
-    const modelId=MARINE_MODEL_BY_SPECIES[species];
+    const mapping=SPECIES_MODEL_MAP[species];
+    const modelId=mapping?.id;
     if(!modelId) return null;
     const gltf=await this.load(modelId);
     const visual=cloneSkeleton(gltf.scene);
@@ -42,8 +46,10 @@ export class OsmoceanMarineModels {
     const bounds=new this.THREE.Box3().setFromObject(visual);
     const size=bounds.getSize(new this.THREE.Vector3());
     const axis=size.x>=size.z&&size.x>=size.y?'x':size.z>=size.y?'z':'y';
-    if(axis==='z') visual.rotation.y=Math.PI/2;
-    else if(axis==='y') visual.rotation.z=-Math.PI/2;
+    if(mapping.orientation!=='vertical'){
+      if(axis==='z') visual.rotation.y=Math.PI/2;
+      else if(axis==='y') visual.rotation.z=-Math.PI/2;
+    }
     visual.updateMatrixWorld(true);
     const oriented=new this.THREE.Box3().setFromObject(visual);
     const extent=oriented.getSize(new this.THREE.Vector3());
