@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { ANIMATED_MODEL_SPECIES } from '../src/phase6/animated-species-filter.js';
 
 const html = readFileSync(new URL('../schooling.html', import.meta.url), 'utf8');
 const src = readFileSync(new URL('../src/schooling.js', import.meta.url), 'utf8');
@@ -11,7 +12,10 @@ const script = match[1].replace(/^import .*?;\s*$/gm, '');
 
 test('habitat browser module parses and initializes every fish before rendering', () => {
   assert.match(html, /from '\.\/src\/phase6\/animated-species-filter\.js'/);
-  assert.match(html, /from '\.\/src\/phase6\/schooling-creature-renderer\.js'/);
+  assert.match(html, /from '\.\/src\/phase6\/habitat-voxel-terrain\.js'/);
+  assert.match(html, /from '\.\/src\/phase6\/voxel-field\.js'/);
+  assert.match(html, /import\('\.\/src\/phase6\/osmocean-marine-models\.js'\)/);
+  assert.doesNotMatch(html, /SchoolingCreatureRenderer/);
   assert.doesNotThrow(() => new vm.Script(script), 'browser module should remain syntactically valid');
   const created = script.indexOf('let school=createSchool(150,73421,{speciesPercentages:speciesMix,worldSize})');
   const initialized = script.indexOf('initialiseFishVisualState(school)');
@@ -35,7 +39,7 @@ test('world dimensions default to 100 on every axis and allow a maximum of 1000'
   assert.match(html,new RegExp('id="world-'+axis+'" type="range" min="1" max="1000" step="1" value="100"'));
  }
  assert.match(script,/const speciesMix=\{\.\.\.SCHOOLING_SPECIES_PERCENTAGES\},worldSize=\{x:100,y:100,z:100\}/);
- assert.match(script,/const WORLD_RANGE_VERSION_KEY='mocean\\.worldRange\\.v1'/);
+ assert.match(script,/const WORLD_RANGE_VERSION_KEY='mocean\.worldRange\.v1'/);
  assert.match(script,/delete savedSliderBounds\['world-x'\];delete savedSliderBounds\['world-y'\];delete savedSliderBounds\['world-z'\]/);
  assert.match(script,/localStorage\.setItem\(WORLD_RANGE_VERSION_KEY,'1-1000-default-100'\)/);
 });
@@ -127,7 +131,9 @@ test('30-species mix includes three new fish with ecology-adjusted weights', () 
   assert.match(src, /moorishIdol: 0\.20/);
   assert.match(src, /barracuda: 3\.2/);
   assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
-  assert.match(html, /7 ANIMATED SPECIES/);
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 7);
+  assert.match(script, /ANIMATED_MODEL_SPECIES\.length\+' ANIMATED SPECIES'/);
+  assert.match(script, /ANIMATED_MODEL_SPECIES\.includes\(changed\)/);
 });
 
 
