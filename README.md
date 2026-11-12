@@ -64,7 +64,7 @@ These are review surfaces and experiments, not alternate main simulations:
 - [Volumetric voxel terrain spike](voxel-terrain-spike.html)
 - [Voxel terrain study](voxel-terrain-study.html)
 - [Creature model and animation review](creature-model-review.html)
-- [Osmocean marine model study](osmocean-model-study.html)
+- [Naturalistic marine model review](creature-model-review.html)
 - [Development blueprint](development.html)
 
 ## Tests and local development
