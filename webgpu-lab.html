@@ -57,7 +57,7 @@ small{display:block;color:#78938b;line-height:1.45;margin-top:9px}
 </div>
 <script type="module">
 import * as THREE from 'three';
-import { WebGPURenderer } from 'three/webgpu';
+import { WebGPURenderer, MeshStandardNodeMaterial } from 'three/webgpu';
 import { Fn, instanceIndex, instancedArray, instancedBufferAttribute, positionLocal, sin, vec3, uniform } from 'three/tsl';
 
 const params=new URLSearchParams(location.search);
@@ -93,11 +93,11 @@ function createWebGLMaterial(attribute){
  return material;
 }
 function createNodeMaterial(useStorage){
- const material=new THREE.MeshStandardNodeMaterial({color:0x75bda5,roughness:.72,metalness:.02});
+ const material=new MeshStandardNodeMaterial({color:0x75bda5,roughness:.72,metalness:.02});
  let phaseNode;
  if(useStorage)phaseNode=phaseBuffer.element(instanceIndex);
  else phaseNode=instancedBufferAttribute(phaseAttribute,'float');
- const envelope=positionLocal.x.mul(-1).smoothstep(-.25,1.1);
+ const envelope=positionLocal.x.mul(-1).clamp(0,1);
  material.positionNode=positionLocal.add(vec3(0,sin(positionLocal.x.mul(2.7).add(phaseNode)).mul(.115).mul(envelope),0));
  return material;
 }
@@ -181,7 +181,7 @@ function tick(now){
  }
  const updateMs=performance.now()-updating;
  const rendering=performance.now();renderer.render(scene,camera);const renderMs=performance.now()-rendering;
- if(elapsed>=WARMUP_MS){frameSamples.push(frameInterval);updateSamples.push(updateMs);renderSamples.push(renderMs);}
+ if(elapsed>=WARMUP_MS&&elapsed<WARMUP_MS+SAMPLE_MS){frameSamples.push(frameInterval);updateSamples.push(updateMs);renderSamples.push(renderMs);}
  if(now-lastReport>500){report(now);lastReport=now;}
 }
 pauseButton.addEventListener('click',()=>{running=!running;pauseButton.textContent=running?'Pause':'Resume';if(running){lastTime=performance.now();renderer.setAnimationLoop(tick);}else renderer.setAnimationLoop(null);});
