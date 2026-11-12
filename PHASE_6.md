@@ -207,3 +207,18 @@ Merged in PR #48 (commit `f9a2051c993102c8dff26d7e723b2fad1f45d247`) and deploye
 - [ ] Adopt no GPU path without a measured material improvement, low-end fallback, visual parity and user review.
 
 **Initial decision:** retain CPU-authoritative behaviour, locomotion and terrain contact. The most promising first GPU experiment is batched model deformation/transforms and visibility work. The current particle count is too small to justify a compute pipeline. Terrain compute is deferred until renderer unification allows generated data to remain GPU-resident.
+
+## Geological field spike · isolated architecture experiment
+
+**Status: implementation spike, not integrated or accepted.** src/phase6/geological-field.js introduces a deterministic feature-driven region whose broad surface and local volumetric cuts are queried through one API. It composes multi-scale seabed relief, continuous ridge centre-lines, ravine cuts and connected tunnel/chamber paths. sampleHeight(x,z) supplies the macro surface; sampleDistance(x,y,z) uses the same surface plus signed-distance tunnel subtraction (positive water, negative solid).
+
+The module is deliberately independent of Three.js, workers and creature simulation. It is not a replacement for voxel-field.js: the distance field is approximate, cave paths are prototype centre-lines, and there is no adaptive mesh extraction, material classification, vegetation attachment or runtime performance evidence. Next: feed this field into a bounded terrain-study mesh and compare it against current surface and voxel studies before considering integration.
+
+Acceptance gates: deterministic output; connected formations rather than scattered props; cave roof/floor separation without leaks; bounded sampling and mesh-generation cost; consistent normals/contact queries; visual comparison at matched camera framing. The live habitat remains unchanged until all gates pass.
+
+
+### Geological field study page
+
+`geological-study.html` is an isolated browser study that extracts the feature field with the existing multi-component dual-contouring implementation and displays the resulting indexed mesh with Three.js lighting, fog and a simple water-plane cue. It is intended for inspecting connected geology, not as a production habitat renderer. It reports mesh vertex/triangle counts and build time. Cave centre-lines now extend beyond the study bounds so the passages can open at the cut boundary instead of terminating as sealed caps. The page remains a prototype: browser runtime and visual quality have not yet been independently verified, and its main-thread mesh build may need a worker before any integration.
+
+The study runs dual-contour extraction in `src/phase6/geological-study-worker.js` and transfers typed geometry buffers back to the renderer. This keeps the animation/render loop responsive during the expensive sampling and mesh build; it does not make the extraction itself cheaper. The page is a branch artifact and is not deployed to production from pull-request builds.
