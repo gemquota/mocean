@@ -2,111 +2,96 @@
 
 <p align="center">
   <strong>A living underwater world, driven by simulated creatures.</strong><br>
-  A real-time aquatic simulation exploring locomotion, behaviour, ecology and a spatial marine habitat.
+  An evolving marine habitat with autonomous schooling, mixed species, population dynamics and experimental 3D environment work.
 </p>
 
 <p align="center">
-  <a href="https://gemquota.github.io/mocean/schooling.html"><strong>▶ OPEN THE LIVE SIMULATION</strong></a>
+  <a href="https://gemquota.github.io/mocean/schooling.html"><strong>▶ OPEN THE MAIN SIMULATION</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://gemquota.github.io/mocean/development.html">Development presentation</a>
+  <a href="https://gemquota.github.io/mocean/development.html">Development blueprint</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/gemquota/mocean">Source repository</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/gemquota/mocean/actions"><img alt="CI" src="https://github.com/gemquota/mocean/actions/workflows/test.yml/badge.svg"></a>
-  <a href="https://github.com/gemquota/mocean/blob/main/ROADMAP.md">Roadmap</a>
-  ·
-  <a href="https://github.com/gemquota/mocean/blob/main/PHASE_6.md">Phase 6 engineering record</a>
+  <a href="https://github.com/gemquota/mocean/actions/workflows/test.yml"><img alt="Core tests" src="https://github.com/gemquota/mocean/actions/workflows/test.yml/badge.svg"></a>
+  <a href="https://github.com/gemquota/mocean/actions/workflows/pages.yml"><img alt="GitHub Pages deployment" src="https://github.com/gemquota/mocean/actions/workflows/pages.yml/badge.svg"></a>
 </p>
 
 ---
 
 ## The main simulation
 
-**[▶ Open Schooling · the main Mocean simulation ↗](https://gemquota.github.io/mocean/schooling.html)**
+**[▶ Launch Schooling · the main Mocean simulation](https://gemquota.github.io/mocean/schooling.html)**
 
-Schooling is the primary live simulation for Mocean: a mixed-species aquatic habitat driven by autonomous schooling and individual creature behaviour. It is published through GitHub Pages from this repository's `main` branch.
+Schooling is the primary live Mocean experience. It runs a mixed-species underwater habitat with autonomous group motion, individual variation, population controls and a growing set of marine species.
 
-The [single-creature prototype](https://gemquota.github.io/mocean/) remains available as a secondary locomotion experiment; it is not the main simulation.
+The original [single-creature swimmer](https://gemquota.github.io/mocean/) remains available as a focused locomotion prototype and engineering reference. It is not the main product.
 
-## What Mocean is
+## Project map
 
-Mocean is a full-screen aquatic simulation. The habitat and its creatures are the experience: there is no user-facing configuration dashboard. Creature movement is intended to emerge from body mechanics, inertia, resistance and behavioural intent rather than canned animation cycles.
+| Area | Location | Purpose |
+|---|---|---|
+| Main simulation | `schooling.html` | Live mixed-species schooling habitat |
+| Single-creature prototype | `index.html` | Focused locomotion and manoeuvre reference |
+| Schooling model | `src/schooling.js` | Creature state, group behaviour and habitat simulation |
+| Locomotion core | `src/core/` | Body mechanics, dynamics, intent, navigation and behaviour |
+| 3D/environment experiments | `src/phase6/` | Terrain, voxel, water, model and renderer modules |
+| Automated tests | `tests/` | Core, habitat, schooling and Phase 6 regression coverage |
+| Build/deployment workflows | `.github/workflows/` | Tests and GitHub Pages publishing |
 
-The main experience is the Schooling simulation: a mixed-species marine habitat with autonomous group motion, individual variation and population controls. The original single-creature swimmer remains available as a focused locomotion prototype.
+## Development status
 
-## Current development status
+The live Schooling habitat is the main simulation. The separate locomotion and Phase 6 engineering tracks continue to develop supporting mechanics, rendering and environment technology. Their prototypes are not automatically part of the live habitat simply because their modules or review pages exist.
 
-- **Phase 0 · Architecture and baseline:** approved.
-- **Phase 1 · True 3D locomotion foundation:** approved.
-- **Phases 2–5:** provisionally labelled *candidate complete*. This is a working status only; visual acceptance, integration checks and/or independent user confirmation remain open. It is not final phase approval.
-- **Phase 6 · Environment, seabed and water:** authorised and in progress. The current increment adds a staged 3D renderer, spatial terrain geometry and renderer-independent terrain-clearance queries. Browser visual verification and performance profiling remain important acceptance work.
-- **Phase 7 · Integration and polish:** not started.
+See the [engineering roadmap](ROADMAP.md) for phase history and task status, and [Phase 6](PHASE_6.md) for the 3D environment, seabed and water work. Status labels in those records distinguish implemented work from visual acceptance and user approval.
 
-See the [canonical roadmap](ROADMAP.md) and [Phase 6 record](PHASE_6.md) for task-level status and evidence. The [development presentation](https://gemquota.github.io/mocean/development.html) provides the visual project overview.
+## Project documentation
 
-## Engineering priorities
-
-1. Observable correctness of body deformation and resulting locomotion.
-2. Numerical stability and temporal coherence of articulated bodies and rigid-body dynamics.
-3. Preservation of already-working swimming behaviour.
-4. Real-time performance in ordinary browsers.
-5. Clear separation of gait, translation, attitude, behaviour and rendering.
-6. Honest reporting of model limitations.
-
-The environment renderer observes simulation state. It must not become an alternate owner of creature physics or conceal broken mechanics with decorative geometry.
-
-## Current architecture
-
-The repository keeps the simulation and presentation responsibilities separate:
-
-- **Creature mechanics:** body deformation, gait, fin articulation and propulsion.
-- **Translational dynamics:** forces, drag, buoyancy, velocity and position.
-- **Attitude dynamics:** moments, angular rates and 3D orientation.
-- **Behaviour:** autonomous intent and state transitions; behaviour requests motion but does not teleport creatures.
-- **Environment:** terrain, habitat features and spatial queries.
-- **Rendering:** fixed-camera presentation derived from simulation state.
-
-The Phase 6 renderer and terrain prototypes are isolated behind their own modules and tests. The existing habitat remains the regression reference while integration proceeds. The volumetric voxel study and Osmocean creature-model review are separate experiments; neither has replaced the live habitat yet.
-
-## Core project records
-
-- [Development roadmap](ROADMAP.md)
+- [Engineering roadmap](ROADMAP.md)
+- [Schooling simulation and model notes](SCHOOLING_100.md)
 - [Phase 0 architecture and coordinate conventions](PHASE_0.md)
-- [Phase 2–4 movement sequences](PHASE_2_4.md)
-- [Phase 6 environment and terrain work](PHASE_6.md)
-- [Open asset sources and licences](ASSET_SOURCES.md)
+- [Phases 2–4 movement primitives and sequences](PHASE_2_4.md)
+- [Phase 6 environment, seabed and water](PHASE_6.md)
+- [Asset sources and licences](ASSET_SOURCES.md)
 - [Tap-to-swim navigation experiment](EXPERIMENT_TAP_TO_SWIM.md)
-- [Main simulation: Schooling](schooling.html)
-- [Schooling experiment notes](SCHOOLING_100.md)
 
-## Phase 6 prototypes
+## Engineering previews
 
-- [Volumetric voxel terrain study](voxel-terrain-spike.html): signed-density seabed, Dual Contouring, caves and an overhanging arch.
-- [Creature model and animation review](creature-model-review.html): pinned Osmocean GLB assets, embedded clip inspection and licence metadata.
+These are review surfaces and experiments, not alternate main simulations:
 
-These pages are engineering review surfaces, not alternate canonical habitat builds.
+- [3D renderer and terrain spike](phase6-spike.html)
+- [Volumetric voxel terrain spike](voxel-terrain-spike.html)
+- [Voxel terrain study](voxel-terrain-study.html)
+- [Creature model and animation review](creature-model-review.html)
+- [Osmocean marine model study](osmocean-model-study.html)
+- [Development blueprint](development.html)
 
 ## Tests and local development
 
-Use Node 22 or later for the built-in test runner:
+Requirements: Node.js 22 or later.
+
+Run the automated suite:
 
 ```sh
 npm test
 ```
 
-To serve the static project locally:
+Serve the static site locally from the repository root:
 
 ```sh
 python -m http.server 8000
 ```
 
-Then open [http://localhost:8000](http://localhost:8000).
+Then open [http://localhost:8000](http://localhost:8000). The main simulation is at `/schooling.html`.
+
+## Deployment
+
+GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow stages a pinned Quaternius animated-fish bundle and its CC0 licence into the deployment artifact. Core tests run separately through [test.yml](.github/workflows/test.yml).
 
 ## Scope and model limitations
 
-Mocean uses biomechanical and ecological approximations. It is not a validated animal model, calibrated marine-ecology model or computational fluid-dynamics solver. Hydrodynamic and ecological coefficients are phenomenological; tests establish software and kinematic properties, not biological realism. Visual inspection, regression comparison and performance profiling remain necessary alongside automated tests.
+Mocean is an experimental real-time simulation, not a validated animal model, calibrated marine-ecology model or computational fluid-dynamics solver. Hydrodynamic and ecological coefficients are phenomenological approximations. Automated tests establish software and selected kinematic properties, not biological realism. Visual inspection, regression comparison and performance profiling remain necessary.
 
 ---
 
