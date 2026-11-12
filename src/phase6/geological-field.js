@@ -56,7 +56,10 @@ export function createGeologicalField({
     width:2.8+random()*2.2,depth:3.5+random()*2.8
   }));
   const caves=Array.from({length:caveCount},(_,i)=>{
-    const points=makePath(random,bounds,8,t=>baseDepth-.6-Math.sin(t*Math.PI)*1.7,
+    // Extend the cave centre-lines beyond the study bounds so passages have
+    // genuine cut-through mouths rather than sealed spherical end caps.
+    const caveBounds={...bounds,minX:bounds.minX-10,maxX:bounds.maxX+10};
+    const points=makePath(random,caveBounds,10,t=>baseDepth+3.5-Math.sin(t*Math.PI)*4,
       (i-(caveCount-1)*.5)*span*.16);
     return Object.freeze({id:'cave-'+i,points,radius:1.25+random()*.7,
       chamber:Object.freeze({x:points[4].x,y:points[4].y,z:points[4].z,radius:2.8+random()*1.2})});
