@@ -114,6 +114,7 @@ function buildScene(count){
  phaseData=new Float32Array(count);
  for(let i=0;i<count;i++)phaseData[i]=(i/count)*Math.PI*2;
  phaseAttribute=new THREE.InstancedBufferAttribute(phaseData,1);
+ if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU')phaseBuffer=instancedArray(phaseData,'float');
  let material;
  if(activeMode==='webgl-cpu')material=createWebGLMaterial(phaseAttribute);
  else material=createNodeMaterial(activeMode==='webgpu-compute'&&backendLabel==='WebGPU');
@@ -126,7 +127,6 @@ function buildScene(count){
  }
  mesh.instanceMatrix.needsUpdate=true;scene.add(mesh);
  if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU'){
-  phaseBuffer=instancedArray(phaseData,'float');
   phaseDelta=uniform(0);
   const value=phaseBuffer.element(instanceIndex);
   computeNode=Fn(()=>{value.assign(value.add(phaseDelta));})().compute(count);
@@ -169,7 +169,7 @@ function report(now){
 }
 function tick(now){
  if(!running)return;
- const dt=Math.min(.05,Math.max(0,(now-lastTime)/1000));lastTime=now;
+ const frameInterval=Math.max(0,now-lastTime),dt=Math.min(.05,frameInterval/1000);lastTime=now;
  const elapsed=now-startedAt;
  const updating=performance.now();
  if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU'){
@@ -181,7 +181,7 @@ function tick(now){
  }
  const updateMs=performance.now()-updating;
  const rendering=performance.now();renderer.render(scene,camera);const renderMs=performance.now()-rendering;
- if(elapsed>=WARMUP_MS){frameSamples.push(now-lastTime+dt*1000);updateSamples.push(updateMs);renderSamples.push(renderMs);}
+ if(elapsed>=WARMUP_MS){frameSamples.push(frameInterval);updateSamples.push(updateMs);renderSamples.push(renderMs);}
  if(now-lastReport>500){report(now);lastReport=now;}
 }
 pauseButton.addEventListener('click',()=>{running=!running;pauseButton.textContent=running?'Pause':'Resume';if(running){lastTime=performance.now();renderer.setAnimationLoop(tick);}else renderer.setAnimationLoop(null);});
