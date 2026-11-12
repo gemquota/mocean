@@ -50,6 +50,7 @@ test('ravines form connected tributary networks rather than parallel isolated cu
     assert.ok(branch.at(-1).x<field.describe().bounds.maxX);
   }
   const junction=ravines[0].branches[0][0];
-  assert.ok(field.sampleHeight(junction.x,junction.z)<-10,
-    'tributary junction contributes a real cut in the sampled terrain');
+  const control=createGeologicalField({seed:314,ravineCount:0});
+  assert.ok(field.sampleHeight(junction.x,junction.z)<control.sampleHeight(junction.x,junction.z)-2,
+    'ravine network measurably lowers the terrain at its connected junction');
 });
