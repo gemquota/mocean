@@ -67,7 +67,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ### P6-3 · Open-source asset integration
 
-**Source shortlist started:** `ASSET_SOURCES.md` records Poly Haven's CC0 licence and four reviewed rock/cliff candidates, including triangle counts and download-size concerns. No binary asset has been downloaded or integrated yet.
+**Asset pipeline established:** `ASSET_SOURCES.md` records reviewed environment-asset sources and licence constraints. The Pages workflow stages the pinned Quaternius Animated Fish Bundle (35 GLBs with its CC0 licence); selected models are mapped into the live habitat's Three.js overlay. Environment props and materials still require individual licence review, optimisation and visual acceptance.
 
 - [x] Identify a preferred CC0 source and verify its redistribution terms (`https://polyhaven.com/license`).
 - [x] Record initial model/texture candidates and reject raw assets that exceed a sensible browser budget (`ASSET_SOURCES.md`).
@@ -111,7 +111,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 - [ ] Verify no startup freeze, blank canvas, WebGL context loss loop or animation fault.
 - [ ] Measure frame time and memory at representative populations on ordinary hardware.
 - [ ] Capture before/after visual evidence and inspect it at desktop and mobile aspect ratios.
-- [ ] User independently reviews the deployed feature branch before any merge or phase completion claim.
+- [ ] User independently reviews the deployed main Schooling habitat at desktop and mobile sizes before Phase 6 completion.
 
 ## Terrain geology iteration · 12 November 2026
 
