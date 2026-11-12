@@ -4,9 +4,9 @@
  * scheduling, cache lifetime and Three.js resource disposal.
  */
 export const TERRAIN_CHUNK_SIZE = 32;
-export const TERRAIN_STREAM_RADIUS = 2;
-export const TERRAIN_PREFETCH_RADIUS = 3;
-export const TERRAIN_MAX_CHUNKS = 49;
+export const TERRAIN_STREAM_RADIUS = 3;
+export const TERRAIN_PREFETCH_RADIUS = 4;
+export const TERRAIN_MAX_CHUNKS = 81;
 
 export function selectTerrainChunks({
   x = 0, z = 0, forwardX = 0, forwardZ = 0,
