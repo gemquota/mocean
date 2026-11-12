@@ -13,6 +13,7 @@ export const MARINE_MODEL_BY_SPECIES = Object.freeze(Object.fromEntries(
   Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.id])
 ));
 export const MARINE_MODEL_IDS = Object.freeze([...new Set(Object.values(MARINE_MODEL_BY_SPECIES))]);
+const GOBKIT_MASTER_TIMELINE_MODELS = new Set(['jellyfish','seal','whale']);
 export const MARINE_MODEL_ORIENTATION = Object.freeze(Object.fromEntries(
   Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.orientation ?? 'horizontal'])
 ));
@@ -62,7 +63,9 @@ export class OsmoceanMarineModels {
     let mixer=null,swimData=null,phase=0;
     if(animations.length){
       mixer=new this.THREE.AnimationMixer(visual);
-      const clip=animations.find(item=>/swim|idle|move/i.test(item.name))??animations[0];
+      const clip=GOBKIT_MASTER_TIMELINE_MODELS.has(modelId)
+        ?this.THREE.AnimationUtils.subclip(animations[0],'idle',0,29,24)
+        :(animations.find(item=>/swim|idle|move/i.test(item.name))??animations[0]);
       mixer.clipAction(clip).play();
     }else if(species==='dolphin'){
       swimData=applySwimMaterial(visual,'dolphin');
