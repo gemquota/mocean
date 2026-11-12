@@ -42,16 +42,14 @@ test('ravines form connected tributary networks rather than parallel isolated cu
   const {ravines}=field.describe();
   assert.ok(ravines.every(r=>r.branches.length===1));
   for(const ravine of ravines) {
-    const branch=ravine.branches[0];
-    assert.equal(branch[0].x,ravine.points[branch === ravine.branches[0] ? ravine.points.indexOf(
-      ravine.points.reduce((best,p)=>Math.hypot(p.x-branch[0].x,p.z-branch[0].z)<
-        Math.hypot(best.x-branch[0].x,best.z-branch[0].z)?p:best)
-    ) : 0].x);
+    const branch=ravine.branches[0],junction=ravine.points[ravine.junctionIndex];
+    assert.equal(branch[0].x,junction.x);
+    assert.equal(branch[0].z,junction.z);
     assert.ok(branch.length>=4);
     assert.ok(branch.at(-1).x>field.describe().bounds.minX);
     assert.ok(branch.at(-1).x<field.describe().bounds.maxX);
   }
-  const r=ravines[0],junction=r.branches[0][0];
+  const junction=ravines[0].branches[0][0];
   assert.ok(field.sampleHeight(junction.x,junction.z)<-10,
     'tributary junction contributes a real cut in the sampled terrain');
 });
