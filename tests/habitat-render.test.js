@@ -10,8 +10,10 @@ assert.ok(match, 'habitat page should contain its module script');
 const script = match[1].replace(/^import .*?;\s*$/gm, '');
 
 test('habitat browser module parses and initializes every fish before rendering', () => {
+  assert.match(html, /from '\.\/src\/phase6\/animated-species-filter\.js'/);
+  assert.match(html, /from '\.\/src\/phase6\/schooling-creature-renderer\.js'/);
   assert.doesNotThrow(() => new vm.Script(script), 'browser module should remain syntactically valid');
-  const created = script.indexOf('let school=createSchool(150)');
+  const created = script.indexOf('let school=createSchool(150,73421,{speciesPercentages:speciesMix,worldSize})');
   const initialized = script.indexOf('initialiseFishVisualState(school)');
   const rendered = script.indexOf('function render()');
   assert.ok(created >= 0 && initialized > created && initialized < rendered, 'initial school gait state must be initialized before render');
@@ -103,7 +105,7 @@ test('one creature renderer fault cannot stop the habitat frame or hide every la
   assert.match(script, /for\(const fish of ordered\)\{[\s\S]*?try \{ drawFish\(fish\); \}[\s\S]*?catch\(error\)/);
   assert.match(script, /const renderFaults=new Map\(\)/);
   assert.match(script, /RENDER WARN/);
-  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\)\+' CREATURES · 30 SPECIES/);
+  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*ANIMATED SPECIES/);
 });
 
 test('coral renderer reads terrain-height anchors from its precomputed colony collection', () => {
@@ -125,7 +127,7 @@ test('30-species mix includes three new fish with ecology-adjusted weights', () 
   assert.match(src, /moorishIdol: 0\.20/);
   assert.match(src, /barracuda: 3\.2/);
   assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
-  assert.match(html, /30 SPECIES/);
+  assert.match(html, /7 ANIMATED SPECIES/);
 });
 
 

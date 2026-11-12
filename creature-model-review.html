@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06151d">
+<title>Mocean · Creature Model Review</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06151d;color:#d7eee7;font:11px ui-monospace,SFMono-Regular,Consolas,monospace}canvas{display:block;width:100%;height:100%}.panel{position:fixed;z-index:2;top:16px;left:16px;width:min(360px,calc(100vw - 32px));padding:14px;border:1px solid #8acbb53d;border-radius:6px;background:#061a22e8;backdrop-filter:blur(10px)}h1{margin:0 0 12px;color:#a6e5ce;font-size:12px;letter-spacing:.15em;font-weight:600}.field{display:grid;gap:6px;margin:10px 0}.field label,.meta{color:#9bbab5a8;font-size:9px;letter-spacing:.1em}.field select{width:100%;padding:9px;background:#0b2831;border:1px solid #31565b;border-radius:4px;color:#d7eee7;font:10px ui-monospace}.actions{display:flex;gap:7px}.actions button{flex:1;padding:8px;background:#12353b;border:1px solid #46736e;border-radius:4px;color:#b9ead5;font:9px ui-monospace;letter-spacing:.08em}.meta{white-space:pre-line;line-height:1.8;margin-top:12px;overflow-wrap:anywhere}.meta strong{color:#b9ead5;font-weight:500}.footer{position:fixed;bottom:14px;left:16px;right:16px;text-align:right;color:#9bbab57a;font-size:9px;letter-spacing:.08em;pointer-events:none}@media(max-width:600px){.panel{top:10px;left:10px;width:min(330px,calc(100vw - 20px));padding:11px}.footer{bottom:9px;font-size:8px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+<section class="panel">
+<h1>OSMOCEAN / CREATURE ASSET REVIEW</h1>
+<div class="field"><label for="model">MODEL</label><select id="model"><option>Loading model catalogues…</option></select></div>
+<div class="field"><label for="clip">ANIMATION CLIP</label><select id="clip" disabled><option>No embedded clips</option></select></div>
+<div class="actions"><button id="play">PAUSE ANIMATION</button><button id="reset">RESET VIEW</button></div>
+<div class="meta" id="meta">Loading pinned model assets and licence catalogues…</div>
+</section>
+<div class="footer">DRAG TO ORBIT · SCROLL TO ZOOM · STATIC MODELS ARE NOT MISLABELLED AS ANIMATED</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { applySwimMaterial, updateSwimUniforms } from './src/phase6/polyfish-swim-material.js';
+
+const canvas=document.querySelector('#view');
+const select=document.querySelector('#model');
+const clipSelect=document.querySelector('#clip');
+const meta=document.querySelector('#meta');
+const playButton=document.querySelector('#play');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x061a24);
+scene.fog=new THREE.FogExp2(0x061a24,.018);
+const camera=new THREE.PerspectiveCamera(42,1,.1,100);
+camera.position.set(0,1.2,10);
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1;
+scene.add(new THREE.HemisphereLight(0xb8e8f0,0x142b2d,1.65));
+const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(-4,8,7);scene.add(key);
+const fill=new THREE.DirectionalLight(0x4d9eac,.8);fill.position.set(5,2,-6);scene.add(fill);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);
+const floor=new THREE.GridHelper(12,24,0x24515a,0x17353e);floor.position.y=-2.7;scene.add(floor);
+const loader=new GLTFLoader();
+let entries=[],currentRoot=null,mixer=null,swimData=null,elapsed=0,playing=true,selectionVersion=0;
+let clips=[];
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);resize();
+
+function setClip(index){
+ if(!mixer||!clips.length)return;
+ mixer.stopAllAction();
+ const clip=clips[index]??clips[0];
+ mixer.clipAction(clip).reset().play();
+ clipSelect.value=String(Math.max(0,clips.indexOf(clip)));
+}
+async function loadEntry(entry){
+ const version=++selectionVersion;
+ meta.textContent='Loading '+entry.name+'…';
+ if(mixer)mixer.stopAllAction();
+ mixer=null;swimData=null;clips=[];
+ if(currentRoot){scene.remove(currentRoot);currentRoot=null;}
+ const gltf=await loader.loadAsync(entry.url);
+ if(version!==selectionVersion)return;
+ const root=new THREE.Group();
+ const visual=gltf.scene;
+ visual.traverse(node=>{
+  if((node.isMesh||node.isSkinnedMesh)&&node.material){
+   node.castShadow=true;node.receiveShadow=true;
+   const mats=Array.isArray(node.material)?node.material:[node.material];
+   for(const mat of mats){if('roughness'in mat)mat.roughness=Math.max(.3,mat.roughness??.7);}
+  }
+ });
+ visual.updateMatrixWorld(true);
+ const bounds=new THREE.Box3().setFromObject(visual);
+ const size=bounds.getSize(new THREE.Vector3());
+ const centre=bounds.getCenter(new THREE.Vector3());
+ visual.position.sub(centre);
+ const maxExtent=Math.max(size.x,size.y,size.z,.001);
+ visual.scale.setScalar(5/maxExtent);
+ root.add(visual);
+ scene.add(root);
+ currentRoot=root;
+ clips=gltf.animations??[];
+ if(clips.length){
+  mixer=new THREE.AnimationMixer(visual);
+  playButton.disabled=false;
+  playButton.textContent='PAUSE ANIMATION';
+  playing=true;
+  clips.forEach((clip,i)=>{const option=document.createElement('option');option.value=String(i);option.textContent=clip.name||('Clip '+(i+1));clipSelect.append(option);});
+  clipSelect.disabled=false;
+  const preferred=clips.findIndex(clip=>/swim|idle|move/i.test(clip.name));
+  setClip(preferred>=0?preferred:0);
+ }else{
+  playButton.disabled=entry.kind!=='polyfish';
+  playButton.textContent=entry.kind==='polyfish'?'PAUSE PROCEDURAL SWIM':'NO ANIMATION';
+  playing=true;
+  clipSelect.replaceChildren(new Option('No embedded clips',''));
+  clipSelect.disabled=true;
+  if(entry.kind==='polyfish')swimData=applySwimMaterial(visual,'fish');
+ }
+ const sizeLabel=size.toArray().map(v=>v.toFixed(2)).join(' × ');
+ const animationLabel=clips.length?clips.map(clip=>clip.name||'unnamed clip').join(', '):entry.kind==='polyfish'?'No baked clip · Osmocean procedural vertex-swim shader':'Static posed mesh · no rig or animation';
+ const provenance=entry.aiGenerated?'AI-generated source mesh · inspect silhouette and topology before production use':'';
+ meta.textContent=[entry.name,entry.kind.toUpperCase()+' · '+sizeLabel+' source units',animationLabel,provenance,'Licence: '+entry.license,'Source: '+entry.source].filter(Boolean).join('\n');
+ controls.target.set(0,0,0);
+ camera.position.set(0,1.2,10);
+ controls.update();
+}
+async function initialise(){
+ const paths=[
+  './assets/models/osmocean/animated/catalog.json',
+  './assets/models/osmocean/static/catalog.json',
+  './assets/models/osmocean/polyfish/catalog.json'
+ ];
+ const results=await Promise.allSettled(paths.map(async path=>{
+  const response=await fetch(path);
+  if(!response.ok)throw new Error(path+' · HTTP '+response.status);
+  return response.json();
+ }));
+ const warnings=results.map((result,index)=>result.status==='rejected'?paths[index]+': '+result.reason.message:null).filter(Boolean);
+ const animated=results[0].status==='fulfilled'?results[0].value:{species:[]};
+ const staticModels=results[1].status==='fulfilled'?results[1].value:{species:[]};
+ const polyfish=results[2].status==='fulfilled'?results[2].value:null;
+ entries=[
+  ...(animated.species??[]).map(item=>({name:item.name,kind:'animated',license:item.license,source:'Quaternius Animated Fish Bundle',url:'./assets/models/osmocean/animated/'+item.file})),
+  ...(staticModels.species??[]).map(item=>({name:item.name,kind:'static',license:item.license,source:'3DAssets.dev · '+item.id,aiGenerated:item.aiGenerated,url:'./assets/models/osmocean/static/'+item.file})),
+  ...(polyfish?[{name:polyfish.name,kind:'polyfish',license:polyfish.license,source:'unclemattmakes/polyfish',url:'./assets/models/osmocean/polyfish/'+polyfish.file}]:[])
+ ];
+ if(!entries.length)throw new Error('No model catalogues were available. '+warnings.join(' | '));
+ select.replaceChildren();
+ const groups=[['animated','ANIMATED / RIGGED'],['static','STATIC / CC0'],['polyfish','PROCEDURAL SWIM']];
+ for(const [kind,label] of groups){
+  const groupEntries=entries.filter(entry=>entry.kind===kind);
+  if(!groupEntries.length)continue;
+  const group=document.createElement('optgroup');group.label=label;
+  groupEntries.forEach(entry=>{
+   const option=document.createElement('option');option.value=String(entries.indexOf(entry));option.textContent=entry.name;group.append(option);
+  });
+  select.append(group);
+ }
+ await loadEntry(entries[0]);
+ if(warnings.length)meta.textContent+='\nPartial asset intake: '+warnings.join(' | ');
+}
+select.addEventListener('change',()=>loadEntry(entries[Number(select.value)]).catch(error=>{meta.textContent='Model load failed: '+error.message;}));
+clipSelect.addEventListener('change',()=>setClip(Number(clipSelect.value)));
+playButton.addEventListener('click',()=>{playing=!playing;playButton.textContent=playing?'PAUSE ANIMATION':'PLAY ANIMATION';});
+document.querySelector('#reset').addEventListener('click',()=>{controls.reset();if(currentRoot){camera.position.set(0,1.2,10);controls.target.set(0,0,0);controls.update();}});
+initialise().catch(error=>{meta.textContent='Asset catalogue failed: '+error.message;});
+const clock=new THREE.Clock();
+function frame(){
+ requestAnimationFrame(frame);
+ const dt=Math.min(clock.getDelta(),.05);elapsed+=dt;
+ if(playing&&mixer)mixer.update(dt);
+ if(playing&&swimData)updateSwimUniforms(swimData,elapsed*5.34,1,false);
+ controls.update();renderer.render(scene,camera);
+}
+frame();
+</script>
+</body>
+</html>
