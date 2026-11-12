@@ -72,18 +72,18 @@ export function createGeologicalField({
     // Extend the cave centre-lines beyond the study bounds so passages have
     // genuine cut-through mouths rather than sealed spherical end caps.
     const caveBounds={...bounds,minX:bounds.minX-10,maxX:bounds.maxX+10};
-    const points=makePath(random,caveBounds,10,t=>baseDepth+3.5-Math.sin(t*Math.PI)*4,
+    const points=makePath(random,caveBounds,10,t=>baseDepth-4.4-Math.sin(t*Math.PI)*.5,
       (i-(caveCount-1)*.5)*span*.16);
     const junction=points[5],direction=i%2===0?1:-1;
     const branchEndZ=clamp(junction.z+direction*7,bounds.minZ+3,bounds.maxZ-3);
     const branch=Object.freeze([
       junction,
-      Object.freeze({x:junction.x+2.5,y:junction.y-.25,z:mix(junction.z,branchEndZ,.35)}),
-      Object.freeze({x:junction.x+5.5,y:junction.y-.65,z:mix(junction.z,branchEndZ,.72)}),
-      Object.freeze({x:junction.x+8,y:junction.y-1,z:branchEndZ})
+      Object.freeze({x:junction.x+2.5,y:junction.y-.2,z:mix(junction.z,branchEndZ,.35)}),
+      Object.freeze({x:junction.x+5.5,y:junction.y-.45,z:mix(junction.z,branchEndZ,.72)}),
+      Object.freeze({x:junction.x+8,y:junction.y-.7,z:branchEndZ})
     ]);
-    return Object.freeze({id:'cave-'+i,points,branches:Object.freeze([branch]),radius:1.25+random()*.7,
-      chamber:Object.freeze({x:junction.x,y:junction.y,z:junction.z,radius:2.8+random()*1.2})});
+    return Object.freeze({id:'cave-'+i,points,branches:Object.freeze([branch]),radius:1.25+random()*.55,
+      chamber:Object.freeze({x:junction.x,y:junction.y,z:junction.z,radius:2.5+random()*.45})});
   });
   const pathDistance=(x,z,points)=>{
     let d=Infinity;
