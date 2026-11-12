@@ -26,6 +26,9 @@ test('mixed-species habitat creates 150 independent agents by default', () => {
   assert.ok(sizeSample.some(f => f.species === 'turtle'), 'turtles should be present');
   assert.ok(sizeSample.some(f => f.species === 'jellyfish'), 'jellyfish should be present');
   assert.ok(sizeSample.some(f => f.species === 'sandEel'), 'sand eels should be present');
+  assert.ok(sizeSample.some(f => f.species === 'seahorse'), 'seahorses should be present');
+  assert.ok(sizeSample.some(f => f.species === 'seaDragon'), 'leafy seadragons should be present');
+  assert.ok(sizeSample.some(f => f.species === 'anglerfish'), 'anglerfish should be present');
   assert.ok(sizeSample.some(f => f.species === 'lobster'));
   const eels=school.fish.filter(f => f.species === 'eel');
   const benthic=school.fish.filter(f => f.species === 'crab' || f.species === 'lobster');
@@ -98,7 +101,7 @@ test('100-fish school remains finite and speed-bounded over sustained simulation
   assert.ok(metrics.averageNeighbours > 0);
 });
 
-test('fifteen species have distinct collision envelopes and benthic species spawn on the seabed', () => {
+test('thirty-three species have distinct collision envelopes and benthic species spawn on the seabed', () => {
   assert.equal(SCHOOLING_FISH_SCALE, 0.25);
   assert.ok(SCHOOLING_COLLISION.halfLength > 0.18 && SCHOOLING_COLLISION.halfLength < 0.23);
   assert.ok(SCHOOLING_COLLISION.radius > 0.06 && SCHOOLING_COLLISION.radius < 0.09);
@@ -337,7 +340,7 @@ test('moray gait produces a broad, pronounced travelling lateral wave', () => {
   assert.ok(activeNodes >= 7, 'the lateral bend should involve much of the trunk');
 });
 
-test('species mix targets regular and dedicated schooling fish, eels, rays, sharks, reef fauna and new turtle species', () => {
+test('species mix targets regular and dedicated schooling fish, eels, rays, sharks, reef fauna and new modelled species', () => {
   const school = createSchool(5000, 73421);
   const share = species => school.fish.filter(agent => agent.species === species).length / school.fish.length;
   for (const [species, target] of Object.entries(SCHOOLING_SPECIES_PERCENTAGES).map(([name, percentage]) => [name, percentage / 100])) {
@@ -435,7 +438,7 @@ test('default allocation retains at least one individual of every enabled specie
 
 test('species prevalence blends model volume, adult mass and ecological prevalence equally', () => {
   const species = Object.keys(SCHOOLING_SPECIES_VOLUME);
-  assert.equal(species.length, 30);
+  assert.equal(species.length, 33);
   for (const key of species) {
     assert.ok(SCHOOLING_SPECIES_ADULT_MASS_KG[key] > 0);
     assert.ok(SCHOOLING_SPECIES_ECOLOGY[key] > 0);
@@ -478,4 +481,27 @@ test('all species stay inside the inner 80 percent of the configured world on ev
   stepSchool(single, 1 / 60);
   assert.ok(fish.p.x <= edge.x, 'an externally displaced fish must be pulled back inside the safe world');
   assert.ok(fish.v.x < 0, 'a fish hitting the boundary must receive an inward velocity response');
+});
+
+test('seahorses and leafy seadragons retain slow kelp-edge drift and bounded motion', () => {
+  const seahorses=createSchool(120,73421,{speciesPercentages:{seahorse:100}}).fish;
+  const seadragons=createSchool(120,73421,{speciesPercentages:{seaDragon:100}}).fish;
+  assert.ok(seahorses.every(agent=>agent.p.y>-3&&agent.p.y<-0.2));
+  assert.ok(seadragons.every(agent=>agent.p.y>-4.9&&agent.p.y<-1.7));
+  const school={...createSchool(0),fish:[...seahorses,...seadragons]};
+  for(let i=0;i<600;i++)stepSchool(school,1/60);
+  assert.ok(school.fish.every(agent=>[agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
+  assert.ok(seahorses.every(agent=>Math.hypot(agent.v.x,agent.v.y,agent.v.z)<=.241));
+  assert.ok(seadragons.every(agent=>Math.hypot(agent.v.x,agent.v.y,agent.v.z)<=.321));
+});
+
+test('anglerfish maintain slow deep-water station keeping with bounded swimming speed',()=>{
+  const school=createSchool(120,73421,{speciesPercentages:{anglerfish:100}});
+  const fish=school.fish;
+  assert.ok(fish.every(agent=>agent.p.y>-5.6&&agent.p.y<-4.7));
+  for(let i=0;i<900;i++)stepSchool(school,1/60);
+  assert.ok(fish.every(agent=>[agent.p.x,agent.p.y,agent.p.z,agent.v.x,agent.v.y,agent.v.z].every(Number.isFinite)));
+  assert.ok(fish.every(agent=>Math.hypot(agent.v.x,agent.v.y,agent.v.z)<=.361));
+  const meanY=fish.reduce((sum,agent)=>sum+agent.p.y,0)/fish.length;
+  assert.ok(meanY>-6.2&&meanY<-4.7);
 });

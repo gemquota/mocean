@@ -1,3 +1,4 @@
+import { classifyHabitatBiome } from './biomes.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const hash=(x,z,seed)=>{let h=Math.imul(Math.floor((x+91.7)*127.1),374761393)^Math.imul(Math.floor((z+53.1)*269.9),668265263)^seed;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295;};
 const normalAt=(field,x,y,z)=>{
@@ -52,8 +53,8 @@ export function createVegetationLayout(field,worldSize={x:41,z:31},seed=73421){
   for(let x=-halfX+1.2;x<halfX-1;x+=2.15){
    const r=hash(x,z,seed),surface=sampleTerrainTop(field,x+(r-.5)*.36,z+(hash(z,x,seed+7)-.5)*.36);
    if(!surface||surface.y<-11.1||surface.y>-7.2)continue;
-   if(surface.normal.y>.94&&r>.22&&grass.length<88)grass.push({...surface,id:grass.length});
-   else if(surface.normal.y>.68&&surface.normal.y<.94&&r>.36&&kelp.length<48)kelp.push({...surface,id:kelp.length});
+   if(surface.normal.y>.94&&r>.22&&grass.length<112)grass.push({...surface,id:grass.length});
+   else if(surface.normal.y>.68&&surface.normal.y<.94&&r>.36&&kelp.length<64)kelp.push({...surface,id:kelp.length});
   }
  }
  const yLevels=[-11.1,-10.1,-9.1,-8.1,-7.2],step=1.9;
@@ -67,13 +68,30 @@ export function createVegetationLayout(field,worldSize={x:41,z:31},seed=73421){
      const key=[Math.round(candidate.x*1.25),Math.round(candidate.y*1.25),Math.round(candidate.z*1.25)].join(':');
      if(seen.has(key))continue;seen.add(key);
      walls.push({...candidate,id:walls.length});
-     if(walls.length>=34)break;
+     if(walls.length>=44)break;
     }
-    if(walls.length>=34)break;
+    if(walls.length>=44)break;
    }
-   if(walls.length>=34)break;
+   if(walls.length>=44)break;
   }
-  if(walls.length>=34)break;
+  if(walls.length>=44)break;
  }
- return {grass,kelp,walls};
+ // Additional growth forms reuse validated surface anchors, avoiding another
+ // expensive pass over the voxel field during layout construction.
+ const sponges=grass.filter(anchor=>anchor.id%5===0).map(anchor=>({
+  ...anchor,biome:classifyHabitatBiome(anchor.x,anchor.z,{y:anchor.y,normalY:anchor.normal.y}),
+  radius:.16+hash(anchor.x,anchor.z,seed+31)*.16,height:.38+hash(anchor.z,anchor.x,seed+37)*.62
+ }));
+ const softCoral=kelp.filter(anchor=>anchor.id%3===0).map(anchor=>({
+  ...anchor,biome:classifyHabitatBiome(anchor.x,anchor.z,{y:anchor.y,normalY:anchor.normal.y}),
+  height:1.1+hash(anchor.x,anchor.z,seed+41)*1.25
+ }));
+ const seaFans=walls.filter(anchor=>anchor.id%3===0&&anchor.normal.y<.52).map(anchor=>({
+  ...anchor,biome:classifyHabitatBiome(anchor.x,anchor.z,{y:anchor.y,normalY:anchor.normal.y}),
+  height:1.3+hash(anchor.x,anchor.z,seed+47)*1.2
+ }));
+ for(const anchor of [...grass,...kelp,...walls]){
+  anchor.biome=classifyHabitatBiome(anchor.x,anchor.z,{y:anchor.y,normalY:anchor.normal.y});
+ }
+ return {grass,kelp,walls,sponges,softCoral,seaFans};
 }

@@ -16,7 +16,10 @@ test('enabled species map only to species-exact naturalistic CC0 GLBs', () => {
     spermWhale: ['sperm_whale','5860'],
     dolphin: ['bottlenose_dolphin','39330'],
     jellyfish: ['moon_jellyfish','5889'],
-    turtle: ['loggerhead_turtle','39340']
+    turtle: ['loggerhead_turtle','39340'],
+    seahorse: ['lined_seahorse','39345'],
+    seaDragon: ['leafy_seadragon','39346'],
+    anglerfish: ['anglerfish','5890']
   };
   assert.deepEqual(Object.keys(SPECIES_MODEL_MAP), Object.keys(expected));
   for (const [species,[id,assetId]] of Object.entries(expected)) {
@@ -25,7 +28,7 @@ test('enabled species map only to species-exact naturalistic CC0 GLBs', () => {
     assert.equal(getSpeciesModel(species).collection,'naturalistic');
   }
   assert.equal(getSpeciesModel('turtle').motion,'wing-wave');
-  assert.equal(Object.keys(SPECIES_MODEL_MAP).length,13);
+  assert.equal(Object.keys(SPECIES_MODEL_MAP).length,16);
 });
 
 test('species without an appropriate naturalistic model remain explicitly disabled', () => {

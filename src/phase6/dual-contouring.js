@@ -39,18 +39,38 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
     if(!Number.isFinite(d))throw new TypeError('sampleDistance returned a non-finite value');
     values[key(x,y,z,sx,sy)]=d;
   }
+  // Precompute normalized lattice gradients once and interpolate them at
+  // edge crossings. Re-sampling the signed-distance field six times for every
+  // crossing dominated worker time on detailed habitat chunks.
+  const gradients=new Float32Array(values.length*3);
+  const gradientReady=new Uint8Array(values.length);
+  const latticeGradient=index=>{
+    if(gradientReady[index])return index*3;
+    const x=index%sx,yz=(index-x)/sx,y=yz%sy,z=(yz-y)/sy;
+    const xm=Math.max(0,x-1),xp=Math.min(sx-1,x+1);
+    const ym=Math.max(0,y-1),yp=Math.min(sy-1,y+1);
+    const zm=Math.max(0,z-1),zp=Math.min(sz-1,z+1);
+    const dx=(values[key(xp,y,z,sx,sy)]-values[key(xm,y,z,sx,sy)])/((xp-xm)*step[0]||1);
+    const dy=(values[key(x,yp,z,sx,sy)]-values[key(x,ym,z,sx,sy)])/((yp-ym)*step[1]||1);
+    const dz=(values[key(x,y,zp,sx,sy)]-values[key(x,y,zm,sx,sy)])/((zp-zm)*step[2]||1);
+    const length=Math.hypot(dx,dy,dz)||1,offset=index*3;
+    gradients[offset]=dx/length;gradients[offset+1]=dy/length;gradients[offset+2]=dz/length;
+    gradientReady[index]=1;
+    return offset;
+  };
+  const gradientAt=(a,b,t)=>{
+    const ia=latticeGradient(a),ib=latticeGradient(b),blend=1-t;
+    const dx=gradients[ia]*blend+gradients[ib]*t;
+    const dy=gradients[ia+1]*blend+gradients[ib+1]*t;
+    const dz=gradients[ia+2]*blend+gradients[ib+2]*t;
+    const length=Math.hypot(dx,dy,dz)||1;
+    return [dx/length,dy/length,dz/length];
+  };
   // Multi-component dual contouring: a cell may contain more than one
   // disconnected surface patch (for example, a cave roof and floor). Keep a
   // separate QEF vertex for each connected patch instead of welding them.
   const cellEdgeIds=new Int32Array(nx*ny*nz*12);cellEdgeIds.fill(-1);
   const positions=[],normals=[];
-  const gradient=(p)=>{
-    const e=Math.min(...step)*.35;
-    const dx=sampleDistance(p[0]+e,p[1],p[2])-sampleDistance(p[0]-e,p[1],p[2]);
-    const dy=sampleDistance(p[0],p[1]+e,p[2])-sampleDistance(p[0],p[1]-e,p[2]);
-    const dz=sampleDistance(p[0],p[1],p[2]+e)-sampleDistance(p[0],p[1],p[2]-e);
-    const l=Math.hypot(dx,dy,dz)||1;return [dx/l,dy/l,dz/l];
-  };
   const faces=[
     {corners:[0,1,2,3],edges:[0,1,2,3]},
     {corners:[4,5,6,7],edges:[4,5,6,7]},
@@ -60,8 +80,9 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
     {corners:[1,2,6,5],edges:[1,10,5,9]}
   ];
   for(let z=0;z<nz;z++)for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){
+    const ids=CORNERS.map(([a,b,c])=>key(x+a,y+b,z+c,sx,sy));
     const ps=CORNERS.map(([a,b,c])=>point(x+a,y+b,z+c));
-    const ds=CORNERS.map(([a,b,c])=>values[key(x+a,y+b,z+c,sx,sy)]);
+    const ds=ids.map(index=>values[index]);
     if(ds.every(v=>v<0)||ds.every(v=>v>=0))continue;
     const crossing=EDGES.map(([ia,ib])=>(ds[ia]<0)!==(ds[ib]<0));
     const parent=Int8Array.from({length:12},(_,i)=>i);
@@ -86,7 +107,7 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
       const ata=[[0,0,0],[0,0,0],[0,0,0]],atb=[0,0,0],hits=[],ns=[];
       for(const edge of group){
         const [ia,ib]=EDGES[edge],da=ds[ia],db=ds[ib];
-        const t=clamp(da/(da-db),0,1),p=ps[ia].map((v,i)=>v+(ps[ib][i]-v)*t),n=gradient(p);
+        const t=clamp(da/(da-db),0,1),p=ps[ia].map((v,i)=>v+(ps[ib][i]-v)*t),n=gradientAt(ids[ia],ids[ib],t);
         hits.push(p);ns.push(n);
         const q=n[0]*p[0]+n[1]*p[1]+n[2]*p[2];
         for(let r=0;r<3;r++){atb[r]+=n[r]*q;for(let c=0;c<3;c++)ata[r][c]+=n[r]*n[c];}
@@ -99,7 +120,8 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
       // Multiple QEF patches can collapse to exactly collinear cell vertices at
       // sharp intersecting formations. A sub-millimetre deterministic tangential
       // nudge preserves shared topology while avoiding zero-area triangles.
-      const hash=((x*73856093)^(y*19349663)^(z*83492791)^(group[0]*2654435761))>>>0;
+      const gx=Math.round(min[0]/step[0])+x,gy=Math.round(min[1]/step[1])+y,gz=Math.round(min[2]/step[2])+z;
+      const hash=((gx*73856093)^(gy*19349663)^(gz*83492791)^(group[0]*2654435761))>>>0;
       const jitter=Math.min(...step)*.001;
       vertex[0]+=(((hash&1023)/1023)-.5)*jitter;
       vertex[1]+=((((hash>>>10)&1023)/1023)-.5)*jitter;

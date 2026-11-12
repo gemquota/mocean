@@ -1,3 +1,4 @@
+import { classifyHabitatBiome } from './biomes.js';
 import { buildDualContourSurface } from './dual-contouring.js';
 import { createHabitatVoxelField } from './voxel-field.js';
 import { seabedHeight } from '../schooling.js';
@@ -19,13 +20,39 @@ function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function shade(normal,position){
  const up=clamp(normal[1],0,1),light=Math.max(0,normal[0]*-.28+normal[1]*.82+normal[2]*.49);
  const sediment=clamp((up-.68)*2.6,0,1),height=clamp((position[1]+11.5)/5,0,1);
- const rock=[42,65,58],sand=[126,119,91],deep=[24,39,38];
- const base=rock.map((v,i)=>v*(1-sediment)+sand[i]*sediment);
- return 'rgb('+base.map((v,i)=>Math.round((v*(.68+light*.38)+deep[i]*.12)*(0.92+height*.08))).join(',')+')';
+ const biome=classifyHabitatBiome(position[0],position[2],{y:position[1],normalY:up});
+ const palettes={
+  'coral-reef':{rock:[58,75,64],sand:[139,126,94],deep:[27,43,40]},
+  'kelp-forest':{rock:[48,75,57],sand:[111,128,82],deep:[19,39,35]},
+  'seagrass-meadow':{rock:[78,82,65],sand:[153,140,105],deep:[39,49,39]},
+  'sponge-garden':{rock:[43,64,66],sand:[104,119,105],deep:[17,34,43]},
+  'rocky-ravine':{rock:[48,62,69],sand:[93,106,108],deep:[16,29,38]},
+  'open-sand':{rock:[70,75,67],sand:[145,137,108],deep:[31,43,39]}
+ };
+ const palette=palettes[biome]??palettes['open-sand'];
+ const base=palette.rock.map((v,i)=>v*(1-sediment)+palette.sand[i]*sediment);
+ return 'rgb('+base.map((v,i)=>Math.round((v*(.68+light*.38)+palette.deep[i]*.12)*(0.92+height*.08))).join(',')+')';
 }
 
 /** Draw the volumetric seabed into the habitat's fixed-camera canvas. */
-export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize){
+export function drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize,stream=null){
+ if(stream){
+  const workerState=stream.stats;
+  if(workerState.failed>0&&workerState.pending===0){
+   return drawHabitatVoxelTerrain(ctx,project,width,height,zoom,worldSize,null);
+  }
+  const streamed=stream.draw(ctx,project,width,height,zoom);
+  if(streamed.visible>0)return streamed;
+  // A temporary floor silhouette prevents a blank seabed while worker chunks
+  // are being generated; it is replaced by the shared voxel surface as soon
+  // as the first visible chunk arrives.
+  const hx=worldSize.x*.5+4,hz=worldSize.z*.5+4;
+  const corners=[project({x:-hx,y:-8.65,z:-hz}),project({x:hx,y:-8.65,z:-hz}),project({x:hx,y:-8.65,z:hz}),project({x:-hx,y:-8.65,z:hz})];
+  ctx.beginPath();ctx.moveTo(corners[0].x,corners[0].y);
+  for(let index=1;index<corners.length;index++)ctx.lineTo(corners[index].x,corners[index].y);
+  ctx.closePath();ctx.fillStyle='#263d37';ctx.fill();
+  return streamed;
+ }
  const key=[worldSize.x,worldSize.y,worldSize.z,width,height,zoom].join(':');
  if(!terrainCache||terrainCache.worldSize.x!==worldSize.x||terrainCache.worldSize.y!==worldSize.y||terrainCache.worldSize.z!==worldSize.z){
   terrainCache=createHabitatVoxelTerrain(worldSize);projectionCache=null;

@@ -2,7 +2,7 @@
 
 ## Live Schooling models
 
-The live habitat no longer uses the Quaternius or Gobkit cartoon-style models. It now stages thirteen species-matched, smooth-shaded marine GLBs from 3DAssets.dev's *Ocean Animals: Whales, Sharks and Fish* collection. The bottlenose dolphin comes from the companion *Ocean Giants: Whales, Dolphins, Sharks and Reef Life* collection.
+The live habitat no longer uses the Quaternius or Gobkit cartoon-style models. It now stages sixteen species-matched, smooth-shaded marine GLBs from two 3DAssets.dev CC0 collections: twelve from *Ocean Animals: Whales, Sharks and Fish* and four from *Ocean Giants: Whales, Dolphins, Sharks and Reef Life*.
 
 These are natural-colour, untextured, smooth-shaded posed studies, not photoreal scans. The source pages describe them as static and explicitly list no rig or baked animation. The GLBs are CC0 1.0 Universal and are staged from their stable CDN URLs by the Pages workflow.
 
@@ -21,6 +21,9 @@ These are natural-colour, untextured, smooth-shaded posed studies, not photoreal
 | Dolphin | Bottlenose dolphin | 39330 | Vertical body/tail wave |
 | Jellyfish | Moon jellyfish | 5889 | Bell pulse |
 | Turtle | Loggerhead turtle | 39340 | Procedural front-flipper wave |
+| Seahorse | Lined seahorse | 39345 | Vertical hover with subtle body pulse |
+| Leafy seadragon | Leafy seadragon | 39346 | Vertical-axis travelling body wave |
+| Anglerfish | Anglerfish | 5890 | Slow deep-water body wave |
 
 Source packs:
 
@@ -43,7 +46,7 @@ The current model catalogue is generated at deployment by `scripts/verify-natura
 
 ## Temporarily disabled species
 
-Seventeen species remain disabled because the reviewed naturalistic collections do not currently provide a suitable model and motion treatment for them: regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish, turtle and sand eel.
+Seventeen species remain disabled because the reviewed naturalistic collections do not currently provide a suitable model and motion treatment for them: regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish and sand eel.
 
 They remain in the simulation's species catalogue and behaviour code, but their prevalence is forced to zero and their controls are disabled. No Quaternius, Gobkit, static reef-study or unrelated animal stand-in is used to make them appear enabled.
 

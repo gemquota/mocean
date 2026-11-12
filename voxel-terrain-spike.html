@@ -2,111 +2,126 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06151d">
-<title>Mocean · Volumetric Voxel Terrain Study</title>
+<title>Mocean · Endless voxel terrain study</title>
 <style>
-*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06151d;color:#d7eee7;font:11px ui-monospace,SFMono-Regular,Consolas,monospace}canvas{display:block;width:100%;height:100%}#status{position:fixed;top:16px;left:18px;z-index:2;padding:11px 14px;border:1px solid #8acbb53d;border-radius:5px;background:#061a22dc;line-height:1.8;letter-spacing:.07em;pointer-events:none;backdrop-filter:blur(8px)}#status strong{color:#a6e5ce;font-weight:600}#status small{display:block;color:#9bbab5a8;font-size:9px}#hint{position:fixed;right:18px;bottom:16px;color:#9bbab57a;font-size:9px;letter-spacing:.08em;pointer-events:none;text-align:right}@media(max-width:600px){#status{top:10px;left:10px;font-size:9px}#hint{right:10px;bottom:10px;font-size:8px}}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#06151d;color:#d7eee7;font:11px ui-monospace,SFMono-Regular,Consolas,monospace;touch-action:none}canvas{display:block;width:100%;height:100%;touch-action:none}
+#status{position:fixed;top:16px;left:18px;z-index:2;padding:11px 14px;border:1px solid #8acbb53d;border-radius:5px;background:#061a22dc;line-height:1.8;letter-spacing:.07em;pointer-events:none;backdrop-filter:blur(8px)}
+#status strong{color:#a6e5ce;font-weight:600}#status small{display:block;color:#9bbab5a8;font-size:9px}
+#habitat{position:fixed;top:16px;right:18px;z-index:3;padding:10px 13px;border:1px solid #8acbb566;border-radius:5px;background:#061a22dc;color:#b9e8d8;text-decoration:none;letter-spacing:.06em;backdrop-filter:blur(8px)}
+#habitat:hover{background:#12323b}
+#hint{position:fixed;right:18px;bottom:16px;color:#b2d1c9a8;font-size:9px;letter-spacing:.08em;pointer-events:none;text-align:right;line-height:1.8}
+@media(max-width:600px){#status{top:10px;left:10px;font-size:9px;padding:8px 10px}#habitat{top:10px;right:10px;font-size:9px;padding:8px 10px}#hint{right:10px;bottom:10px;font-size:8px}}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
 </script>
 </head>
 <body>
-<div id="status"><strong>MOCEAN / VOLUMETRIC TERRAIN</strong><small id="state">Sampling signed-density field…</small></div>
-<div id="hint">DRAG TO ORBIT · PINCH / WHEEL TO ZOOM<br>DUAL CONTOURING · SINGLE-RESOLUTION PROTOTYPE</div>
-<canvas id="world"></canvas>
+<div id="status"><strong>MOCEAN / TERRAIN STREAMING STUDY</strong><small id="state">Starting terrain workers…</small></div>
+<a id="habitat" href="./schooling.html">OPEN LIVE HABITAT ↗</a>
+<div id="hint">1 FINGER / LEFT DRAG · PAN<br>2 FINGERS / RIGHT DRAG · ROTATE · PINCH TO ZOOM<br>WHEEL TO ZOOM · 32-UNIT STREAMED CHUNKS</div>
+<canvas id="world" aria-label="A procedurally generated underwater seabed viewed from above"></canvas>
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createTerrainChunkStream } from './src/phase6/streamed-voxel-terrain.js';
 
 const canvas=document.querySelector('#world');
 const state=document.querySelector('#state');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
-renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.05;
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x061a24);
-scene.fog=new THREE.FogExp2(0x092633,.012);
-const camera=new THREE.PerspectiveCamera(48,1,.1,180);
-camera.position.set(0,-1,48);
-const controls=new OrbitControls(camera,renderer.domElement);
-controls.target.set(0,-8.2,0);
-controls.enableDamping=true;
-controls.dampingFactor=.055;
-controls.minDistance=12;
-controls.maxDistance=90;
-controls.maxPolarAngle=Math.PI*.88;
-scene.add(new THREE.HemisphereLight(0x9edce3,0x132b2d,1.35));
-const key=new THREE.DirectionalLight(0xd3f1e7,2.1);
-key.position.set(-18,24,15);
-scene.add(key);
-const fill=new THREE.DirectionalLight(0x2c8da4,.7);
-fill.position.set(16,5,-18);
-scene.add(fill);
+let stream=null,controls=null,renderer=null;
+try{
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.02;
 
-function resize(){
- const width=innerWidth,height=innerHeight;
- renderer.setSize(width,height,false);
- camera.aspect=width/height;
- camera.updateProjectionMatrix();
-}
-addEventListener('resize',resize);
-resize();
+ const scene=new THREE.Scene();
+ scene.background=new THREE.Color(0x071c27);
+ // Fog hides the streamed horizon rather than exposing the edge of a finite floor.
+ scene.fog=new THREE.FogExp2(0x092b37,.026);
+ const camera=new THREE.PerspectiveCamera(48,1,.1,220);
+ camera.position.set(0,15,43);
+ controls=new OrbitControls(camera,renderer.domElement);
+ controls.target.set(0,-8.3,0);
+ controls.enableDamping=true;
+ controls.dampingFactor=.075;
+ controls.enablePan=true;
+ controls.screenSpacePanning=false;
+ // OrbitControls defaults to one-finger orbit. Reverse that for a useful touch map:
+ // one finger pans, two fingers rotate, and the two-finger pinch still dollies.
+ controls.touches.ONE=THREE.TOUCH.PAN;
+ controls.touches.TWO=THREE.TOUCH.DOLLY_ROTATE;
+ controls.minDistance=17;
+ controls.maxDistance=76;
+ controls.minPolarAngle=.12;
+ controls.maxPolarAngle=1.36;
+ controls.minAzimuthAngle=-Infinity;
+ controls.maxAzimuthAngle=Infinity;
 
-const worker=new Worker('./src/phase6/voxel-worker.js',{type:'module'});
-const started=performance.now();
-worker.addEventListener('message',event=>{
- const message=event.data;
- if(message.type==='error'){
-  state.textContent='VOXEL GENERATION FAILED · '+message.message;
-  return;
+ scene.add(new THREE.HemisphereLight(0xa8dce0,0x172d2d,1.25));
+ const key=new THREE.DirectionalLight(0xd9eee0,2.0);
+ key.position.set(-22,28,18);
+ scene.add(key);
+ const fill=new THREE.DirectionalLight(0x318ba0,.62);
+ fill.position.set(18,5,-24);
+ scene.add(fill);
+
+ function resize(){
+  const width=innerWidth,height=innerHeight;
+  renderer.setSize(width,height,false);
+  camera.aspect=width/Math.max(1,height);
+  camera.updateProjectionMatrix();
  }
- if(message.type!=='complete')return;
- const mesh=message.mesh;
- const geometry=new THREE.BufferGeometry();
- geometry.setAttribute('position',new THREE.BufferAttribute(mesh.positions,3));
- geometry.setAttribute('normal',new THREE.BufferAttribute(mesh.normals,3));
- geometry.setIndex(new THREE.BufferAttribute(mesh.indices,1));
- const colours=new Float32Array(mesh.positions.length);
- const color=new THREE.Color();
- for(let i=0;i<mesh.positions.length;i+=3){
-  const x=mesh.positions[i],y=mesh.positions[i+1],z=mesh.positions[i+2];
-  const ny=mesh.normals[i+1];
-  const slope=THREE.MathUtils.clamp(1-ny,0,1);
-  const grain=.5+.5*Math.sin(x*.72+Math.sin(z*.41)*2.1)*Math.cos(z*.61-x*.23);
-  const sediment=THREE.MathUtils.clamp((y+10.5)*.11,0,1);
-  const rock=THREE.MathUtils.clamp(slope*.95+(1-sediment)*.2,0,1);
-  color.setRGB(.095+grain*.018+rock*.055,.17+sediment*.045+rock*.07,.16+grain*.014+rock*.055);
-  colours[i]=color.r;colours[i+1]=color.g;colours[i+2]=color.b;
- }
- geometry.setAttribute('color',new THREE.BufferAttribute(colours,3));
- geometry.computeBoundingSphere();
- const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.94,metalness:.015});
- const terrain=new THREE.Mesh(geometry,material);
- terrain.receiveShadow=true;
- scene.add(terrain);
- state.textContent=mesh.vertexCount.toLocaleString()+' vertices · '+mesh.triangleCount.toLocaleString()+' triangles · '+((performance.now()-started)/1000).toFixed(2)+' s';
- const marker=document.createElement('small');
- marker.textContent='Carved tunnels · solid overhang · connected rock volume';
- document.querySelector('#status').append(marker);
- worker.terminate();
-});
-worker.postMessage({
- type:'generate',seed:6102026,
- origin:{x:-36,y:-15,z:-28},
- cells:{x:72,y:27,z:56},
- cellSize:1
-});
+ addEventListener('resize',resize);
+ resize();
 
-function animate(){
+ stream=createTerrainChunkStream({
+  THREE,scene,workerCount:2,chunkSize:32,radius:3,prefetchRadius:4,maxChunks:81,seed:6102026,
+  onUpdate:stats=>{
+   state.textContent=stats.loaded+' chunks ready · '+stats.pending+' queued / generating · '+stats.visible+' in view';
+  }
+ });
+
+ const forward=new THREE.Vector3();
+ let lastStreamUpdate=0;
+ function updateStream(now){
+  if(now-lastStreamUpdate<140)return;
+  lastStreamUpdate=now;
+  camera.getWorldDirection(forward);
+  stream.update({
+   x:controls.target.x,z:controls.target.z,
+   forwardX:forward.x,forwardZ:forward.z
+  });
+ }
+
+ function keepCameraAboveSeabed(){
+  // The generated seabed tops out close to y=-7. Keep the camera rig above it
+  // even when a pan gesture tries to drag the target below the terrain.
+  const minimumCameraY=-3.5;
+  if(camera.position.y<minimumCameraY){
+   const lift=minimumCameraY-camera.position.y;
+   camera.position.y+=lift;
+   controls.target.y+=lift;
+  }
+ }
+
+ updateStream(0);
+ function animate(now){
+  requestAnimationFrame(animate);
+  controls.update();
+  keepCameraAboveSeabed();
+  updateStream(now);
+  renderer.render(scene,camera);
+ }
  requestAnimationFrame(animate);
- controls.update();
- renderer.render(scene,camera);
+ addEventListener('pagehide',()=>{stream?.dispose();renderer?.dispose();},{once:true});
+}catch(error){
+ state.textContent='WEBGL / WORKER INITIALISATION FAILED · '+String(error?.message??error);
+ console.error(error);
 }
-animate();
 </script>
 </body>
 </html>

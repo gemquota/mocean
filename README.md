@@ -61,7 +61,7 @@ See the [engineering roadmap](ROADMAP.md) for phase history and task status, and
 These are review surfaces and experiments, not alternate main simulations:
 
 - [3D renderer and terrain spike](phase6-spike.html)
-- [Volumetric voxel terrain spike](voxel-terrain-spike.html)
+- [Endless voxel terrain streaming study](voxel-terrain-spike.html)
 - [Voxel terrain study](voxel-terrain-study.html)
 - [Creature model and animation review](creature-model-review.html)
 - [Naturalistic marine model review](creature-model-review.html)
@@ -87,7 +87,7 @@ Then open [http://localhost:8000](http://localhost:8000). The main simulation is
 
 ## Deployment
 
-GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow downloads and validates thirteen CC0 naturalistic marine GLBs from 3DAssets.dev, then generates a model catalogue before deployment. It no longer stages the Quaternius or Gobkit cartoon model packs. Core tests run separately through [test.yml](.github/workflows/test.yml).
+GitHub Pages deploys the repository's `main` branch through [pages.yml](.github/workflows/pages.yml). The workflow downloads and validates sixteen CC0 naturalistic marine GLBs from 3DAssets.dev, then generates a model catalogue before deployment. It no longer stages the Quaternius or Gobkit cartoon model packs. Core tests run separately through [test.yml](.github/workflows/test.yml).
 
 ## Scope and model limitations
 
