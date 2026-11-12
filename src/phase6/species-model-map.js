@@ -15,7 +15,10 @@ export const SPECIES_MODEL_MAP = Object.freeze({
   tuna: { collection: 'animated', id: 'tuna', animation: 'clip' },
   shark: { collection: 'animated', id: 'shark', animation: 'clip' },
   mola: { collection: 'animated', id: 'sunfish', animation: 'clip' },
-  dolphin: { collection: 'animated', id: 'dolphin_rigged', animation: 'clip' }
+  dolphin: { collection: 'animated', id: 'dolphin_rigged', animation: 'procedural-swim' },
+  jellyfish: { collection: 'animated', id: 'jellyfish', animation: 'clip', orientation: 'vertical' },
+  seal: { collection: 'animated', id: 'seal', animation: 'clip' },
+  spermWhale: { collection: 'animated', id: 'whale', animation: 'clip', note: 'generic whale model, not species-specific' }
 });
 
 // Review-only assets remain discoverable but are deliberately excluded from the
@@ -29,8 +32,7 @@ export const CREATURE_REVIEW_MODEL_MAP = Object.freeze({
 
 export const SPECIES_WITHOUT_REVIEWED_MODEL = Object.freeze([
   'angelfish', 'barracuda', 'wobbegong', 'marlin', 'eel', 'crab', 'lobster',
-  'mantis', 'manta', 'stingray', 'whaleShark', 'orca', 'spermWhale', 'seal',
-  'starfish', 'turtle', 'jellyfish', 'sandEel'
+  'mantis', 'manta', 'stingray', 'whaleShark', 'orca', 'starfish', 'turtle', 'sandEel'
 ]);
 
 export function getSpeciesModel(species) {
