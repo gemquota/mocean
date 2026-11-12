@@ -8,7 +8,7 @@
 
 Turn the mixed-species habitat into a convincing underwater environment without degrading creature simulation, locomotion, interaction, or ordinary-browser performance. The environment must be a real spatial scene, not a flat backdrop decorated with fake depth cues.
 
-`schooling.html` retains its Canvas-based habitat and species renderers, now augmented by a volumetric voxel terrain projection and a transparent Three.js overlay for selected animated fish models. `src/schooling.js` owns creature state and the fixed-step simulation; `src/phase6/voxel-field.js` supplies the shared signed-distance field used by terrain extraction and creature contact. This is a staged hybrid renderer, not yet a fully unified 3D scene: cross-renderer depth ordering, water/light integration and performance on ordinary hardware remain open.
+`schooling.html` retains its Canvas-based habitat and species renderers, now augmented by a volumetric voxel terrain projection and a transparent Three.js overlay for twelve naturalistic marine models with procedural swimming. `src/schooling.js` owns creature state and the fixed-step simulation; `src/phase6/voxel-field.js` supplies the shared signed-distance field used by terrain extraction and creature contact. This is a staged hybrid renderer, not yet a fully unified 3D scene: cross-renderer depth ordering, water/light integration and performance on ordinary hardware remain open.
 
 ## Non-negotiable constraints
 
@@ -98,7 +98,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 ### P6-6 · Creature/render integration
 
 - [x] Integrate the live 30-species simulation with shared voxel terrain contact without changing simulation authority.
-- [x] Add a Three.js overlay for suitable animated fish models driven by live creature position, heading and swimming speed; retain dedicated renderers for species without matching rigs.
+- [x] Add a Three.js overlay for suitable animated fish models driven by live creature position, heading and swimming speed; retain dedicated renderers for species without reviewed naturalistic models.
 - [ ] Resolve cross-renderer depth ordering, scale and occlusion across the full habitat.
 - [ ] Compare representative species and population settings against the Canvas baseline on ordinary hardware.
 
@@ -141,7 +141,7 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 ## Known risks
 
-- The habitat keeps its established Canvas projection for coral, invertebrates and species without matching rigs. A transparent Three.js layer now composites animated fish GLBs over that view; cross-renderer depth ordering remains a known limitation.
+- The habitat keeps its established Canvas projection for coral, invertebrates and disabled species. A transparent Three.js layer now composites naturalistic marine GLBs with procedural swimming over that view; cross-renderer depth ordering remains a known limitation.
 - The original `seabedHeight(x, z)` remains as the broad base profile, but the visible seabed is now extracted from a signed-distance volume. Creature contact uses the same volume field; full path planning through cave networks is not yet implemented.
 - The habitat already contains 30 species, but only suitable fish use the imported animated-model overlay. Other species retain their dedicated Canvas renderers; do not replace them with unrelated GLBs merely to increase model coverage.
 - Visual fidelity is not evidence of physical correctness. Keep simulation and rendering responsibilities separate.
@@ -171,7 +171,7 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 - The Pages build now stages the complete fish bundle and original licence under `assets/models/osmocean/species/`.
 - Added `src/phase6/osmocean-marine-models.js`: cached GLTF loading, skeleton-safe cloning, longest-axis normalisation, per-instance animation mixers and species-to-model mapping.
 - The live `schooling.html` now mounts a transparent Three.js overlay. Suitable fish models follow the simulation's live position and forward vector; animation playback speed is scaled by swimming speed. The procedural 2D fish remains visible until its GLB has loaded, then yields to the model.
-- The full fish bundle is inspectable through `osmocean-model-study.html`, which lists embedded animation clips for the imported models.
+- The naturalistic model set is inspectable through `creature-model-review.html`, which previews each species-specific model and its procedural motion.
 - Schooling fish retain the light procedural renderer to avoid creating dozens of skeletal animation mixers for the densest shoal. Whale shark, mammals, rays, eels and crustaceans retain their dedicated renderers because the pinned Osmocean bundle does not contain equivalent suitable animated rigs. No animal is silently replaced with an unrelated fish.
 
 ### Verification boundary
