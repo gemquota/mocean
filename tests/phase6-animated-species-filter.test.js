@@ -4,10 +4,10 @@ import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from '../src/phase6/a
 import { SCHOOLING_SPECIES_PERCENTAGES } from '../src/schooling.js';
 
 test('animated species list is derived from the exact model map', () => {
-  assert.equal(ANIMATED_MODEL_SPECIES.length, 12);
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 15);
   assert.deepEqual(new Set(ANIMATED_MODEL_SPECIES), new Set([
     'fish','schoolFish','clownfish','parrotfish','blueTang','butterflyfish',
-    'grouper','moorishIdol','tuna','shark','mola','dolphin'
+    'grouper','moorishIdol','tuna','shark','mola','dolphin','jellyfish','seal','spermWhale'
   ]));
 });
 
