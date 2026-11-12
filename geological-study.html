@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mocean · Geological Field Study</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061923;color:#d9edf0;font:13px system-ui,sans-serif}
+canvas{display:block;width:100%;height:100%}
+#status{position:fixed;left:16px;top:14px;padding:9px 12px;border:1px solid #ffffff20;border-radius:8px;background:#061923bb;backdrop-filter:blur(8px);line-height:1.55;pointer-events:none}
+#status strong{color:#b9e5dc;font-weight:650}
+#error{color:#ffb4a9}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="status"><strong>GEOLOGICAL FIELD / STUDY 01</strong><br><span id="metrics">Building continuous terrain…</span><br><span id="error"></span></div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createGeologicalField } from './src/phase6/geological-field.js';
+import { buildDualContourSurface } from './src/phase6/dual-contouring.js';
+
+const metrics=document.querySelector('#metrics');
+const error=document.querySelector('#error');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x071d29);
+scene.fog=new THREE.FogExp2(0x0a2c39,0.0065);
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.1,500);
+camera.position.set(69,43,76);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.15;
+document.body.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,-12,0);controls.enableDamping=true;controls.dampingFactor=.055;
+controls.minDistance=22;controls.maxDistance=180;controls.maxPolarAngle=Math.PI*.49;
+scene.add(new THREE.HemisphereLight(0x9bd5e4,0x182d2a,1.7));
+const key=new THREE.DirectionalLight(0xffe6c3,3.1);key.position.set(-35,65,22);scene.add(key);
+const fill=new THREE.DirectionalLight(0x54b7d1,1.1);fill.position.set(42,20,-50);scene.add(fill);
+
+try {
+ const field=createGeologicalField({seed:6102026});
+ const started=performance.now();
+ const surface=buildDualContourSurface({
+   min:[-48,-24,-36],max:[48,5,36],cells:[96,36,72],
+   sampleDistance:(x,y,z)=>field.sampleDistance(x,y,z)
+ });
+ const elapsed=performance.now()-started;
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.BufferAttribute(surface.positions,3));
+ geometry.setAttribute('normal',new THREE.BufferAttribute(surface.normals,3));
+ const colours=new Float32Array(surface.vertexCount*3);
+ for(let i=0;i<surface.vertexCount;i++){
+   const y=surface.positions[i*3+1],ny=surface.normals[i*3+1];
+   const shelf=THREE.MathUtils.smoothstep(y,-13,-7);
+   const exposed=THREE.MathUtils.smoothstep(ny,.35,.92);
+   const sediment=THREE.MathUtils.clamp((.25-ny)*.8,0,.22);
+   colours[i*3]=.105+shelf*.13+exposed*.055+sediment;
+   colours[i*3+1]=.17+shelf*.13+exposed*.085+sediment*.65;
+   colours[i*3+2]=.155+shelf*.08+exposed*.06+sediment*.35;
+ }
+ geometry.setAttribute('color',new THREE.BufferAttribute(colours,3));
+ geometry.setIndex(new THREE.BufferAttribute(surface.indices,1));
+ geometry.computeBoundingSphere();
+ const seabed=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+   vertexColors:true,roughness:.88,metalness:.02,side:THREE.DoubleSide
+ }));
+ scene.add(seabed);
+ // A sparse scatter of natural boulders is intentionally omitted: the test is
+ // whether the geology reads as one connected landform without decorative props.
+ const water=new THREE.Mesh(new THREE.PlaneGeometry(300,240),new THREE.MeshBasicMaterial({
+   color:0x0b5367,transparent:true,opacity:.105,depthWrite:false,side:THREE.DoubleSide
+ }));
+ water.rotation.x=-Math.PI/2;water.position.y=3.8;scene.add(water);
+ const grid=new THREE.GridHelper(96,24,0x2a6570,0x17404b);
+ grid.position.y=-23.8;grid.material.transparent=true;grid.material.opacity=.13;scene.add(grid);
+ metrics.textContent=surface.vertexCount.toLocaleString()+' vertices · '+surface.triangleCount.toLocaleString()+' triangles · '+elapsed.toFixed(0)+' ms mesh build · drag to inspect';
+} catch(e) {
+ error.textContent=e?.stack||String(e);
+ console.error(e);
+}
+addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+renderer.setAnimationLoop(()=>{
+ controls.update();
+ renderer.render(scene,camera);
+});
+</script>
+</body>
+</html>
