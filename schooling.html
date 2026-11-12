@@ -36,11 +36,12 @@ a:hover{text-decoration:underline}
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE, SCHOOLING_SPECIES_PERCENTAGES, REEF_ANEMONE_SITES, seabedHeight } from './src/schooling.js';
 import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/core/body.js';
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
+import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies, SchoolingCreatureRenderer } from './src/phase6/schooling-creature-renderer.js';
 
-const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
+const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});\nlet creatureRenderer=null;try{creatureRenderer=new SchoolingCreatureRenderer({canvas:document.getElementById('school-models')});}catch(error){console.error('3D creature renderer unavailable:',error);}
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
-const speciesMix={...SCHOOLING_SPECIES_PERCENTAGES},worldSize={x:41,y:15.5,z:31};
+const speciesMix=filterToAnimatedSpecies(SCHOOLING_SPECIES_PERCENTAGES),worldSize={x:41,y:15.5,z:31};
 const mixRoot=document.getElementById('species-mix'),configPanel=document.getElementById('config-panel'),configToggle=document.getElementById('config-toggle');
 const speciesLabels={fish:'Regular fish',schoolFish:'Dedicated shoaling fish',grouper:'Giant Queensland grouper',moorishIdol:'Moorish idol',barracuda:'Great barracuda',clownfish:'Clownfish',parrotfish:'Parrotfish',blueTang:'Blue tang',angelfish:'Angelfish',butterflyfish:'Butterflyfish',wobbegong:'Wobbegong shark',marlin:'Marlin',tuna:'Tuna',eel:'Moray eels',crab:'Crabs',lobster:'Lobsters',mantis:'Mantis shrimp',manta:'Manta rays',stingray:'Stingrays',shark:'Reef sharks',whaleShark:'Whale sharks',mola:'Mola mola',orca:'Orcas',spermWhale:'Sperm whales',seal:'Seals',starfish:'Starfish',dolphin:'Dolphins',turtle:'Sea turtles',jellyfish:'Jellyfish',sandEel:'Burrowing sand eels'};
 const speciesSettings=Object.fromEntries(Object.keys(speciesLabels).map(key=>[key,{speed:1,size:1,minSize:.8,maxSize:1.2,aggression:1}]));
@@ -48,8 +49,8 @@ function applySpeciesBodySettings(fish){const setting=speciesSettings[fish.speci
 function initialiseFishVisualState(nextSchool){for(const fish of nextSchool.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;fish._appliedSpeed=1;applySpeciesBodySettings(fish);}}
 function rebuildSchool(){const next=createSchool(Number(populationSlider.value),73421,{speciesPercentages:speciesMix,worldSize});initialiseFishVisualState(next);school=next;}
 function applySpeciesSetting(species,key,value){const setting=speciesSettings[species];setting[key]=value;if(key==='speed')return;for(const fish of school.fish)if(fish.species===species)applySpeciesBodySettings(fish);}
-function updateMix(changed,value){value=Math.max(0,Math.min(100,Number(value)||0));if(value>=100){for(const key of Object.keys(speciesMix))speciesMix[key]=key===changed?100:0;}else{speciesMix[changed]=value;const others=Object.keys(speciesMix).filter(key=>key!==changed),total=others.reduce((sum,key)=>sum+speciesMix[key],0),remaining=100-value;for(const key of others)speciesMix[key]=total>0?speciesMix[key]/total*remaining:remaining/others.length;}for(const row of mixRoot.querySelectorAll('.mix-row')){const key=row.dataset.species;row.querySelector('input').value=speciesMix[key].toFixed(0);row.querySelector('output').textContent=Number(speciesMix[key]).toFixed(2)+'%';}rebuildSchool();}
-for(const [key,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='mix-row';row.dataset.species=key;row.innerHTML=`<span>${label}</span><input type="range" min="0" max="100" step="0.01" value="${speciesMix[key]??0}" aria-label="${label} percentage"><output>${Number(speciesMix[key]??0).toFixed(2)}%</output>`;row.querySelector('input').addEventListener('input',event=>updateMix(key,event.target.value));mixRoot.append(row);}
+function updateMix(changed,value){if(!ANIMATED_MODEL_SPECIES.includes(changed))return;value=Math.max(0,Math.min(100,Number(value)||0));if(value>=100){for(const key of Object.keys(speciesMix))speciesMix[key]=key===changed?100:0;}else{speciesMix[changed]=value;const others=Object.keys(speciesMix).filter(key=>key!==changed),total=others.reduce((sum,key)=>sum+speciesMix[key],0),remaining=100-value;for(const key of others)speciesMix[key]=total>0?speciesMix[key]/total*remaining:remaining/others.length;}for(const row of mixRoot.querySelectorAll('.mix-row')){const key=row.dataset.species;row.querySelector('input').value=speciesMix[key].toFixed(0);row.querySelector('output').textContent=Number(speciesMix[key]).toFixed(2)+'%';}rebuildSchool();}
+for(const [key,label] of Object.entries(speciesLabels)){const row=document.createElement('label');row.className='mix-row';row.dataset.species=key;const supported=ANIMATED_MODEL_SPECIES.includes(key);row.innerHTML=`<span>${label}</span><input type="range" min="0" max="100" step="0.01" value="${speciesMix[key]??0}" aria-label="${label} percentage"><output>${Number(speciesMix[key]??0).toFixed(2)}%</output>`;row.querySelector('input').disabled=!supported;if(!supported){row.querySelector('span').textContent=label+' · TEMPORARILY HIDDEN';row.querySelector('output').textContent='NO ANIMATED MODEL';}else row.querySelector('input').addEventListener('input',event=>updateMix(key,event.target.value));mixRoot.append(row);}
 for(const tab of configPanel.querySelectorAll('[data-tab]'))tab.addEventListener('click',()=>{for(const el of configPanel.querySelectorAll('[data-tab]'))el.classList.toggle('active',el===tab);for(const page of configPanel.querySelectorAll('[data-page]'))page.classList.toggle('active',page.dataset.page===tab.dataset.tab);});
 configToggle.addEventListener('click',()=>{configPanel.hidden=!configPanel.hidden;configToggle.setAttribute('aria-expanded',String(!configPanel.hidden));});document.getElementById('config-close').addEventListener('click',()=>{configPanel.hidden=true;configToggle.setAttribute('aria-expanded','false');});
 for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+axis),output=document.getElementById('world-'+axis+'-value');slider.addEventListener('input',()=>{worldSize[axis]=Number(slider.value);output.value=slider.value;output.textContent=slider.value;school.worldSize={...worldSize};});}
@@ -68,12 +69,12 @@ function setPopulation(value){
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' CREATURES · 30 SPECIES';
+ status.textContent=count.toLocaleString('en-US')+' CREATURES · '+ANIMATED_MODEL_SPECIES.length+' ANIMATED SPECIES';
 }
 populationSlider.addEventListener('input',event=>{
  const count=Math.max(Number(populationSlider.min),Math.min(Number(populationSlider.max),Math.round(Number(event.target.value)/10)*10));
  populationValue.textContent=count.toLocaleString('en-US');
- status.textContent='RELEASE TO APPLY · '+count.toLocaleString('en-US')+' CREATURES';
+ status.textContent='RELEASE TO APPLY · '+count.toLocaleString('en-US')+' CREATURES · '+ANIMATED_MODEL_SPECIES.length+' ANIMATED SPECIES';
 });
 populationSlider.addEventListener('change',event=>setPopulation(event.target.value));
 
@@ -725,7 +726,7 @@ function animate(now){
  }
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/24){render();renderAccumulator%=1/24;}
- if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · 30 SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
+ if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' CREATURES · '+ANIMATED_MODEL_SPECIES.length+' ANIMATED SPECIES · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
  } catch(error) {
   if(!animationFault) {
    animationFault=error;
