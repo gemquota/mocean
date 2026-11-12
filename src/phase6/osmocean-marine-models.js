@@ -127,7 +127,14 @@ export class OsmoceanMarineModels {
           visual.scale.y=visual.scale.x*(1+0.035*Math.sin(pulsePhase));
         }
       },
-      dispose(){}
+      dispose(){
+        visual.traverse(node=>{
+          if(!node.isMesh)return;
+          node.geometry?.dispose();
+          const materials=Array.isArray(node.material)?node.material:[node.material];
+          for(const material of materials)material?.dispose();
+        });
+      }
     };
   }
   dispose(){this.cache.clear();}
