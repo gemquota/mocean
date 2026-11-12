@@ -9,7 +9,7 @@ import { selectTerrainChunks } from './streamed-voxel-terrain.js';
 import { classifyHabitatBiome } from './biomes.js';
 
 const TERRAIN_SEED = 6102026;
-const CELL_SIZE = 0.5;
+const CELL_SIZE = 1;
 const MIN_Y = -14.2;
 const MAX_Y = -5.2;
 const biomeCache = new Map();
