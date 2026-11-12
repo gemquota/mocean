@@ -115,7 +115,8 @@ export function buildDualContourSurface({min=[-16,-8,-16],max=[16,8,16],cells=[3
       // Multiple QEF patches can collapse to exactly collinear cell vertices at
       // sharp intersecting formations. A sub-millimetre deterministic tangential
       // nudge preserves shared topology while avoiding zero-area triangles.
-      const hash=((x*73856093)^(y*19349663)^(z*83492791)^(group[0]*2654435761))>>>0;
+      const gx=Math.round(min[0]/step[0])+x,gy=Math.round(min[1]/step[1])+y,gz=Math.round(min[2]/step[2])+z;
+      const hash=((gx*73856093)^(gy*19349663)^(gz*83492791)^(group[0]*2654435761))>>>0;
       const jitter=Math.min(...step)*.001;
       vertex[0]+=(((hash&1023)/1023)-.5)*jitter;
       vertex[1]+=((((hash>>>10)&1023)/1023)-.5)*jitter;
