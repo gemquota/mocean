@@ -137,7 +137,7 @@ export function createHabitatVoxelTerrainStream({
       projected[index]=project({x:positions[offset],y:positions[offset+1],z:positions[offset+2]});
     }
     const triangles=[];
-    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,depthTotal=0;
     for(let index=0;index<indices.length;index+=3){
       const ia=indices[index],ib=indices[index+1],ic=indices[index+2];
       const a=projected[ia],b=projected[ib],c=projected[ic];
@@ -154,7 +154,8 @@ export function createHabitatVoxelTerrainStream({
         (positions[pa+1]+positions[pb+1]+positions[pc+1])/3,
         (positions[pa+2]+positions[pb+2]+positions[pc+2])/3
       ];
-      triangles.push({a,b,c,depth:(a.depth+b.depth+c.depth)/3,fill:terrainColour(normal,centre)});
+      const depth=(a.depth+b.depth+c.depth)/3;
+      triangles.push({a,b,c,depth,fill:terrainColour(normal,centre)});depthTotal+=depth;
       minX=Math.min(minX,a.x,b.x,c.x);maxX=Math.max(maxX,a.x,b.x,c.x);
       minY=Math.min(minY,a.y,b.y,c.y);maxY=Math.max(maxY,a.y,b.y,c.y);
     }
@@ -172,18 +173,23 @@ export function createHabitatVoxelTerrainStream({
       context.lineTo(triangle.c.x-left,triangle.c.y-top);
       context.closePath();context.fillStyle=triangle.fill;context.fill();
     }
-    item.projection={key,canvas,left,top};
+    item.projection={key,canvas,left,top,depth:depthTotal/triangles.length};
     return item.projection;
   }
 
   function draw(context,project,width,height,zoom=1){
     let rendered=0,triangles=0;
+    const drawables=[];
     for(const item of chunks.values()){
       if(!item.visible||!item.mesh)continue;
       const raster=rasterise(item,project,width,height,zoom);
       if(!raster.canvas)continue;
+      drawables.push(raster);triangles+=item.mesh.triangleCount;
+    }
+    drawables.sort((a,b)=>b.depth-a.depth);
+    for(const raster of drawables){
       context.drawImage(raster.canvas,raster.left,raster.top);
-      rendered++;triangles+=item.mesh.triangleCount;
+      rendered++;
     }
     return {...stats(),visible:rendered,triangles};
   }
@@ -195,6 +201,6 @@ export function createHabitatVoxelTerrainStream({
     workers.length=0;chunks.clear();queue.length=0;
   }
 
-  update({x:0,z:0,forwardX:0,forwardZ:1});
+  update({x:0,z:0,forwardX:0,forwardZ:-1});
   return Object.freeze({update,draw,dispose,get stats(){return stats();}});
 }
