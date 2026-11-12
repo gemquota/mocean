@@ -39,7 +39,22 @@ const quaternius=[
   'yellow_tang.glb',
   'zebra_clown_fish.glb'
 ];
-const required=[...quaternius,'dolphin_rigged.glb'];
+const gobkit=[
+  {file:'jellyfish.glb',url:'https://gobkit.com/freebies/animal/Jellyfish.glb',id:'jellyfish'},
+  {file:'seal.glb',url:'https://gobkit.com/freebies/animalB/Seal.glb',id:'seal'},
+  {file:'whale.glb',url:'https://gobkit.com/freebies/animalB/Whale.glb',id:'whale'}
+];
+const required=[...quaternius,'dolphin_rigged.glb',...gobkit.map(item=>item.file)];
+const manifestPath=process.argv[3];
+if(!manifestPath) throw new Error('Gobkit manifest path is required for source/licence verification');
+const manifest=JSON.parse(await fs.readFile(path.resolve(manifestPath),'utf8'));
+const manifestModels=(manifest.packs??[]).flatMap(pack=>pack.models??[]);
+for(const item of gobkit){
+  const source=manifestModels.find(model=>model.url===item.url);
+  if(!source||!source.rigged||!(source.animations??[]).length||!String(source.license??'').includes('CC0 1.0')){
+    throw new Error('Gobkit source manifest does not confirm a rigged CC0 animated model: '+item.file);
+  }
+}
 
 function readGlb(file){
   const bytes=file;
@@ -60,8 +75,9 @@ for(const file of required){
   const gltf=readGlb(bytes);
   const animations=(gltf.animations??[]).map((clip,index)=>clip.name||'Animation '+(index+1));
   const quaterniusAsset=quaternius.includes(file);
+  const gobkitAsset=gobkit.some(item=>item.file===file);
   const proceduralDolphin=file==='dolphin_rigged.glb'&&Array.isArray(gltf.skins)&&gltf.skins.length>0;
-  if(!animations.length&&(quaterniusAsset||!proceduralDolphin)) throw new Error(file+' contains neither embedded clips nor a reviewed procedural swim rig');
+  if(!animations.length&&(quaterniusAsset||gobkitAsset||!proceduralDolphin)) throw new Error(file+' contains neither embedded clips nor a reviewed procedural swim rig');
   entries.push({
     id:path.basename(file,'.glb'),
     file,
@@ -70,9 +86,9 @@ for(const file of required){
     animationMode:animations.length?'baked-clips':'procedural-swim',
     source:quaterniusAsset
       ? 'Quaternius Animated Fish Bundle / Vitexus ishtaria-client'
-      : 'PolyFish / unclemattmakes-polyfish',
-    license:quaterniusAsset?'CC0-1.0':'MIT',
-    licenseFile:quaterniusAsset?'QUATERNIUS-CC0-LICENSE.txt':'POLYFISH-MIT-LICENSE.txt'
+      : gobkitAsset ? 'Gobkit Free 3D Assets / live CC0 manifest' : 'PolyFish / unclemattmakes-polyfish',
+    license:quaterniusAsset||gobkitAsset?'CC0-1.0':'MIT',
+    licenseFile:quaterniusAsset?'QUATERNIUS-CC0-LICENSE.txt':gobkitAsset?'GOBKIT-CC0-LICENSE.txt':'POLYFISH-MIT-LICENSE.txt'
   });
 }
 const catalogue={
