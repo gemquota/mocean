@@ -20,8 +20,6 @@ canvas{display:block;width:100%;height:100%}
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createGeologicalField } from './src/phase6/geological-field.js';
-import { buildDualContourSurface } from './src/phase6/dual-contouring.js';
 
 const metrics=document.querySelector('#metrics');
 const error=document.querySelector('#error');
@@ -44,14 +42,7 @@ scene.add(new THREE.HemisphereLight(0x9bd5e4,0x182d2a,1.7));
 const key=new THREE.DirectionalLight(0xffe6c3,3.1);key.position.set(-35,65,22);scene.add(key);
 const fill=new THREE.DirectionalLight(0x54b7d1,1.1);fill.position.set(42,20,-50);scene.add(fill);
 
-try {
- const field=createGeologicalField({seed:6102026});
- const started=performance.now();
- const surface=buildDualContourSurface({
-   min:[-48,-24,-36],max:[48,5,36],cells:[96,36,72],
-   sampleDistance:(x,y,z)=>field.sampleDistance(x,y,z)
- });
- const elapsed=performance.now()-started;
+function showSurface(surface,elapsed){
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.BufferAttribute(surface.positions,3));
  geometry.setAttribute('normal',new THREE.BufferAttribute(surface.normals,3));
@@ -68,23 +59,25 @@ try {
  geometry.setAttribute('color',new THREE.BufferAttribute(colours,3));
  geometry.setIndex(new THREE.BufferAttribute(surface.indices,1));
  geometry.computeBoundingSphere();
- const seabed=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+ scene.add(new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
    vertexColors:true,roughness:.88,metalness:.02,side:THREE.DoubleSide
- }));
- scene.add(seabed);
- // A sparse scatter of natural boulders is intentionally omitted: the test is
- // whether the geology reads as one connected landform without decorative props.
+ })));
  const water=new THREE.Mesh(new THREE.PlaneGeometry(300,240),new THREE.MeshBasicMaterial({
    color:0x0b5367,transparent:true,opacity:.105,depthWrite:false,side:THREE.DoubleSide
  }));
  water.rotation.x=-Math.PI/2;water.position.y=3.8;scene.add(water);
  const grid=new THREE.GridHelper(96,24,0x2a6570,0x17404b);
  grid.position.y=-23.8;grid.material.transparent=true;grid.material.opacity=.13;scene.add(grid);
- metrics.textContent=surface.vertexCount.toLocaleString()+' vertices · '+surface.triangleCount.toLocaleString()+' triangles · '+elapsed.toFixed(0)+' ms mesh build · drag to inspect';
-} catch(e) {
- error.textContent=e?.stack||String(e);
- console.error(e);
+ metrics.textContent=surface.vertexCount.toLocaleString()+' vertices · '+surface.triangleCount.toLocaleString()+' triangles · '+elapsed.toFixed(0)+' ms worker build · drag to inspect';
 }
+const worker=new Worker('./src/phase6/geological-study-worker.js',{type:'module'});
+worker.onmessage=({data})=>{
+ worker.terminate();
+ if(data.type==='error'){error.textContent=data.message;return;}
+ showSurface(data.surface,data.elapsed);
+};
+worker.onerror=(event)=>{worker.terminate();error.textContent=event.message||'Terrain worker failed';};
+worker.postMessage({build:true});
 addEventListener('resize',()=>{
  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
  renderer.setSize(innerWidth,innerHeight);
