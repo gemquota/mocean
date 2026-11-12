@@ -220,7 +220,7 @@ function syncMarineModels(ordered,dt){
  marineRenderedFish.clear();
  for(const fish of ordered){
   if(!MODELLED_SPECIES.has(fish.species)||!MARINE_MODEL_BY_SPECIES[fish.species])continue;
-  const screen=project(fish.p);
+  const screen=fish.screen;
   if(screen.depth<2.5||screen.x<-80||screen.x>viewWidth+80||screen.y<-80||screen.y>viewHeight+80)continue;
   candidates.push({fish,depth:screen.depth});
  }
@@ -932,11 +932,10 @@ function render(){
  const renderEntries=[];
  for(const fish of school.fish){
   const screen=project(fish.p);
-  if(screen.depth>2.5&&screen.x>-100&&screen.x<viewWidth+100&&screen.y>-100&&screen.y<viewHeight+100)renderEntries.push({fish,depth:screen.depth});
+  if(screen.depth>2.5&&screen.x>-100&&screen.x<viewWidth+100&&screen.y>-100&&screen.y<viewHeight+100)renderEntries.push({fish,depth:screen.depth,screen});
  }
  renderEntries.sort((a,b)=>b.depth-a.depth);
- const ordered=renderEntries.map(item=>item.fish);
- updateMarineCamera();syncMarineModels(ordered,1/24);
+ updateMarineCamera();syncMarineModels(renderEntries,1/24);
  for(const {fish} of renderEntries){
   try { drawFish(fish); }
   catch(error) {
