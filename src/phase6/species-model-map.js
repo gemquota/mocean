@@ -17,7 +17,9 @@ export const SPECIES_MODEL_MAP = Object.freeze({
   spermWhale: { collection: 'naturalistic', id: 'sperm_whale', assetId: '5860', motion: 'vertical-body-wave' },
   dolphin: { collection: 'naturalistic', id: 'bottlenose_dolphin', assetId: '39330', motion: 'vertical-body-wave' },
   jellyfish: { collection: 'naturalistic', id: 'moon_jellyfish', assetId: '5889', motion: 'pulse', orientation: 'vertical' },
-  turtle: { collection: 'naturalistic', id: 'loggerhead_turtle', assetId: '39340', motion: 'wing-wave' }
+  turtle: { collection: 'naturalistic', id: 'loggerhead_turtle', assetId: '39340', motion: 'wing-wave' },
+  seahorse: { collection: 'naturalistic', id: 'lined_seahorse', assetId: '39345', motion: 'pulse', orientation: 'vertical' },
+  seaDragon: { collection: 'naturalistic', id: 'leafy_seadragon', assetId: '39346', motion: 'body-wave', orientation: 'vertical' }
 });
 
 export const CREATURE_REVIEW_MODEL_MAP = Object.freeze({});
