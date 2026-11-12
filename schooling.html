@@ -38,6 +38,7 @@ a:hover{text-decoration:underline}
 </script>
 <script type="module">
 import { createSchool, stepSchool, SCHOOLING_FISH_SCALE, SCHOOLING_SPECIES_PERCENTAGES, REEF_ANEMONE_SITES, seabedHeight } from './src/schooling.js';
+import { ANIMATED_MODEL_SPECIES } from './src/phase6/animated-species-filter.js';
 import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/core/body.js';
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
 import { drawHabitatVoxelTerrain } from './src/phase6/habitat-voxel-terrain.js';
@@ -45,7 +46,6 @@ import { createHabitatVoxelField } from './src/phase6/voxel-field.js';
 import { createVegetationLayout, sampleTerrainTop } from './src/phase6/vegetation-layout.js';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
-let creatureRenderer=null;try{creatureRenderer=new SchoolingCreatureRenderer({canvas:document.getElementById('school-models')});}catch(error){console.error('3D creature renderer unavailable:',error);}
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
 const populationSlider=document.getElementById('population'),populationValue=document.getElementById('population-value');
 const speciesMix={...SCHOOLING_SPECIES_PERCENTAGES},worldSize={x:100,y:100,z:100};
