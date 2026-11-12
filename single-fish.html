@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06141b"><meta name="description" content="Mocean: an autonomous aquatic creature simulation.">
+<title>Mocean</title><link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main class="ocean">
+  <canvas id="creature" aria-label="Autonomous swimming creature in a three-dimensional aquatic environment"></canvas>
+  <div class="signature"><span class="sig-mark">M</span><span>MOCEAN</span></div>
+  <div class="caption">AN EXPERIMENT IN AQUATIC LIFE</div>
+  <button class="direction-toggle" id="directionToggle" type="button" aria-pressed="false" title="Autonomous swimming is active">AUTO</button>
+  <div class="behaviour" id="behaviour">CRUISING</div>
+</main>
+<script type="module" src="./src/main.js"></script>
+</body></html>
