@@ -2,33 +2,34 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getSpeciesModel, SPECIES_MODEL_MAP, SPECIES_WITHOUT_REVIEWED_MODEL } from '../src/phase6/species-model-map.js';
 
-test('every enabled species maps to a matching animated marine GLB', () => {
-  assert.equal(getSpeciesModel('fish').id, 'blue_goldfish');
-  assert.equal(getSpeciesModel('schoolFish').id, 'tetra');
-  assert.equal(getSpeciesModel('clownfish').id, 'clownfish');
-  assert.equal(getSpeciesModel('parrotfish').id, 'parrot_fish');
-  assert.equal(getSpeciesModel('blueTang').id, 'blue_tang');
-  assert.equal(getSpeciesModel('butterflyfish').id, 'butterfly_fish');
-  assert.equal(getSpeciesModel('grouper').id, 'coral_grouper');
-  assert.equal(getSpeciesModel('moorishIdol').id, 'moorish_idol');
-  assert.equal(getSpeciesModel('tuna').id, 'tuna');
-  assert.equal(getSpeciesModel('shark').id, 'shark');
-  assert.equal(getSpeciesModel('mola').id, 'sunfish');
-  assert.equal(getSpeciesModel('dolphin').id, 'dolphin_rigged');
-  assert.equal(getSpeciesModel('jellyfish').id, 'jellyfish');
-  assert.equal(getSpeciesModel('seal').id, 'seal');
-  assert.equal(getSpeciesModel('spermWhale').id, 'whale');
-  assert.deepEqual(SPECIES_MODEL_MAP.fish.variants, ['blue_goldfish','goldfish','koi']);
-  assert.deepEqual(SPECIES_MODEL_MAP.schoolFish.variants, ['tetra','cardinal_fish']);
-  assert.deepEqual(SPECIES_MODEL_MAP.blueTang.variants, ['blue_tang','gobkit_bluetang']);
-  assert.deepEqual(SPECIES_MODEL_MAP.shark.variants, ['shark','gobkit_shark']);
-  assert.equal(Object.keys(SPECIES_MODEL_MAP).length, 15);
+test('enabled species map only to species-exact naturalistic CC0 GLBs', () => {
+  const expected = {
+    barracuda: ['barracuda','5875'],
+    marlin: ['blue_marlin','5873'],
+    tuna: ['bluefin_tuna','5870'],
+    shark: ['great_white_shark','5867'],
+    whaleShark: ['whale_shark','5864'],
+    mola: ['ocean_sunfish','5866'],
+    manta: ['manta_ray','5878'],
+    stingray: ['southern_stingray','5877'],
+    orca: ['orca','5861'],
+    spermWhale: ['sperm_whale','5860'],
+    dolphin: ['bottlenose_dolphin','39330'],
+    jellyfish: ['moon_jellyfish','5889']
+  };
+  assert.deepEqual(Object.keys(SPECIES_MODEL_MAP), Object.keys(expected));
+  for (const [species,[id,assetId]] of Object.entries(expected)) {
+    assert.equal(getSpeciesModel(species).id,id);
+    assert.equal(getSpeciesModel(species).assetId,assetId);
+    assert.equal(getSpeciesModel(species).collection,'naturalistic');
+  }
+  assert.equal(Object.keys(SPECIES_MODEL_MAP).length,12);
 });
 
-test('species without an appropriate animated model remain explicitly disabled', () => {
-  for (const species of ['crab','lobster','mantis','eel','manta','stingray','orca','starfish','turtle','sandEel','angelfish','barracuda','wobbegong','marlin','whaleShark']) {
-    assert.equal(getSpeciesModel(species), null, species + ' must not be silently mapped to an unrelated model');
+test('species without an appropriate naturalistic model remain explicitly disabled', () => {
+  for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','wobbegong','eel','crab','lobster','mantis','seal','starfish','turtle','sandEel']) {
+    assert.equal(getSpeciesModel(species),null,species+' must not be silently mapped to an unrelated model');
     assert.ok(SPECIES_WITHOUT_REVIEWED_MODEL.includes(species));
   }
-  assert.equal(SPECIES_WITHOUT_REVIEWED_MODEL.length, 15);
+  assert.equal(SPECIES_WITHOUT_REVIEWED_MODEL.length,18);
 });
