@@ -114,24 +114,37 @@ export function createGeologicalField({
     }
     return height;
   }
-  function sampleDistance(x,y,z) {
-    if(![x,y,z].every(Number.isFinite)) throw new TypeError('Distance query coordinates must be finite');
+  // A column sampler amortises the macro-surface height and normal across
+  // every vertical voxel in the same x/z column. The cave distance remains
+  // evaluated per y, but the comparatively expensive geological height field
+  // and its finite-difference gradient are no longer recomputed per voxel.
+  function sampleDistanceColumn(x,z) {
+    if(!Number.isFinite(x)||!Number.isFinite(z)) throw new TypeError('Distance query coordinates must be finite');
     const surface=sampleHeight(x,z),eps=.12;
     const dx=(sampleHeight(x+eps,z)-sampleHeight(x-eps,z))/(2*eps);
     const dz=(sampleHeight(x,z+eps)-sampleHeight(x,z-eps))/(2*eps);
-    let distance=(y-surface)/Math.sqrt(1+dx*dx+dz*dz);
-    for(const cave of caves){
-      let tunnel=Infinity;
-      for(let i=1;i<cave.points.length;i++)
-        tunnel=Math.min(tunnel,distance3({x,y,z},cave.points[i-1],cave.points[i])-cave.radius);
-      for(const branch of cave.branches||[]) for(let i=1;i<branch.length;i++)
-        tunnel=Math.min(tunnel,distance3({x,y,z},branch[i-1],branch[i])-cave.radius*.82);
-      const c=cave.chamber;
-      const chamber=Math.hypot(x-c.x,y-c.y,z-c.z)-c.radius;
-      distance=Math.max(distance,-Math.min(tunnel,chamber));
-    }
-    return distance;
+    const inverseSlope=1/Math.sqrt(1+dx*dx+dz*dz);
+    return y=>{
+      if(!Number.isFinite(y)) throw new TypeError('Distance query coordinates must be finite');
+      let distance=(y-surface)*inverseSlope;
+      for(const cave of caves){
+        let tunnel=Infinity;
+        const p={x,y,z};
+        for(let i=1;i<cave.points.length;i++)
+          tunnel=Math.min(tunnel,distance3(p,cave.points[i-1],cave.points[i])-cave.radius);
+        for(const branch of cave.branches||[]) for(let i=1;i<branch.length;i++)
+          tunnel=Math.min(tunnel,distance3(p,branch[i-1],branch[i])-cave.radius*.82);
+        const c=cave.chamber;
+        const chamber=Math.hypot(x-c.x,y-c.y,z-c.z)-c.radius;
+        distance=Math.max(distance,-Math.min(tunnel,chamber));
+      }
+      return distance;
+    };
+  }
+  function sampleDistance(x,y,z) {
+    if(!Number.isFinite(y)) throw new TypeError('Distance query coordinates must be finite');
+    return sampleDistanceColumn(x,z)(y);
   }
   function describe(){return Object.freeze({seed:seed>>>0,bounds:Object.freeze({...bounds}),ridges,ravines,caves});}
-  return Object.freeze({sampleHeight,sampleDistance,describe});
+  return Object.freeze({sampleHeight,sampleDistance,sampleDistanceColumn,describe});
 }
