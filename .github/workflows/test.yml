@@ -39,4 +39,6 @@ jobs:
           curl -fsSL "$base/39346/v1/model.glb" -o assets/models/osmocean/naturalistic/leafy_seadragon.glb
           curl -fsSL "$base/5890/v1/model.glb" -o assets/models/osmocean/naturalistic/anglerfish.glb
           node scripts/verify-naturalistic-marine-models.mjs assets/models/osmocean/naturalistic
-      - run: npm test\n      - name: Benchmark geological column sampling\n        run: npm run benchmark:geology
+      - run: npm test
+      - name: Benchmark geological column sampling
+        run: npm run benchmark:geology
