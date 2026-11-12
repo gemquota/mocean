@@ -206,7 +206,7 @@ test('only exact animated-model species can spawn and unsupported species are di
 test('dolphin uses the reviewed rigged model and procedural swim shader when no baked clips exist', () => {
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
   const shader = readFileSync(new URL('../src/phase6/polyfish-swim-material.js', import.meta.url), 'utf8');
-  assert.match(adapter,/dolphin==='dolphin'/);
+  assert.match(adapter,/else if\(species==='dolphin'\)/);
   assert.match(adapter,/applySwimMaterial\(visual,'dolphin'\)/);
   assert.match(adapter,/updateSwimUniforms\(swimData,phase,1,false\)/);
   assert.match(shader,/dolphin:\s*\{/);
