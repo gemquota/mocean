@@ -127,3 +127,6 @@ self.addEventListener('message', event => {
     });
   }
 });
+
+// Exposed for deterministic seam regression tests; the worker listener remains the runtime entry point.
+export { buildChunk as buildVoxelTerrainChunk };
