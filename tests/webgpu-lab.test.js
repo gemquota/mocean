@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 
 test('isolated WebGPU lab module parses as JavaScript', async () => {
   const html = await readFile(new URL('../webgpu-lab.html', import.meta.url), 'utf8');
-  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
   assert.ok(match, 'module script exists');
   const result = spawnSync(process.execPath, ['--check', '--input-type=module'], {
     input: match[1], encoding: 'utf8'
@@ -15,9 +15,9 @@ test('isolated WebGPU lab module parses as JavaScript', async () => {
 
 test('compute is gated on the native WebGPU backend and live habitat is not imported', async () => {
   const html = await readFile(new URL('../webgpu-lab.html', import.meta.url), 'utf8');
-  assert.match(html, /renderer\\.backend\\?\\.isWebGPUBackend===true/);
-  assert.match(html, /renderer\\.compute\\(computeNode\\)/);
+  assert.match(html, /renderer\.backend\?\.isWebGPUBackend===true/);
+  assert.match(html, /renderer\.compute\(computeNode\)/);
   assert.match(html, /forceWebGL:activeMode==='webgpu-cpu'/);
-  assert.doesNotMatch(html, /src\\/schooling\\.js/);
+  assert.doesNotMatch(html, /src\/schooling\.js/);
   assert.match(html, /CPU update p50 \/ p95/);
 });
