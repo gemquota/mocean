@@ -200,6 +200,8 @@ test('only exact animated-model species can spawn and unsupported species are di
   assert.match(script,/const speciesMix=filterToAnimatedSpecies\(SCHOOLING_SPECIES_PERCENTAGES\)/);
   assert.match(script,/ANIMATED_MODEL_SPECIES\.filter\(key=>key!==changed\)/);
   assert.match(script,/const MODELLED_SPECIES=new Set\(ANIMATED_MODEL_SPECIES\)/);
+  assert.match(script,/supported\?'':'disabled'/);
+  assert.match(script,/MARINE_MODEL_ORIENTATION\[fish\.species\]==='vertical'/);
   assert.match(script,/NO MODEL/);
 });
 
@@ -211,4 +213,11 @@ test('dolphin uses the reviewed rigged model and procedural swim shader when no 
   assert.match(adapter,/updateSwimUniforms\(swimData,phase,1,false\)/);
   assert.match(shader,/dolphin:\s*\{/);
   assert.match(shader,/export function applySwimMaterial/);
+});
+
+test('jellyfish keep a vertical body axis while yaw follows horizontal heading', () => {
+  const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
+  assert.match(adapter,/jellyfish.*orientation: 'vertical'/);
+  assert.match(adapter,/mapping\.orientation!=='vertical'/);
+  assert.match(script,/setFromAxisAngle\(new THREE\.Vector3\(0,1,0\),yaw\)/);
 });
