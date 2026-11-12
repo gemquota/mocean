@@ -49,3 +49,9 @@ They remain in the simulation's species catalogue and behaviour code, but their 
 ## Visual quality caveat
 
 These models are a clear step away from the cartoon asset packs, but they are still AI-generated smooth-shaded models with untextured materials. They are not photogrammetry, high-end textured production assets or anatomically rigged creatures. The current priority is a coherent naturalistic silhouette and species identity, with procedural movement. A later asset pass can replace individual models with higher-fidelity hand-authored or scanned assets without changing the simulation interface.
+
+## Higher-fidelity option evaluated
+
+[Grab3D](https://grab3d.com/) also publishes CC0 high-detail PBR marine models with 1K light variants. Examples include a [great white shark](https://grab3d.com/models/animals/great-white-shark/), [bottlenose dolphin](https://grab3d.com/models/animals/dolphin/), [clownfish](https://grab3d.com/models/animals/clownfish/), [jellyfish](https://grab3d.com/models/animals/jellyfish/) and [sea turtle](https://grab3d.com/models/animals/sea-turtle/). The light shark is still about 83,500 triangles; the light clownfish, jellyfish and turtle are roughly 259k, 400k and 389k triangles respectively. These are static poses, not rigged swim assets.
+
+They are the better route for close-up PBR quality, but not a sensible unoptimised replacement for every creature in a 150-agent mobile simulation. A later high-fidelity pass should decimate them into distance-based LODs, resize/compress textures and instance shared geometry before introducing them into the live school. The current 3DAssets.dev models keep the live draw cost predictable while removing the cartoon style.
