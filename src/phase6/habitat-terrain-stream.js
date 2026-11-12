@@ -54,14 +54,15 @@ export function createHabitatVoxelTerrainStream({
   const size={...worldSize};
 
   function stats(){
-    const visible=[...chunks.values()].filter(item=>item.visible&&item.mesh);
+    let loaded=0,visible=0,triangles=0,failed=0,busy=0;
+    for(const item of chunks.values()){
+      if(item.mesh){loaded++;if(item.visible){visible++;triangles+=item.mesh.triangleCount??0;}}
+      if(item.error)failed++;
+    }
+    for(const slot of workers)if(slot.busy)busy++;
     return {
-      loaded:[...chunks.values()].filter(item=>item.mesh).length,
-      pending:workers.some(slot=>!slot.failed)?queue.length+workers.filter(slot=>slot.busy).length:0,
-      visible:visible.length,
-      triangles:visible.reduce((sum,item)=>sum+(item.mesh?.triangleCount??0),0),
-      failed:[...chunks.values()].filter(item=>item.error).length,
-      focus:{...lastFocus}
+      loaded,pending:workers.some(slot=>!slot.failed)?queue.length+busy:0,
+      visible,triangles,failed,focus:{...lastFocus}
     };
   }
   function report(){onUpdate(stats());}
