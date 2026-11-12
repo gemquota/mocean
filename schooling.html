@@ -607,7 +607,7 @@ function rebuildHabitatTerrainStream(){
  habitatTerrainStream?.dispose();
  try{
   habitatTerrainStream=createHabitatVoxelTerrainStream({
-   worldSize,workerCount:2,chunkSize:32,radius:2,prefetchRadius:3,maxChunks:49
+   worldSize,workerCount:2,chunkSize:32,radius:2,prefetchRadius:2,maxChunks:25
   });
  }catch(error){
   habitatTerrainStream=null;
