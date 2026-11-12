@@ -2,7 +2,7 @@
 
 ## Live Schooling models
 
-The live habitat no longer uses the Quaternius or Gobkit cartoon-style models. It now stages fifteen species-matched, smooth-shaded marine GLBs from 3DAssets.dev's *Ocean Animals: Whales, Sharks and Fish* collection. The bottlenose dolphin comes from the companion *Ocean Giants: Whales, Dolphins, Sharks and Reef Life* collection.
+The live habitat no longer uses the Quaternius or Gobkit cartoon-style models. It now stages sixteen species-matched, smooth-shaded marine GLBs from 3DAssets.dev's *Ocean Animals: Whales, Sharks and Fish* collection. The bottlenose dolphin comes from the companion *Ocean Giants: Whales, Dolphins, Sharks and Reef Life* collection.
 
 These are natural-colour, untextured, smooth-shaded posed studies, not photoreal scans. The source pages describe them as static and explicitly list no rig or baked animation. The GLBs are CC0 1.0 Universal and are staged from their stable CDN URLs by the Pages workflow.
 
@@ -23,6 +23,7 @@ These are natural-colour, untextured, smooth-shaded posed studies, not photoreal
 | Turtle | Loggerhead turtle | 39340 | Procedural front-flipper wave |
 | Seahorse | Lined seahorse | 39345 | Vertical hover with subtle body pulse |
 | Leafy seadragon | Leafy seadragon | 39346 | Gentle travelling body wave |
+| Anglerfish | Anglerfish | 5890 | Slow deep-water body wave |
 
 Source packs:
 
