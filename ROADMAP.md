@@ -147,7 +147,7 @@ The single-creature swimmer at [index.html](index.html) remains a separate locom
 
 ## Phase 6 · 3D environment, seabed and water
 
-**Status:** Authorised · in progress. The main branch contains isolated Phase 6 modules and review prototypes; the 3D renderer and terrain work are not yet integrated into the live Schooling entry point. The scope includes open-source 3D assets, complex spatial terrain, underwater lighting and post-processing. See [PHASE_6.md](PHASE_6.md) for implementation details and acceptance criteria.
+**Status:** Authorised · in progress. The main branch contains the integrated voxel terrain/contact path and selected animated-fish overlay. The habitat remains a hybrid Canvas/Three.js renderer; unified depth ordering, water/light polish and performance acceptance are still open. The scope includes open-source 3D assets, complex spatial terrain, underwater lighting and post-processing. See [PHASE_6.md](PHASE_6.md) for implementation details and acceptance criteria.
 
 - [x] P6-0 Audit current renderer, simulation/terrain coupling and delivery constraints. (Assistant complete; evidence in `PHASE_6.md`.)
 - [ ] P6-1 Renderer architecture and compatibility spike.
