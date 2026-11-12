@@ -225,7 +225,7 @@ test('jellyfish keep a vertical body axis while yaw follows horizontal heading',
 
 test('Gobkit marine models play only their idle subclip, not attack or death frames', () => {
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
-  assert.match(adapter,/GOBKIT_MASTER_TIMELINE_MODELS = new Set\(\['jellyfish','seal','whale'\]\)/);
+  assert.match(adapter,/GOBKIT_MASTER_TIMELINE_MODELS = new Set\(\['jellyfish','seal','whale','gobkit_bluetang','gobkit_parrotfish','gobkit_moorishidol','gobkit_shark'\]\)/);
   assert.match(adapter,/AnimationUtils\.subclip\(animations\[0\],'idle',0,29,24\)/);
 });
 
