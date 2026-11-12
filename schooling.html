@@ -459,13 +459,13 @@ function drawMantaRay(fish){
  drawVolume(fish,q,vec3(-.05,.015,0),scale3(vec3(.78,.13,.58),scale),'#245c70',.38,12,5);ctx.restore();
 }
 
-const planktonParticles=Array.from({length:480},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
+const planktonParticles=Array.from({length:360},(_,i)=>({x:((i*37.17)%82)-41,y:((i*19.73)%12)-5.6,z:((i*53.91)%62)-31,phase:i*2.399,drift:.12+(i%7)*.025,size:.7+(i%5)*.32}));
 function drawSeagrassAndKelp(){
  const layout=vegetationLayout;if(!layout)return;
  // Seagrass grows in broad, sparse meadows on near-horizontal sediment.
  for(const anchor of layout.grass){
   const x=anchor.x,y=anchor.y,z=anchor.z,root=project(vec3(x,y+.035,z));
-  if(root.depth<2.5)continue;
+  if(root.depth<2.5||root.x<-60||root.x>viewWidth+60||root.y<-80||root.y>viewHeight+60)continue;
   ctx.save();ctx.lineCap='round';
   const blades=4+(anchor.id%3),sway=Math.sin(school.time*.68+anchor.id*1.71)*.16;
   for(let b=0;b<blades;b++){
@@ -481,7 +481,7 @@ function drawSeagrassAndKelp(){
  // Kelp is concentrated around sloping reef shoulders and ledges, with longer
  // blades than seagrass and a little more density than the previous layout.
  for(const anchor of layout.kelp){
-  const {x,y,z,id}=anchor,root=project(vec3(x,y+.06,z));if(root.depth<2.5)continue;
+  const {x,y,z,id}=anchor,root=project(vec3(x,y+.06,z));if(root.depth<2.5||root.x<-60||root.x>viewWidth+60||root.y<-100||root.y>viewHeight+60)continue;
   ctx.save();ctx.lineCap='round';
   const stems=2+(id%2),sway=Math.sin(school.time*.38+id*1.3)*.46;
   for(let stem=0;stem<stems;stem++){
@@ -629,7 +629,7 @@ rebuildPlantLayout();
 function drawAnemones(){
  for(let i=0;i<REEF_ANEMONE_SITES.length;i++){
   const site=anemoneSites[i],floor=site.y,base=project(vec3(site.x,floor+.12,site.z)),sway=school.time*.8+i*1.7;
-  if(base.depth<2.5)continue;ctx.save();ctx.lineCap='round';const colours=['#c77f9d','#d39b75','#8da9a0','#b68ac0'];
+  if(base.depth<2.5||base.x<-60||base.x>viewWidth+60||base.y<-60||base.y>viewHeight+60)continue;ctx.save();ctx.lineCap='round';const colours=['#c77f9d','#d39b75','#8da9a0','#b68ac0'];
   for(let t=0;t<15;t++){const a=t/15*TAU,root=project(vec3(site.x+Math.cos(a)*.11,floor+.22,site.z+Math.sin(a)*.11)),bend=Math.sin(sway+t*.83)*.12,tip=project(vec3(site.x+Math.cos(a)*(.24+bend),floor+.78+Math.sin(sway*.7+t)*.09,site.z+Math.sin(a)*(.24+bend)));
    if(root.depth<2.5||tip.depth<2.5)continue;ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.quadraticCurveTo((root.x+tip.x)*.5+Math.sin(sway+t)*base.size*.025,(root.y+tip.y)*.5,tip.x,tip.y);ctx.strokeStyle=colours[i%colours.length];ctx.lineWidth=Math.max(1,base.size*.025);ctx.stroke();ctx.beginPath();ctx.arc(tip.x,tip.y,Math.max(.8,base.size*.014),0,TAU);ctx.fillStyle='#efc4b2';ctx.fill();}
   const column=project(vec3(site.x,floor+.32,site.z));ctx.beginPath();ctx.ellipse(column.x,column.y,Math.max(2,base.size*.14),Math.max(2,base.size*.22),0,0,TAU);ctx.fillStyle=colours[i%colours.length];ctx.fill();ctx.restore();
@@ -637,7 +637,7 @@ function drawAnemones(){
 }
 function drawCoral(){
  for(let index=0;index<coralColonies.length;index++){
-  const [x,z,type,floor]=coralColonies[index],base=project(vec3(x,floor+.12,z));ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  const [x,z,type,floor]=coralColonies[index],base=project(vec3(x,floor+.12,z));if(base.depth<2.5||base.x<-70||base.x>viewWidth+70||base.y<-70||base.y>viewHeight+70)continue;ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   if(type===0){for(let branch=0;branch<5;branch++){const spread=(branch-2)*.16,height=.42+((branch*7+index)%4)*.13,p0=project(vec3(x,floor+.08,z)),p1=project(vec3(x+spread*.5,floor+height*.55,z)),p2=project(vec3(x+spread,floor+height,z));ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.quadraticCurveTo(p1.x,p1.y,p2.x,p2.y);ctx.strokeStyle=['#d58a72','#d5a66d','#b879a0'][index%3];ctx.lineWidth=Math.max(1,base.size*.07);ctx.stroke();}}
   else if(type===1){for(let lobe=0;lobe<5;lobe++){const a=lobe/5*TAU,c=project(vec3(x+Math.cos(a)*.22,floor+.1*Math.sin(a),z+Math.sin(a)*.22));ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(1,base.size*.14),Math.max(1,base.size*.22),a,0,TAU);ctx.fillStyle=index%2?'#b66d86':'#d28b73';ctx.fill();}}
   else if(type===2){for(let layer=0;layer<3;layer++){const p=project(vec3(x,floor+.18+layer*.16,z));ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(2,base.size*(.18+layer*.07)),Math.max(1,base.size*.07),0,0,TAU);ctx.fillStyle=['#d08d7d','#b97e9f','#dcad83'][layer];ctx.fill();}}
@@ -963,7 +963,7 @@ function drawSchoolFish(fish){
  drawVolume(fish,quatFromEuler(yaw,0,0),vec3(0,.025,0),scale3(vec3(.24,.075,.24),scale),colours[fish.id%colours.length],.42,9,4);drawVolume(fish,q,vec3(-.02,.035,0),scale3(vec3(.88,.22,.22),scale),'#668f98',.36,12,6);drawVolume(fish,q,vec3(-.04,.025,0),whale?scale3(vec3(1.05,.27,.34),scale):scale3(vec3(1.02,.19,.22),scale),dorsal,.36,12,6);drawVolume(fish,q,vec3(-.08,.005,0),scale3(vec3(.67,.095,.43),scale),'#526e73',.38,12,5);ctx.restore();
 }
 function render(){
- const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
+ const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,1.75);
  const width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
  if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
  ctx.setTransform(dpr,0,0,dpr,0,0);viewWidth=rect.width;viewHeight=rect.height;
