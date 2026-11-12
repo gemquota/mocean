@@ -52,6 +52,7 @@ test('live habitat wires biome flora, new modelled species and bounded 3D render
   assert.ok(html.includes("from './src/phase6/vegetation-layout.js'"));
   assert.ok(html.includes("seahorse:'Lined seahorses'"));
   assert.ok(html.includes("seaDragon:'Leafy seadragons'"));
+  assert.ok(html.includes("anglerfish:'Deep-sea anglerfish'"));
   assert.ok(html.includes('drawSpongeGardens()'));
   assert.ok(html.includes('drawSoftCorals()'));
   assert.ok(html.includes('drawSeaFans()'));
