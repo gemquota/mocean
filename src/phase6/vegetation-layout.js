@@ -70,11 +70,11 @@ export function createVegetationLayout(field,worldSize={x:41,z:31},seed=73421){
      walls.push({...candidate,id:walls.length});
      if(walls.length>=44)break;
     }
-    if(walls.length>=34)break;
+    if(walls.length>=44)break;
    }
-   if(walls.length>=34)break;
+   if(walls.length>=44)break;
   }
-  if(walls.length>=34)break;
+  if(walls.length>=44)break;
  }
  // Additional growth forms reuse validated surface anchors, avoiding another
  // expensive pass over the voxel field during layout construction.
