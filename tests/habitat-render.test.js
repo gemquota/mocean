@@ -131,7 +131,7 @@ test('30-species mix includes three new fish with ecology-adjusted weights', () 
   assert.match(src, /moorishIdol: 0\.20/);
   assert.match(src, /barracuda: 3\.2/);
   assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
-  assert.equal(ANIMATED_MODEL_SPECIES.length, 12);
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 13);
   assert.match(script, /ANIMATED_MODEL_SPECIES\.length\+' MODELLED SPECIES'/);
   assert.match(script, /ANIMATED_MODEL_SPECIES\.includes\(changed\)/);
 });
@@ -190,11 +190,11 @@ test('habitat enforces the inner-world boundary and ties minimum camera zoom to 
 });
 
 test('only exact animated-model species can spawn and unsupported species are disabled in the prevalence controls', () => {
-  assert.equal(ANIMATED_MODEL_SPECIES.length, 12);
-  for (const species of ['barracuda','marlin','tuna','shark','whaleShark','mola','manta','stingray','orca','spermWhale','dolphin','jellyfish']) {
+  assert.equal(ANIMATED_MODEL_SPECIES.length, 13);
+  for (const species of ['barracuda','marlin','tuna','shark','whaleShark','mola','manta','stingray','orca','spermWhale','dolphin','jellyfish','turtle']) {
     assert.ok(ANIMATED_MODEL_SPECIES.includes(species), species + ' should have a matching animated model');
   }
-  for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','wobbegong','eel','crab','lobster','mantis','seal','starfish','turtle','sandEel']) {
+  for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','wobbegong','eel','crab','lobster','mantis','seal','starfish','sandEel']) {
     assert.ok(!ANIMATED_MODEL_SPECIES.includes(species), species + ' should remain temporarily disabled');
   }
   assert.match(script,/const speciesMix=filterToAnimatedSpecies\(SCHOOLING_SPECIES_PERCENTAGES\)/);
@@ -214,6 +214,7 @@ test('naturalistic GLBs use procedural body, vertical-tail, ray-wing and jellyfi
   assert.match(shader,/uWaveMode/);
   assert.match(shader,/uWingMax/);
   assert.match(shader,/'wing-wave'/);
+  assert.match(adapter,/motion:'wing-wave'/);
   assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)\)return/);
 });
 
