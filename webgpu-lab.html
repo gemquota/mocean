@@ -22,9 +22,10 @@ small{display:block;color:#78938b;line-height:1.45;margin-top:9px}
 </style>
 <script type="importmap">
 {"imports":{
- "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+ "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
  "three/webgpu":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
- "three/tsl":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js"
+ "three/tsl":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js",
+ "three-gl":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
 }}
 </script>
 </head>
@@ -56,9 +57,8 @@ small{display:block;color:#78938b;line-height:1.45;margin-top:9px}
 <small>CPU timings measure JavaScript update and render submission, not GPU execution time. Warm-up: 3s. Sample window: 10s. Use the same device, browser, instance count and power mode for comparisons. No habitat code is changed by this experiment.</small>
 </div>
 <script type="module">
-import * as THREE from 'three';
-import { WebGPURenderer, MeshStandardNodeMaterial } from 'three/webgpu';
-import { Fn, instanceIndex, instancedArray, instancedBufferAttribute, positionLocal, sin, cos, vec3, uniform } from 'three/tsl';
+let THREE,WebGPURenderer,MeshStandardNodeMaterial;
+let Fn,instanceIndex,instancedArray,instancedBufferAttribute,positionLocal,sin,cos,vec3,uniform;
 
 const params=new URLSearchParams(location.search);
 const modeSelect=document.querySelector('#mode');
@@ -143,7 +143,15 @@ function buildScene(count){
 }
 async function initialise(){
  try{
-  const count=Number(countSelect.value);activeMode=modeSelect.value;
+  const count=Number(countSelect.value);activeMode=modeSelect.value;running=true;
+  if(activeMode==='webgl-cpu'){
+   THREE=await import('three-gl');
+  }else{
+   THREE=await import('three');
+   const tsl=await import('three/tsl');
+   ({Fn,instanceIndex,instancedArray,instancedBufferAttribute,positionLocal,sin,cos,vec3,uniform}=tsl);
+   WebGPURenderer=THREE.WebGPURenderer;MeshStandardNodeMaterial=THREE.MeshStandardNodeMaterial;
+  }
   if(renderer){renderer.setAnimationLoop(null);renderer.dispose();renderer.domElement.remove();}
   const canvas=document.createElement('canvas');document.body.appendChild(canvas);
   if(activeMode==='webgl-cpu'){
