@@ -35,6 +35,8 @@ jobs:
           curl -fsSL "$base/39330/v1/model.glb" -o assets/models/osmocean/naturalistic/bottlenose_dolphin.glb
           curl -fsSL "$base/5889/v1/model.glb" -o assets/models/osmocean/naturalistic/moon_jellyfish.glb
           curl -fsSL "$base/39340/v1/model.glb" -o assets/models/osmocean/naturalistic/loggerhead_turtle.glb
+          curl -fsSL "$base/39345/v1/model.glb" -o assets/models/osmocean/naturalistic/lined_seahorse.glb
+          curl -fsSL "$base/39346/v1/model.glb" -o assets/models/osmocean/naturalistic/leafy_seadragon.glb
           node scripts/verify-naturalistic-marine-models.mjs assets/models/osmocean/naturalistic
       - name: Configure Pages
         uses: actions/configure-pages@v6
