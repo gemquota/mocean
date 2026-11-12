@@ -22,7 +22,7 @@ These are natural-colour, untextured, smooth-shaded posed studies, not photoreal
 | Jellyfish | Moon jellyfish | 5889 | Bell pulse |
 | Turtle | Loggerhead turtle | 39340 | Procedural front-flipper wave |
 | Seahorse | Lined seahorse | 39345 | Vertical hover with subtle body pulse |
-| Leafy seadragon | Leafy seadragon | 39346 | Gentle travelling body wave |
+| Leafy seadragon | Leafy seadragon | 39346 | Vertical-axis travelling body wave |
 | Anglerfish | Anglerfish | 5890 | Slow deep-water body wave |
 
 Source packs:
