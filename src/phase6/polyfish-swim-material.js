@@ -61,19 +61,28 @@ export const SWIM_CONFIGS = {
     coastSpeed: 0.0,
   },
   manatee: {
-    frequency: 1.0,
-    amplitude: 0.004,
-    speed: 2.0,
-    maskStart: 0.3,
-    maskFloor: 0.1,
-    headPhase: 0.3,
-    swimAxis: 1,
-    idleAmplitude: 0.01,    // visible lazy strokes when idle
-    thrustAmplitude: 0.002,
-    coastAmplitude: 0.0,
-    idleSpeed: 3.0,
-    thrustSpeed: 10.0,
-    coastSpeed: 0.0,
+    frequency: 1.0, amplitude: 0.004, speed: 2.0, maskStart: 0.3,
+    maskFloor: 0.1, headPhase: 0.3, swimAxis: 1, idleAmplitude: 0.01,
+    thrustAmplitude: 0.002, coastAmplitude: 0.0, idleSpeed: 3.0,
+    thrustSpeed: 10.0, coastSpeed: 0.0,
+  },
+  'body-wave': {
+    frequency: 1.15, amplitude: 0.04, speed: 2.8, maskStart: 0.22,
+    maskFloor: 0.04, headPhase: 0.15, swimAxis: 0, waveMode: 0,
+    idleAmplitude: 0.035, thrustAmplitude: 0.052, coastAmplitude: 0.012,
+    idleSpeed: 3.6, thrustSpeed: 7.2, coastSpeed: 1.5,
+  },
+  'vertical-body-wave': {
+    frequency: 0.9, amplitude: 0.035, speed: 2.4, maskStart: 0.2,
+    maskFloor: 0.04, headPhase: 0.12, swimAxis: 1, waveMode: 0,
+    idleAmplitude: 0.028, thrustAmplitude: 0.044, coastAmplitude: 0.01,
+    idleSpeed: 2.8, thrustSpeed: 5.4, coastSpeed: 1.2,
+  },
+  'wing-wave': {
+    frequency: 1.0, amplitude: 0.05, speed: 2.2, maskStart: 0.12,
+    maskFloor: 0.08, headPhase: 0, swimAxis: 1, waveMode: 1,
+    idleAmplitude: 0.045, thrustAmplitude: 0.07, coastAmplitude: 0.018,
+    idleSpeed: 2.7, thrustSpeed: 4.6, coastSpeed: 1.0,
   },
 };
 
@@ -101,7 +110,7 @@ const SWIM_VERTEX_MAIN = /* glsl */`
     float waveBody = max(body, uMaskStart);
 
     // Amplitude ramp with eye weighting
-    float ramp = smoothstep(uMaskStart, uMaskStart + 0.3, body);
+    float ramp = uWaveMode > 0.5 ? smoothstep(0.08, 0.72, body) : smoothstep(uMaskStart, uMaskStart + 0.3, body);
     float lateralOffset;
     if (uSwimAxis < 0.5) {
       lateralOffset = abs(position.y) / (bodyRange * 0.5 + 0.001);
@@ -178,7 +187,7 @@ export function applySwimMaterial(meshRoot, creatureType) {
     uBodyMin: { value: bodyMin },
     uBodyMax: { value: bodyMax },
     uMaskFloor: { value: config.maskFloor ?? 0.15 },
-    uHeadPhase: { value: config.headPhase ?? 0.5 },
+    uHeadPhase: { value: config.headPhase ?? 0.5 },\n    uWaveMode: { value: config.waveMode ?? 0 },\n    uWingMax: { value: wingMax || 1 },
   };
 
   // Patch all materials in the hierarchy
