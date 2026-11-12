@@ -15,7 +15,8 @@ test('enabled species map only to species-exact naturalistic CC0 GLBs', () => {
     orca: ['orca','5861'],
     spermWhale: ['sperm_whale','5860'],
     dolphin: ['bottlenose_dolphin','39330'],
-    jellyfish: ['moon_jellyfish','5889']
+    jellyfish: ['moon_jellyfish','5889'],
+    turtle: ['loggerhead_turtle','39340']
   };
   assert.deepEqual(Object.keys(SPECIES_MODEL_MAP), Object.keys(expected));
   for (const [species,[id,assetId]] of Object.entries(expected)) {
@@ -23,13 +24,14 @@ test('enabled species map only to species-exact naturalistic CC0 GLBs', () => {
     assert.equal(getSpeciesModel(species).assetId,assetId);
     assert.equal(getSpeciesModel(species).collection,'naturalistic');
   }
-  assert.equal(Object.keys(SPECIES_MODEL_MAP).length,12);
+  assert.equal(getSpeciesModel('turtle').motion,'wing-wave');
+  assert.equal(Object.keys(SPECIES_MODEL_MAP).length,13);
 });
 
 test('species without an appropriate naturalistic model remain explicitly disabled', () => {
-  for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','wobbegong','eel','crab','lobster','mantis','seal','starfish','turtle','sandEel']) {
+  for (const species of ['fish','schoolFish','clownfish','parrotfish','blueTang','angelfish','butterflyfish','grouper','moorishIdol','wobbegong','eel','crab','lobster','mantis','seal','starfish','sandEel']) {
     assert.equal(getSpeciesModel(species),null,species+' must not be silently mapped to an unrelated model');
     assert.ok(SPECIES_WITHOUT_REVIEWED_MODEL.includes(species));
   }
-  assert.equal(SPECIES_WITHOUT_REVIEWED_MODEL.length,18);
+  assert.equal(SPECIES_WITHOUT_REVIEWED_MODEL.length,17);
 });
