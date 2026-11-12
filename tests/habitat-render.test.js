@@ -109,7 +109,7 @@ test('one creature renderer fault cannot stop the habitat frame or hide every la
   assert.match(script, /for\(const fish of ordered\)\{[\s\S]*?try \{ drawFish\(fish\); \}[\s\S]*?catch\(error\)/);
   assert.match(script, /const renderFaults=new Map\(\)/);
   assert.match(script, /RENDER WARN/);
-  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*30 SPECIES/);
+  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*MODELLED SPECIES/);
 });
 
 test('coral renderer reads terrain-height anchors from its precomputed colony collection', () => {
@@ -197,8 +197,8 @@ test('only exact animated-model species can spawn and unsupported species are di
   for (const species of ['eel','crab','lobster','mantis','manta','stingray','whaleShark','orca','spermWhale','seal','starfish','turtle','jellyfish','sandEel','angelfish','barracuda','wobbegong','marlin']) {
     assert.ok(!ANIMATED_MODEL_SPECIES.includes(species), species + ' should remain temporarily disabled');
   }
-  assert.match(script,/const speciesMix=filterToAnimatedSpecies\\(SCHOOLING_SPECIES_PERCENTAGES\\)/);
-  assert.match(script,/ANIMATED_MODEL_SPECIES\\.filter\\(key=>key!==changed\\)/);
-  assert.match(script,/const MODELLED_SPECIES=new Set\\(ANIMATED_MODEL_SPECIES\\)/);
+  assert.match(script,/const speciesMix=filterToAnimatedSpecies\(SCHOOLING_SPECIES_PERCENTAGES\)/);
+  assert.match(script,/ANIMATED_MODEL_SPECIES\.filter\(key=>key!==changed\)/);
+  assert.match(script,/const MODELLED_SPECIES=new Set\(ANIMATED_MODEL_SPECIES\)/);
   assert.match(script,/TEMPORARILY HIDDEN/);
 });
