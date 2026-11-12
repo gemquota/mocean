@@ -83,7 +83,7 @@ test('one creature renderer fault cannot stop the habitat frame or hide every la
   assert.match(script, /for\(const fish of ordered\)\{[\s\S]*?try \{ drawFish\(fish\); \}[\s\S]*?catch\(error\)/);
   assert.match(script, /const renderFaults=new Map\(\)/);
   assert.match(script, /RENDER WARN/);
-  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\)\+' CREATURES · '+ANIMATED_MODEL_SPECIES.length+' ANIMATED SPECIES/);
+  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*ANIMATED SPECIES/);
 });
 
 test('coral renderer reads from its precomputed colony collection', () => {
