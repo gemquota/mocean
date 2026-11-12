@@ -460,3 +460,22 @@ test('live agents collide against the same voxel density field used by the seabe
  stepSchool(school,1/60);
  assert.notEqual(school.terrainField,previousField,'terrain field must follow world dimension changes');
 });
+
+
+test('all species stay inside the inner 80 percent of the configured world on every axis', () => {
+  const worldSize = { x: 80, y: 60, z: 100 };
+  const edge = Object.fromEntries(Object.entries(worldSize).map(([axis, size]) => [axis, size * 0.4]));
+  const school = createSchool(300, 73421, { worldSize });
+  for (let i = 0; i < 900; i++) stepSchool(school, 1 / 60);
+  assert.ok(school.fish.every(agent =>
+    ['x', 'y', 'z'].every(axis => Math.abs(agent.p[axis]) <= edge[axis] + 1e-8)
+  ), 'no creature centre may enter the outer ten-percent border on any face');
+
+  const single = createSchool(1, 91, { speciesPercentages: { fish: 100 }, worldSize });
+  const fish = single.fish[0];
+  fish.p = { x: edge.x + 12, y: 0, z: 0 };
+  fish.v = { x: 2, y: 0, z: 0 };
+  stepSchool(single, 1 / 60);
+  assert.ok(fish.p.x <= edge.x, 'an externally displaced fish must be pulled back inside the safe world');
+  assert.ok(fish.v.x < 0, 'a fish hitting the boundary must receive an inward velocity response');
+});
