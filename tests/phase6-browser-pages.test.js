@@ -46,6 +46,20 @@ test('creature model review has valid import map and parseable browser module', 
   assert.ok(html.includes('PROCEDURAL SWIM'));
 });
 
+test('live habitat wires biome flora, new modelled species and bounded 3D rendering', () => {
+  const html=readPage('schooling.html');
+  assert.ok(html.includes("from './src/phase6/biomes.js'"));
+  assert.ok(html.includes("from './src/phase6/vegetation-layout.js'"));
+  assert.ok(html.includes("seahorse:'Lined seahorses'"));
+  assert.ok(html.includes("seaDragon:'Leafy seadragons'"));
+  assert.ok(html.includes('drawSpongeGardens()'));
+  assert.ok(html.includes('drawSoftCorals()'));
+  assert.ok(html.includes('drawSeaFans()'));
+  assert.ok(html.includes('MAX_VISIBLE_3D_MODELS=72'));
+  assert.ok(html.includes('marineRenderedFish.has(fish)'));
+  assert.ok(html.includes('renderEntries.sort((a,b)=>b.depth-a.depth)'));
+});
+
 test('all Three.js pages keep import maps as real JSON rather than escaped text', () => {
   for (const path of ['phase6-spike.html', 'voxel-terrain-spike.html', 'creature-model-review.html']) {
     const html = readPage(path);
