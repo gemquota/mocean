@@ -48,7 +48,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ### P6-2 · Spatial seabed and terrain
 
-**Prototype and live integration:** isolated terrain studies contain seeded heightfields, irregular rock clusters, arch meshes, raised shelves and depressed sand channels. The live habitat now streams 32-unit voxel chunks from two module workers, sampling the same signed-distance field used for creature contact. The fixed-camera habitat keeps a two-chunk visible radius and three-chunk prefetch ring, uses half-unit cells, and caches projected chunk tiles for Canvas compositing. Extra study-only boulders are disabled in the live worker path so visual geometry cannot diverge from collision. The live hybrid renderer still needs visual and performance acceptance.
+**Prototype and live integration:** isolated terrain studies contain seeded heightfields, irregular rock clusters, arch meshes, raised shelves and depressed sand channels. The live habitat now streams 32-unit voxel chunks from two module workers, sampling the same signed-distance field used for creature contact. The fixed-camera habitat keeps a two-chunk visible radius and three-chunk prefetch ring, uses one-unit cells, and caches projected chunk tiles for Canvas compositing. Extra study-only boulders are disabled in the live worker path so visual geometry cannot diverge from collision. The live hybrid renderer still needs visual and performance acceptance.
 
 - [x] Replace the simple analytic floor presentation with a volumetric terrain mesh extracted from the shared signed-distance field at multiple elevations.
 - [x] Add seeded raised rock shelves with finite solid volume and queryable top/underside normals.
