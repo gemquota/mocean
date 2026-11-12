@@ -2,19 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveModelEntry } from '../src/phase6/creature-model-bank.js';
 
-const catalogues = {
-  animated: { species: [{ id: 'parrot_fish', file: 'parrot_fish.glb', name: 'Parrot Fish' }] },
-  static: { species: [{ id: '5878', file: '5878.glb', name: 'Manta Ray' }] },
-  polyfish: { id: 'polyfish-rigged', file: 'fish_rigged.glb', name: 'PolyFish' }
-};
+const catalogue={models:[
+  {species:'manta',assetId:'5878',file:'manta_ray.glb'},
+  {species:'turtle',assetId:'39340',file:'loggerhead_turtle.glb'}
+]};
 
-test('model bank resolves only exact reviewed species assets', () => {
-  assert.equal(resolveModelEntry('parrotfish', catalogues).file, 'parrot_fish.glb');
-  assert.equal(resolveModelEntry('manta', catalogues).file, '5878.glb');
-  assert.equal(resolveModelEntry('fish', catalogues).file, 'fish_rigged.glb');
-  assert.equal(resolveModelEntry('crab', catalogues), null);
+test('model bank resolves only exact naturalistic species assets',()=>{
+  assert.equal(resolveModelEntry('manta',catalogue).file,'manta_ray.glb');
+  assert.equal(resolveModelEntry('turtle',catalogue).file,'loggerhead_turtle.glb');
+  assert.equal(resolveModelEntry('fish',catalogue),null);
+  assert.equal(resolveModelEntry('clownfish',catalogue),null);
 });
 
-test('model bank refuses to substitute a similarly named but absent asset', () => {
-  assert.equal(resolveModelEntry('grouper', { ...catalogues, animated: { species: [] } }), null);
+test('model bank refuses similarly named assets with the wrong source ID or file',()=>{
+  assert.equal(resolveModelEntry('manta',{models:[{species:'manta',assetId:'5877',file:'manta_ray.glb'}]}),null);
+  assert.equal(resolveModelEntry('manta',{models:[{species:'manta',assetId:'5878',file:'stingray.glb'}]}),null);
 });
