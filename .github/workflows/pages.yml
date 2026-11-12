@@ -50,6 +50,10 @@ jobs:
           curl -fsSL https://gobkit.com/freebies/animal/Jellyfish.glb -o assets/models/osmocean/species/jellyfish.glb
           curl -fsSL https://gobkit.com/freebies/animalB/Seal.glb -o assets/models/osmocean/species/seal.glb
           curl -fsSL https://gobkit.com/freebies/animalB/Whale.glb -o assets/models/osmocean/species/whale.glb
+          curl -fsSL https://gobkit.com/freebies/animal006/BlueTang.glb -o assets/models/osmocean/species/gobkit_bluetang.glb
+          curl -fsSL https://gobkit.com/freebies/animal008/Parrotfish.glb -o assets/models/osmocean/species/gobkit_parrotfish.glb
+          curl -fsSL https://gobkit.com/freebies/animal009/Moorishidol.glb -o assets/models/osmocean/species/gobkit_moorishidol.glb
+          curl -fsSL https://gobkit.com/freebies/animal/Shark.glb -o assets/models/osmocean/species/gobkit_shark.glb
           curl -fsSL https://raw.githubusercontent.com/Ariescar/gobkit-free-assets/4e73c68fa6e8ca9d948fcc0ce7215c830a022c3b/LICENSE -o assets/models/osmocean/species/GOBKIT-CC0-LICENSE.txt
           node scripts/verify-animated-marine-models.mjs assets/models/osmocean/species _upstream/gobkit-free-manifest.json
       - name: Configure Pages
