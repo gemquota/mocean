@@ -1,9 +1,13 @@
 {
   "name": "mocean",
   "version": "0.2.0",
-  "private": false,
+  "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test"
+  },
+  "description": "Browser-based aquatic schooling, creature locomotion and marine habitat simulation.",
+  "engines": {
+    "node": ">=22"
   }
 }
