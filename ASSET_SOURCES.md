@@ -46,7 +46,7 @@ The current model catalogue is generated at deployment by `scripts/verify-natura
 
 ## Temporarily disabled species
 
-Seventeen species remain disabled because the reviewed naturalistic collections do not currently provide a suitable model and motion treatment for them: regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish, turtle and sand eel.
+Seventeen species remain disabled because the reviewed naturalistic collections do not currently provide a suitable model and motion treatment for them: regular fish, schooling fish, clownfish, parrotfish, blue tang, angelfish, butterflyfish, grouper, Moorish idol, wobbegong, eel, crab, lobster, mantis shrimp, seal, starfish and sand eel.
 
 They remain in the simulation's species catalogue and behaviour code, but their prevalence is forced to zero and their controls are disabled. No Quaternius, Gobkit, static reef-study or unrelated animal stand-in is used to make them appear enabled.
 
