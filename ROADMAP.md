@@ -1,14 +1,14 @@
-# Mocean Development Roadmap
+# Mocean Engineering Roadmap · Locomotion and Environment
 
-**Revision:** 15 · 11 November 2026  
+**Revision:** 16 · 12 November 2026  
 **Canonical status:** Phase 0 and Phase 1 approved. Phases 2–5 are provisionally tagged *candidate complete* at the user's request; visual acceptance, integration checks and/or user confirmation remain outstanding. Phase 6 is authorised and in progress.  
 **Current production branch:** `main` · latest production integration includes Phase 6 spatial-terrain work. The Phase 5 autonomy increment remains subject to its own integration and review gates.
 
 ## Objective
 
-Build one aquatic creature whose movement emerges from body deformation, tail-driven propulsion, inertia, resistance and persistent behavioural intent. The simulation is a real-time phenomenological biomechanical model, not a validated animal model or computational fluid-dynamics solver.
+Support the main Schooling habitat with reliable creature locomotion, behaviour and increasingly convincing spatial environment technology. The live product is the mixed-species schooling simulation in [schooling.html](schooling.html); the single-creature swimmer remains a focused locomotion reference. All simulation work remains phenomenological, not a validated animal model or computational fluid-dynamics solver.
 
-The fish is the product. Architecture, diagrams, tests and presentation exist to improve and explain its movement, not to replace observable correctness.
+Architecture, diagrams, tests and prototypes exist to improve the observable simulation. Experimental renderer work must remain clearly separated from the live habitat until it passes integration, regression, visual and performance checks.
 
 ## Engineering priorities
 
@@ -129,24 +129,25 @@ The main-branch Actions test runs after these integrations succeeded. The curren
 
 **Unresolved acceptance:** watch the actual fish in AUTO and DIRECT modes; compare cruising, acceleration, turn radius, overshoot, braking and near-target hovering against the accepted baseline. The current habitat boundary is not a general obstacle field. Do not mark Phase 5 tasks or the phase gate complete until visual evidence and user review exist.
 
-## Post-Phase 5 experiment · 100-fish schooling
+## Main simulation · Schooling habitat
 
-**Authorised by the user · isolated prototype implemented on `experiment/schooling-100-fish`. Not a new production phase and not part of the live single-fish entry point.**
+**Status:** Primary live simulation on `main` and published through GitHub Pages.
 
-**Prototype:** [schooling.html](schooling.html) · [SCHOOLING_100.md](SCHOOLING_100.md).
+**Entry point:** [schooling.html](schooling.html) · [model notes](SCHOOLING_100.md).
 
-The experiment should use local interactions, not a shared waypoint:
-- separation to avoid crowding/collisions;
+The habitat uses local group interactions rather than a shared waypoint:
+- separation to avoid crowding and collisions;
 - alignment to respond to nearby heading and velocity;
-- cohesion to maintain a loose group;
-- bounded neighbour sampling and spatial partitioning so 100 agents remain real-time;
-- the same movement intent/force principles where practical, with simplified per-agent body rendering if necessary.
+- cohesion to maintain a loose school;
+- a 3D spatial hash to bound neighbour and collision candidate work;
+- individual inertia, turn-rate limits and phase variation;
+- a default population of 1,000 fish, with mixed-species habitat work layered around the schooling model.
 
-First establish a reproducible single-fish baseline, then profile 10, 25, 50 and 100 agents. Keep the experiment isolated and compare group behaviour and frame time against the single-fish build. Do not introduce schooling infrastructure into the production fish until the experiment demonstrates value.
+The single-creature swimmer at [index.html](index.html) remains a separate locomotion prototype. Its mechanics and tests are useful references, but it is not the primary live experience. See `SCHOOLING_100.md` for model details and known limitations.
 
 ## Phase 6 · 3D environment, seabed and water
 
-**Status:** Authorised · in progress; the spatial-terrain increment is integrated into `main` (11 November 2026). The user expanded the original environment/water scope to include open-source 3D assets, complex spatial terrain, underwater lighting and post-processing. See [PHASE_6.md](PHASE_6.md) for the implementation plan, audit evidence and acceptance criteria.
+**Status:** Authorised · in progress. The main branch contains isolated Phase 6 modules and review prototypes; the 3D renderer and terrain work are not yet integrated into the live Schooling entry point. The scope includes open-source 3D assets, complex spatial terrain, underwater lighting and post-processing. See [PHASE_6.md](PHASE_6.md) for implementation details and acceptance criteria.
 
 - [x] P6-0 Audit current renderer, simulation/terrain coupling and delivery constraints. (Assistant complete; evidence in `PHASE_6.md`.)
 - [ ] P6-1 Renderer architecture and compatibility spike.
@@ -184,9 +185,9 @@ First establish a reproducible single-fish baseline, then profile 10, 25, 50 and
 | 3 · Basic composites | **Provisional candidate complete**; implementation and kinematic checks integrated | Pending visual review · not approved |
 | 4 · Complex arrangements | **Provisional candidate complete**; implementation and kinematic checks integrated | Pending visual review · not approved |
 | 5 · Autonomous behaviour | **Provisional candidate complete**; prototype on feature branch, 68 tests pass | Pending integration, visual review · not approved |
-| 6 · Environment | Deferred | Not started |
+| 6 · Environment | In progress · isolated prototypes and modules | Pending visual/performance acceptance |
 | 7 · Integration and polish | Queued | Not started |
 
 **Status-label note (10 November 2026):** At the user's request, Phases 2–5 are labelled *provisional / candidate complete*. This is a planning label only. It does not change task checkboxes, assistant-complete evidence, user-confirmation marks or phase-gate approvals. In particular, Phase 5 remains on its feature branch and must be integrated and regression-checked before acceptance.
 
-**Authorisation:** On 9 November 2026 the user explicitly authorised the work through Phase 5 and the subsequent isolated 100-fish schooling experiment. This authorises implementation work; it does not imply task completion, user confirmation or phase-gate approval.
+**Authorisation:** The user authorised the locomotion and environment engineering tracks, and the Schooling habitat is now the primary live simulation. Implementation status, visual acceptance and phase-gate approval remain separate; a working deployment does not automatically approve every engineering task.
