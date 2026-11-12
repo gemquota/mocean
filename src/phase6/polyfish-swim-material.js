@@ -97,6 +97,8 @@ const SWIM_VERTEX_PARS = /* glsl */`
   uniform float uBodyMax;
   uniform float uMaskFloor;
   uniform float uHeadPhase;
+  uniform float uWaveMode;
+  uniform float uWingMax;
 `;
 
 // Vertex shader chunk — the wave is sin(spatialPhase - uPhase).
@@ -104,7 +106,9 @@ const SWIM_VERTEX_PARS = /* glsl */`
 const SWIM_VERTEX_MAIN = /* glsl */`
   {
     float bodyRange = uBodyMax - uBodyMin;
-    float body = bodyRange > 0.001 ? clamp(1.0 - (position.z - uBodyMin) / bodyRange, 0.0, 1.0) : 0.5;
+    float body = uWaveMode > 0.5
+      ? clamp(abs(position.x) / max(uWingMax, 0.001), 0.0, 1.0)
+      : (bodyRange > 0.001 ? clamp(1.0 - (position.z - uBodyMin) / bodyRange, 0.0, 1.0) : 0.5);
 
     // Head region: all vertices sample wave at maskStart (rigid head, no eye sliding)
     float waveBody = max(body, uMaskStart);
@@ -127,7 +131,9 @@ const SWIM_VERTEX_MAIN = /* glsl */`
     float phase = waveBody * uFrequency * 6.2832 - uPhase + headDelay;
     float wave = sin(phase) * uAmplitude * amp;
 
-    if (uSwimAxis < 0.5) {
+    if (uWaveMode > 0.5) {
+      transformed.y += wave;
+    } else if (uSwimAxis < 0.5) {
       transformed.x += wave;
     } else {
       transformed.y += wave;
@@ -167,15 +173,21 @@ export function applySwimMaterial(meshRoot, creatureType) {
   }
 
   // ── First-time patch: compute bounding box, create uniforms, inject shader ──
-  let localBBox = null;
+  let bodyMin = Infinity, bodyMax = -Infinity, wingMax = 0;
+  meshRoot.updateMatrixWorld(true);
   meshRoot.traverse((child) => {
-    if ((child.isMesh || child.isSkinnedMesh) && !localBBox && child.geometry) {
+    if ((child.isMesh || child.isSkinnedMesh) && child.geometry) {
       child.geometry.computeBoundingBox();
-      localBBox = child.geometry.boundingBox;
+      const box = child.geometry.boundingBox.clone().applyMatrix4(child.matrix);
+      bodyMin = Math.min(bodyMin, box.min.z);
+      bodyMax = Math.max(bodyMax, box.max.z);
+      wingMax = Math.max(wingMax, Math.abs(box.min.x), Math.abs(box.max.x));
     }
   });
-  const bodyMin = localBBox ? localBBox.min.z : -1;
-  const bodyMax = localBBox ? localBBox.max.z : 1;
+  if (!Number.isFinite(bodyMin) || !Number.isFinite(bodyMax)) {
+    bodyMin = -1;
+    bodyMax = 1;
+  }
 
   // Shared uniforms (all materials on this creature share the same uniform objects)
   const uniforms = {
@@ -187,7 +199,9 @@ export function applySwimMaterial(meshRoot, creatureType) {
     uBodyMin: { value: bodyMin },
     uBodyMax: { value: bodyMax },
     uMaskFloor: { value: config.maskFloor ?? 0.15 },
-    uHeadPhase: { value: config.headPhase ?? 0.5 },\n    uWaveMode: { value: config.waveMode ?? 0 },\n    uWingMax: { value: wingMax || 1 },
+    uHeadPhase: { value: config.headPhase ?? 0.5 },
+    uWaveMode: { value: config.waveMode ?? 0 },
+    uWingMax: { value: wingMax || 1 },\n    uWaveMode: { value: config.waveMode ?? 0 },\n    uWingMax: { value: wingMax || 1 },
   };
 
   // Patch all materials in the hierarchy
