@@ -1,8 +1,8 @@
 import { applySwimMaterial, updateSwimUniforms } from './polyfish-swim-material.js';
-import { getSpeciesModel } from './species-model-map.js';
+import { getCreatureReviewModel } from './species-model-map.js';
 
 export function resolveModelEntry(species, catalogues) {
-  const mapping = getSpeciesModel(species);
+  const mapping = getCreatureReviewModel(species);
   if (!mapping || !catalogues) return null;
   if (mapping.collection === 'animated') {
     const item = catalogues.animated?.species?.find(entry => entry.id === mapping.id);
