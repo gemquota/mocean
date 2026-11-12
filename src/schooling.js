@@ -36,7 +36,7 @@ export const SCHOOLING_SPECIES_ADULT_MASS_KG = Object.freeze({
   dolphin: 225, turtle: 150, jellyfish: 0.01, sandEel: 0.01
 });
 export const SCHOOLING_SPECIES_ECOLOGY = Object.freeze({
-  fish: 10, schoolFish: 9, seahorse: 15, seaDragon: 15, anglerfish: 12, clownfish: 7, parrotfish: 8, blueTang: 6, angelfish: 5, butterflyfish: 6, grouper: 2, moorishIdol: 5, barracuda: 3, wobbegong: 4, marlin: 2, tuna: 4, eel: 5, crab: 8, lobster: 4,
+  fish: 10, schoolFish: 9, seahorse: 80, seaDragon: 70, anglerfish: 45, clownfish: 7, parrotfish: 8, blueTang: 6, angelfish: 5, butterflyfish: 6, grouper: 2, moorishIdol: 5, barracuda: 3, wobbegong: 4, marlin: 2, tuna: 4, eel: 5, crab: 8, lobster: 4,
   mantis: 3, manta: 2, stingray: 5, shark: 3, whaleShark: 1,
   mola: 1, orca: 1, spermWhale: 1, seal: 2, starfish: 8,
   dolphin: 2, turtle: 3, jellyfish: 7, sandEel: 8
