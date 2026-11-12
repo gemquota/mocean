@@ -177,3 +177,14 @@ test('voxel and WebGL failures preserve the procedural habitat fallback',()=>{
   assert.match(script,/webglcontextlost/);
   assert.match(script,/Animated GLB layer disabled; procedural species renderers remain active/);
 });
+
+
+test('habitat enforces the inner-world boundary and ties minimum camera zoom to world size', () => {
+  assert.match(src, /export const SCHOOLING_WORLD_EDGE_MARGIN = 0\.1/);
+  assert.match(src, /function constrainAgentToWorld\(agent, worldSize\)/);
+  assert.match(src, /for \(const agent of survivors\) constrainAgentToWorld\(agent, limits\)/);
+  assert.match(script, /function minimumCameraZoom\(\)/);
+  assert.match(script, /baseDistance\/worldExtent/);
+  assert.match(script, /zoom=Math\.max\(minimum,Math\.min\(Math\.max\(4\.5,minimum\),zoom\)\)/);
+  assert.match(script, /applyZoom\(\);/);
+});
