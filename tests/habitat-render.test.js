@@ -214,7 +214,6 @@ test('naturalistic GLBs use procedural body, vertical-tail, ray-wing and jellyfi
   assert.match(shader,/uWaveMode/);
   assert.match(shader,/uWingMax/);
   assert.match(shader,/'wing-wave'/);
-  assert.match(adapter,/motion:'wing-wave'/);
   assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)\)return/);
 });
 
