@@ -46,7 +46,7 @@ const fill=new THREE.DirectionalLight(0x4d9eac,.8);fill.position.set(5,2,-6);sce
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0,0);
 const floor=new THREE.GridHelper(12,24,0x24515a,0x17353e);floor.position.y=-2.7;scene.add(floor);
 const models=new OsmoceanMarineModels(THREE,{baseUrl:'./assets/models/osmocean/naturalistic/'});
-const names={barracuda:'Barracuda',marlin:'Blue marlin',tuna:'Bluefin tuna',shark:'Great white shark',whaleShark:'Whale shark',mola:'Ocean sunfish',manta:'Manta ray',stingray:'Southern stingray',orca:'Orca',spermWhale:'Sperm whale',dolphin:'Bottlenose dolphin',jellyfish:'Moon jellyfish'};
+const names={barracuda:'Barracuda',marlin:'Blue marlin',tuna:'Bluefin tuna',shark:'Great white shark',whaleShark:'Whale shark',mola:'Ocean sunfish',manta:'Manta ray',stingray:'Southern stingray',orca:'Orca',spermWhale:'Sperm whale',dolphin:'Bottlenose dolphin',jellyfish:'Moon jellyfish',turtle:'Loggerhead turtle'};
 let entries=[],currentInstance=null,currentRoot=null,playing=true,selectionVersion=0;
 function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
 addEventListener('resize',resize);resize();
