@@ -12,8 +12,11 @@ import { SPECIES_MODEL_MAP } from './species-model-map.js';
 export const MARINE_MODEL_BY_SPECIES = Object.freeze(Object.fromEntries(
   Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.id])
 ));
-export const MARINE_MODEL_IDS = Object.freeze([...new Set(Object.values(MARINE_MODEL_BY_SPECIES))]);
-const GOBKIT_MASTER_TIMELINE_MODELS = new Set(['jellyfish','seal','whale']);
+export const MARINE_MODEL_VARIANTS_BY_SPECIES = Object.freeze(Object.fromEntries(
+  Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, Object.freeze([...(mapping.variants ?? [mapping.id])])])
+));
+export const MARINE_MODEL_IDS = Object.freeze([...new Set(Object.values(MARINE_MODEL_VARIANTS_BY_SPECIES).flat())]);
+const GOBKIT_MASTER_TIMELINE_MODELS = new Set(['jellyfish','seal','whale','gobkit_bluetang','gobkit_parrotfish','gobkit_moorishidol','gobkit_shark']);
 export const MARINE_MODEL_ORIENTATION = Object.freeze(Object.fromEntries(
   Object.entries(SPECIES_MODEL_MAP).map(([species, mapping]) => [species, mapping.orientation ?? 'horizontal'])
 ));
@@ -30,10 +33,11 @@ export class OsmoceanMarineModels {
     if(!this.cache.has(modelId)) this.cache.set(modelId,this.loader.loadAsync(this.baseUrl+modelId+'.glb'));
     return this.cache.get(modelId);
   }
-  async createInstance(species,{targetLength=1.2}={}) {
+  async createInstance(species,{targetLength=1.2,modelId:requestedModelId=null}={}) {
     const mapping=SPECIES_MODEL_MAP[species];
-    const modelId=mapping?.id;
+    const modelId=requestedModelId??mapping?.id;
     if(!modelId) return null;
+    if(!MARINE_MODEL_VARIANTS_BY_SPECIES[species]?.includes(modelId)) throw new RangeError('Model '+modelId+' is not mapped to '+species);
     const gltf=await this.load(modelId);
     const visual=cloneSkeleton(gltf.scene);
     visual.traverse(node=>{
