@@ -34,8 +34,9 @@ test('creature model review has valid import map and parseable browser module', 
   const html = readPage('creature-model-review.html');
   assertImportMap(html, 'creature model review');
   assert.doesNotThrow(() => new vm.Script(moduleSource(html, 'creature model review')));
-  assert.ok(html.includes('assets/models/osmocean/animated/catalog.json'));
-  assert.ok(html.includes('assets/models/osmocean/static/catalog.json'));
+  assert.ok(html.includes('assets/models/osmocean/naturalistic/catalog.json'));
+  assert.ok(html.includes('OsmoceanMarineModels'));
+  assert.ok(html.includes('PROCEDURAL SWIM'));
 });
 
 test('all Three.js pages keep import maps as real JSON rather than escaped text', () => {
