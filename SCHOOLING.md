@@ -17,15 +17,17 @@ Each fish has independent 3D position, velocity, body-forward direction and gait
 - **Habitat pressure:** a smooth ellipsoidal force steers fish away from the soft boundary.
 - **Individual variation:** slow phase-offset drift prevents a rigid rotating formation.
 
-The default school contains 1,000 fish. The rendered body is 25% of the previous schooling prototype's dimensions, and the habitat extents are five times the previous experiment in all three axes. The gait and articulated geometry are shared with the single-creature body implementation. The schooling scene uses a lower-polygon mesh and renders at 30 Hz while simulation continues at a 60 Hz fixed step.
+The live page starts with 150 creatures and exposes a population slider from 10 to 200 in steps of ten. Its species catalogue contains 30 species. The rendered schooling-fish body scale is 25% of the shared single-creature body dimensions. The habitat starts at 100 × 100 × 100 world units; its dimensions can be adjusted in the habitat configuration panel. The simulation uses a fixed-step update and shares gait/body helpers with the single-creature locomotion prototype.
 
 ## Performance strategy
 
-A uniform 3D spatial hash replaces an all-pairs neighbour scan. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. Rendering uses a lower-resolution mesh and precomputed face shading rather than recomputing per-triangle lighting normals.
+A uniform 3D spatial hash replaces an all-pairs neighbour scan. Each fish queries its local cell and adjacent cells; only nearby candidates receive distance and interaction tests. The same broad-phase grid feeds capsule collision checks. The habitat uses a Canvas-based world layer plus a transparent Three.js overlay for suitable animated fish models. The procedural renderer remains responsible for species without a matching imported rig.
 
 This reduces work for a spatially distributed school, but actual frame time still depends on browser, screen resolution and device. Performance should be measured on representative hardware rather than inferred from algorithmic complexity alone.
 
 ## Validation
+
+The live habitat also uses a shared signed-distance voxel field for the visible seabed and creature terrain contact. Selected animated fish models are loaded from the pinned Quaternius bundle; other species retain their dedicated procedural renderers.
 
 Automated coverage includes:
 
