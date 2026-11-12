@@ -103,6 +103,15 @@ export class OsmoceanMarineModels {
 
     const motion=mapping.motion;
     const swimData=motion==='pulse'?null:applySwimMaterial(visual,motion);
+    if(swimData){
+      const inverseScale=1/Math.max(scale,.001);
+      swimData.config={...swimData.config,
+        amplitude:swimData.config.amplitude*inverseScale,
+        idleAmplitude:swimData.config.idleAmplitude*inverseScale,
+        thrustAmplitude:swimData.config.thrustAmplitude*inverseScale,
+        coastAmplitude:swimData.config.coastAmplitude*inverseScale};
+      swimData.uniforms.uAmplitude.value=swimData.config.amplitude;
+    }
     let phase=0,pulsePhase=0;
     return {
       species,modelId,visual,mixer:null,swimData,animations:[],
