@@ -221,7 +221,6 @@ function syncMarineModels(ordered,dt){
   const direction=new THREE.Vector3(fish.forward.x,fish.forward.y,fish.forward.z).normalize();
   if(MARINE_MODEL_ORIENTATION[fish.species]==='vertical'){const yaw=Math.atan2(fish.forward.x,fish.forward.z);entry.root.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);}else entry.root.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),direction);
   const bodyScale=fish.bodyScale??1;entry.visual.scale.setScalar(entry.baseScale*bodyScale/Math.max(.001,entry.initialBodyScale));
-  if(entry.mixer)entry.mixer.timeScale=Math.max(.65,Math.min(1.45,Math.hypot(fish.v.x,fish.v.y,fish.v.z)/.35));
   entry.update(dt);
  }
  for(const [fish,entry] of marineModelEntries){if(active.has(fish))continue;modelScene.remove(entry.root);entry.dispose();marineModelEntries.delete(fish);}
