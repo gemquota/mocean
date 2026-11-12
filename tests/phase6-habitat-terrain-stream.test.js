@@ -33,7 +33,7 @@ test('live habitat terrain workers use the shared voxel field and a bounded visi
     assert.equal(jobs.length,2);
     assert.ok(jobs.every(job=>job.type==='generate-chunk'));
     assert.ok(jobs.every(job=>job.includeStreamRocks===false));
-    assert.ok(jobs.every(job=>job.cellSize===.5&&job.minY===-14.2&&job.maxY===-5.2));
+    assert.ok(jobs.every(job=>job.cellSize===1&&job.minY===-14.2&&job.maxY===-5.2));
     assert.ok(jobs.every(job=>job.worldSize.x===100&&job.worldSize.y===100&&job.worldSize.z===100));
     assert.ok(stream.stats.pending>0);
     stream.dispose();
