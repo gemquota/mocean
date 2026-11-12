@@ -172,7 +172,7 @@ function disableMarineModelLayer(error){
  modelLayerLost=true;
  for(const entry of marineModelEntries.values()){modelScene?.remove(entry.root);entry.dispose();}
  marineModelEntries.clear();
- if(error)console.warn('Animated GLB layer disabled; procedural species renderers remain active.',error);
+ if(error)console.warn('Naturalistic GLB layer disabled; unsupported species keep their native renderers.',error);
 }
 modelCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();disableMarineModelLayer(new Error('WebGL context lost'));});
 modelCanvas.addEventListener('webglcontextrestored',()=>{modelLayerLost=false;if(!modelRenderer)initialiseMarineModelLayer();});
@@ -188,7 +188,7 @@ async function initialiseMarineModelLayer(){
   const modelFill=new THREE.DirectionalLight(0x5aa6b3,.65);modelFill.position.set(15,3,-18);modelScene.add(modelFill);
   modelCamera=new THREE.PerspectiveCamera(48,1,.1,220);modelCamera.up.set(0,1,0);
   marineModels=new adapter.OsmoceanMarineModels(THREE,{baseUrl:'./assets/models/osmocean/naturalistic/'});
- }catch(error){modelRenderer=null;marineModels=null;console.warn('Mocean animated model layer unavailable; retaining procedural renderers.',error);}
+ }catch(error){modelRenderer=null;marineModels=null;console.warn('Naturalistic model layer unavailable; modelled species will not use cartoon fallbacks.',error);}
 }
 initialiseMarineModelLayer();
 function updateMarineCamera(){
