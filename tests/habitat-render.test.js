@@ -228,3 +228,10 @@ test('Gobkit marine models play only their idle subclip, not attack or death fra
   assert.match(adapter,/GOBKIT_MASTER_TIMELINE_MODELS = new Set\(\['jellyfish','seal','whale'\]\)/);
   assert.match(adapter,/AnimationUtils\.subclip\(animations\[0\],'idle',0,29,24\)/);
 });
+
+test('schooling assigns deterministic matching model variants per creature', () => {
+  const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
+  assert.match(adapter,/MARINE_MODEL_VARIANTS_BY_SPECIES/);
+  assert.match(script,/variants\[Math\.abs\(fish\.id\?\?0\)%variants\.length\]/);
+  assert.match(script,/modelId\}\)\.then\(instance/);
+});
