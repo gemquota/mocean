@@ -215,3 +215,8 @@ Merged in PR #48 (commit `f9a2051c993102c8dff26d7e723b2fad1f45d247`) and deploye
 The module is deliberately independent of Three.js, workers and creature simulation. It is not a replacement for voxel-field.js: the distance field is approximate, cave paths are prototype centre-lines, and there is no adaptive mesh extraction, material classification, vegetation attachment or runtime performance evidence. Next: feed this field into a bounded terrain-study mesh and compare it against current surface and voxel studies before considering integration.
 
 Acceptance gates: deterministic output; connected formations rather than scattered props; cave roof/floor separation without leaks; bounded sampling and mesh-generation cost; consistent normals/contact queries; visual comparison at matched camera framing. The live habitat remains unchanged until all gates pass.
+
+
+### Geological field study page
+
+`geological-study.html` is an isolated browser study that extracts the feature field with the existing multi-component dual-contouring implementation and displays the resulting indexed mesh with Three.js lighting, fog and a simple water-plane cue. It is intended for inspecting connected geology, not as a production habitat renderer. It reports mesh vertex/triangle counts and build time. Cave centre-lines now extend beyond the study bounds so the passages can open at the cut boundary instead of terminating as sealed caps. The page remains a prototype: browser runtime and visual quality have not yet been independently verified, and its main-thread mesh build may need a worker before any integration.
