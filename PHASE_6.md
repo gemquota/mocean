@@ -67,7 +67,7 @@ Turn the mixed-species habitat into a convincing underwater environment without 
 
 ### P6-3 · Open-source asset integration
 
-**Naturalistic marine model pipeline established:** `ASSET_SOURCES.md` records the twelve species-matched CC0 smooth-shaded GLBs now used by the live habitat. The Pages workflow downloads them from stable 3DAssets.dev CDN URLs and validates their glTF structure. They are static posed studies, so the Three.js overlay adds procedural body, tail, ray-wing and jellyfish-bell motion. The old Quaternius/Gobkit cartoon packs are no longer staged or rendered. Environment props and materials still require individual licence review, optimisation and visual acceptance.
+**Naturalistic marine model pipeline established:** `ASSET_SOURCES.md` records the thirteen species-matched CC0 smooth-shaded GLBs now used by the live habitat. The Pages workflow downloads them from stable 3DAssets.dev CDN URLs and validates their glTF structure. They are static posed studies, so the Three.js overlay adds procedural body, tail, ray-wing and jellyfish-bell motion. The old Quaternius/Gobkit cartoon packs are no longer staged or rendered. Environment props and materials still require individual licence review, optimisation and visual acceptance.
 
 - [x] Identify a preferred CC0 source and verify its redistribution terms (`https://polyhaven.com/license`).
 - [x] Record initial model/texture candidates and reject raw assets that exceed a sensible browser budget (`ASSET_SOURCES.md`).
@@ -167,7 +167,7 @@ Phase 6 is not complete until the environment has visibly real 3D depth and irre
 
 ### Naturalistic marine model integration
 
-- Replaced the stylized Quaternius/Gobkit live creature models with twelve species-exact CC0 GLBs from 3DAssets.dev's Ocean Animals and Ocean Giants packs. The selected GLBs are static smooth-shaded studies rather than rigged clips; procedural vertex deformation now supplies the swim cycle. Eighteen species remain disabled until suitable naturalistic models are sourced.
+- Replaced the stylized Quaternius/Gobkit live creature models with thirteen species-exact CC0 GLBs from 3DAssets.dev's Ocean Animals and Ocean Giants packs. The selected GLBs are static smooth-shaded studies rather than rigged clips; procedural vertex deformation now supplies the swim cycle. Seventeen species remain disabled until suitable naturalistic models are sourced.
 - The Pages build now stages the complete fish bundle and original licence under `assets/models/osmocean/species/`.
 - Added `src/phase6/osmocean-marine-models.js`: cached GLTF loading, skeleton-safe cloning, longest-axis normalisation, per-instance animation mixers and species-to-model mapping.
 - The live `schooling.html` now mounts a transparent Three.js overlay. Suitable fish models follow the simulation's live position and forward vector; animation playback speed is scaled by swimming speed. The procedural 2D fish remains visible until its GLB has loaded, then yields to the model.
