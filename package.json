@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",\n    "benchmark:geology": "node scripts/benchmark-geological-mesh.mjs"
+    "test": "node --test",
+    "benchmark:geology": "node scripts/benchmark-geological-mesh.mjs"
   },
   "description": "Browser-based aquatic schooling, creature locomotion and marine habitat simulation.",
   "engines": {
