@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07171d">
+<title>Mocean · WebGPU compute lab</title>
+<style>
+:root{color-scheme:dark;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#07171d;color:#d9eee5}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}canvas{display:block;width:100%;height:100%}
+#panel{position:fixed;z-index:2;left:16px;top:16px;width:min(390px,calc(100vw - 32px));padding:14px;border:1px solid #315a58;border-radius:8px;background:#07171deb;box-shadow:0 8px 32px #0008;font-size:11px}
+h1{font-size:13px;letter-spacing:.13em;color:#9be7c8;margin:0 0 10px}
+p{line-height:1.5;color:#a9c2b9;margin:8px 0}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+label{display:grid;gap:5px;color:#a9c2b9}select,button{min-width:0;background:#102a31;border:1px solid #416b67;color:#e3f5eb;border-radius:4px;padding:8px;font:inherit}
+button{cursor:pointer}button:disabled{opacity:.45;cursor:default}
+#readout{white-space:pre-line;line-height:1.65;padding:9px;background:#0b2229;border-radius:5px;color:#bfe8d4;font-variant-numeric:tabular-nums}
+#warning{color:#e6bd82;min-height:1.4em}
+#links{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}a{color:#9be7c8}
+small{display:block;color:#78938b;line-height:1.45;margin-top:9px}
+@media(max-width:600px){#panel{left:8px;top:8px;width:min(340px,calc(100vw - 16px));padding:10px;font-size:10px}.controls{gap:6px}select,button{padding:7px}}
+</style>
+<script type="importmap">
+{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+ "three/webgpu":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+ "three/tsl":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js",
+ "three-gl":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+}}
+</script>
+</head>
+<body>
+<div id="panel">
+<h1>MOCEAN / GPU DEFORMATION LAB</h1>
+<p>Isolated fish-mesh workload. Same geometry, instance count and vertex deformation across modes. Only per-instance wave-phase updates move between CPU and GPU.</p>
+<div class="controls">
+<label>Backend / update path<select id="mode">
+<option value="webgl-cpu">WebGLRenderer · CPU update</option>
+<option value="webgpu-cpu">WebGPURenderer · WebGL2 fallback · CPU update</option>
+<option value="webgpu-compute">WebGPU · compute update</option>
+</select></label>
+<label>Instances<select id="count">
+<option>72</option><option>256</option><option>512</option><option selected>1024</option><option>2048</option><option>4096</option>
+</select></label>
+</div>
+<div class="controls">
+<button id="restart">Restart benchmark</button>
+<button id="pause">Pause</button>
+</div>
+<div id="readout">Initialising renderer…</div>
+<div id="warning"></div>
+<div id="links">
+<a href="?mode=webgl-cpu">WebGL CPU</a>
+<a href="?mode=webgpu-cpu">WebGL2 fallback</a>
+<a href="?mode=webgpu-compute">WebGPU compute</a>
+</div>
+<small>CPU timings measure JavaScript update and render submission, not GPU execution time. Warm-up: 3s. Sample window: 10s. Use the same device, browser, instance count and power mode for comparisons. No habitat code is changed by this experiment.</small>
+</div>
+<script type="module">
+let THREE,WebGPURenderer,MeshStandardNodeMaterial;
+let Fn,instanceIndex,instancedArray,instancedBufferAttribute,positionLocal,sin,cos,vec3,uniform;
+
+const params=new URLSearchParams(location.search);
+const modeSelect=document.querySelector('#mode');
+const countSelect=document.querySelector('#count');
+const readout=document.querySelector('#readout');
+const warning=document.querySelector('#warning');
+const pauseButton=document.querySelector('#pause');
+const requestedMode=params.get('mode')||'webgpu-compute';
+const requestedCount=Number(params.get('count'))||1024;
+if([...modeSelect.options].some(option=>option.value===requestedMode))modeSelect.value=requestedMode;
+if([...countSelect.options].some(option=>Number(option.value)===requestedCount))countSelect.value=String(requestedCount);
+let renderer,scene,camera,mesh,phaseAttribute,phaseData,computeNode,phaseBuffer,phaseDelta;
+let running=true,frame=0,lastTime=0,startedAt=0,warmupComplete=false,finished=false;
+let frameSamples=[],updateSamples=[],renderSamples=[],lastReport=0,backendLabel='unknown',activeMode=modeSelect.value;
+const SAMPLE_MS=10000,WARMUP_MS=3000;
+
+function percentile(values,p){if(!values.length)return null;const sorted=[...values].sort((a,b)=>a-b);return sorted[Math.min(sorted.length-1,Math.ceil(sorted.length*p)-1)];}
+function stats(values){return{p50:percentile(values,.5),p95:percentile(values,.95)};}
+function fishGeometry(){
+ const shape=new THREE.Shape();
+ shape.moveTo(1.35,0);shape.quadraticCurveTo(.7,.48,-.45,.32);shape.lineTo(-.92,.76);shape.lineTo(-.82,.18);shape.quadraticCurveTo(-1.28,0,-.82,-.18);shape.lineTo(-.92,-.76);shape.lineTo(-.45,-.32);shape.quadraticCurveTo(.7,-.48,1.35,0);
+ const geometry=new THREE.ExtrudeGeometry(shape,{depth:.22,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.035,bevelThickness:.035,curveSegments:8});
+ geometry.translate(0,0,-.11);geometry.computeVertexNormals();return geometry;
+}
+function createWebGLMaterial(attribute){
+ const material=new THREE.MeshStandardMaterial({color:0x75bda5,roughness:.72,metalness:.02});
+ material.onBeforeCompile=shader=>{
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec4 instanceState;');
+  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','vec3 transformed = vec3(position); transformed.x += instanceState.y; transformed.y += instanceState.z; transformed.y += sin(position.x * 2.7 + instanceState.x) * 0.115 * clamp(-position.x, 0.0, 1.0);');
+ };
+ material.customProgramCacheKey=()=> 'mocean-gpu-lab-wave-v1';
+ return material;
+}
+function createNodeMaterial(useStorage){
+ const material=new MeshStandardNodeMaterial({color:0x75bda5,roughness:.72,metalness:.02});
+ let stateNode;
+ if(useStorage)stateNode=phaseBuffer.element(instanceIndex);
+ else stateNode=instancedBufferAttribute(phaseAttribute,'vec4');
+ const envelope=positionLocal.x.mul(-1).clamp(0,1);
+ const offset=vec3(stateNode.y,stateNode.z,0);
+ const wave=vec3(0,sin(positionLocal.x.mul(2.7).add(stateNode.x)).mul(.115).mul(envelope),0);
+ material.positionNode=positionLocal.add(offset).add(wave);
+ return material;
+}
+function resetSamples(){frameSamples=[];updateSamples=[];renderSamples=[];frame=0;startedAt=performance.now();lastTime=startedAt;lastReport=startedAt;warmupComplete=false;finished=false;}
+function buildScene(count){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x07171d);
+ camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,400);
+ const columns=Math.ceil(Math.sqrt(count)),rows=Math.ceil(count/columns),spacing=3.25;
+ const frustumHeight=Math.max(rows*spacing*.62,columns*spacing/Math.max(.7,innerWidth/innerHeight));
+ camera.position.set(0,0,Math.max(22,frustumHeight/(2*Math.tan(THREE.MathUtils.degToRad(24)))*1.15));camera.lookAt(0,0,0);
+ scene.add(new THREE.HemisphereLight(0xbde9e0,0x1b3036,2));
+ const key=new THREE.DirectionalLight(0xffe7c2,2.2);key.position.set(-12,18,22);scene.add(key);
+ const fill=new THREE.DirectionalLight(0x4c9eb0,.8);fill.position.set(12,-5,-16);scene.add(fill);
+ const geometry=fishGeometry();
+ phaseData=new Float32Array(count*4);
+ for(let i=0;i<count;i++)phaseData[i*4]=(i/count)*Math.PI*2;
+ phaseAttribute=new THREE.InstancedBufferAttribute(phaseData,4);
+ geometry.setAttribute('instanceState',phaseAttribute);
+ if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU')phaseBuffer=instancedArray(phaseData,'vec4');
+ let material;
+ if(activeMode==='webgl-cpu')material=createWebGLMaterial(phaseAttribute);
+ else material=createNodeMaterial(activeMode==='webgpu-compute'&&backendLabel==='WebGPU');
+ mesh=new THREE.InstancedMesh(geometry,material,count);mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+ const dummy=new THREE.Object3D();
+ for(let i=0;i<count;i++){
+  const x=(i%columns-(columns-1)*.5)*spacing;
+  const y=(Math.floor(i/columns)-(rows-1)*.5)*spacing*.62;
+  dummy.position.set(x,y,((i%7)-3)*.24);dummy.rotation.z=0;dummy.scale.setScalar(.82+((i*17)%11)*.035);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+ }
+ mesh.instanceMatrix.needsUpdate=true;scene.add(mesh);
+ if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU'){
+  phaseDelta=uniform(0);
+  const value=phaseBuffer.element(instanceIndex);
+  const phase=value.x;
+  const update=Fn(()=>{
+   value.x.assign(phase.add(phaseDelta.mul(1.1)));
+   value.y.assign(value.y.add(cos(phase).mul(phaseDelta).mul(.12)));
+   value.z.assign(value.z.add(sin(phase).mul(phaseDelta).mul(.08)));
+  })();
+  computeNode=update.compute(count);
+ }
+}
+async function initialise(){
+ try{
+  const count=Number(countSelect.value);activeMode=modeSelect.value;running=true;
+  if(activeMode==='webgl-cpu'){
+   THREE=await import('three-gl');
+  }else{
+   THREE=await import('three');
+   const tsl=await import('three/tsl');
+   ({Fn,instanceIndex,instancedArray,instancedBufferAttribute,positionLocal,sin,cos,vec3,uniform}=tsl);
+   WebGPURenderer=THREE.WebGPURenderer;MeshStandardNodeMaterial=THREE.MeshStandardNodeMaterial;
+  }
+  if(renderer){renderer.setAnimationLoop(null);renderer.dispose();renderer.domElement.remove();}
+  const canvas=document.createElement('canvas');document.body.appendChild(canvas);
+  if(activeMode==='webgl-cpu'){
+   renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});
+   backendLabel='WebGL2';
+  }else{
+   renderer=new WebGPURenderer({canvas,antialias:false,powerPreference:'high-performance',forceWebGL:activeMode==='webgpu-cpu'});
+   await renderer.init();
+   backendLabel=renderer.backend?.isWebGPUBackend===true?'WebGPU':'WebGL2 fallback';
+  }
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(innerWidth,innerHeight,false);
+  buildScene(count);
+  if(activeMode==='webgpu-compute'&&backendLabel!=='WebGPU')warning.textContent='Native WebGPU unavailable. Compute test is disabled; this run is CPU-updated fallback only.';
+  else warning.textContent='';
+  resetSamples();pauseButton.textContent='Pause';
+  renderer.setAnimationLoop(tick);
+ }catch(error){warning.textContent='Initialisation failed: '+String(error?.message??error);readout.textContent='Renderer unavailable';console.error(error);}
+}
+function report(now){
+ const elapsed=now-startedAt,fs=stats(frameSamples),us=stats(updateSamples),rs=stats(renderSamples);
+ readout.textContent=[
+  'Backend: '+backendLabel,
+  'Mode: '+activeMode+(activeMode==='webgpu-compute'&&backendLabel!=='WebGPU'?' (compute inactive)':''),
+  'Instances: '+mesh.count.toLocaleString(),
+  'Phase: '+(elapsed<WARMUP_MS?'warm-up':elapsed<WARMUP_MS+SAMPLE_MS?'sampling':'complete'),
+  'Frame interval p50 / p95: '+(fs.p50?.toFixed(2)??'--')+' / '+(fs.p95?.toFixed(2)??'--')+' ms',
+  'CPU update p50 / p95: '+(us.p50?.toFixed(3)??'--')+' / '+(us.p95?.toFixed(3)??'--')+' ms',
+  'CPU render submit p50 / p95: '+(rs.p50?.toFixed(3)??'--')+' / '+(rs.p95?.toFixed(3)??'--')+' ms',
+  'Samples: '+frameSamples.length
+ ].join('\n');
+ if(elapsed>=WARMUP_MS+SAMPLE_MS&&!finished){finished=true;warning.textContent='Sample complete. Change backend or instance count and repeat on the same device.';}
+}
+function tick(now){
+ if(!running)return;
+ const frameInterval=Math.max(0,now-lastTime),dt=Math.min(.05,frameInterval/1000);lastTime=now;
+ const elapsed=now-startedAt;
+ const updating=performance.now();
+ if(activeMode==='webgpu-compute'&&backendLabel==='WebGPU'){
+  phaseDelta.value=dt;
+  renderer.compute(computeNode);
+ }else{
+  for(let i=0;i<mesh.count;i++){
+   const offset=i*4,phase=phaseData[offset];
+   phaseData[offset]=phase+dt*1.1;
+   phaseData[offset+1]+=Math.cos(phase)*dt*.12;
+   phaseData[offset+2]+=Math.sin(phase)*dt*.08;
+  }
+  phaseAttribute.needsUpdate=true;
+ }
+ const updateMs=performance.now()-updating;
+ const rendering=performance.now();renderer.render(scene,camera);const renderMs=performance.now()-rendering;
+ if(elapsed>=WARMUP_MS&&elapsed<WARMUP_MS+SAMPLE_MS){frameSamples.push(frameInterval);updateSamples.push(updateMs);renderSamples.push(renderMs);}
+ if(now-lastReport>500){report(now);lastReport=now;}
+}
+pauseButton.addEventListener('click',()=>{running=!running;pauseButton.textContent=running?'Pause':'Resume';if(running){lastTime=performance.now();renderer.setAnimationLoop(tick);}else renderer.setAnimationLoop(null);});
+document.querySelector('#restart').addEventListener('click',initialise);
+modeSelect.addEventListener('change',()=>{const url=new URL(location.href);url.searchParams.set('mode',modeSelect.value);url.searchParams.set('count',countSelect.value);location.href=url;});
+countSelect.addEventListener('change',()=>{const url=new URL(location.href);url.searchParams.set('mode',modeSelect.value);url.searchParams.set('count',countSelect.value);location.href=url;});
+addEventListener('resize',()=>{if(!renderer||!camera)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);});
+initialise();
+</script>
+</body>
+</html>

@@ -192,3 +192,18 @@ Merged in PR #48 (commit `f9a2051c993102c8dff26d7e723b2fad1f45d247`) and deploye
 - Added lined seahorse, leafy seadragon and anglerfish as three additional species with verified CC0 GLBs, procedural movement and dedicated slow/hovering simulation behaviour. The model roster is now sixteen species; remaining species stay disabled until reviewed models are available.
 - Reduced model-layer cost with a 72-visible-model budget, screen culling, cached projected fish positions, no antialiasing on the transparent overlay, a 1.25 device-pixel-ratio cap, reusable transform vectors and disposal of cloned geometry/materials when instances are evicted. Creatures outside the 3D budget retain their animated Canvas renderer rather than disappearing.
 - Added tests for biome classification, vegetation forms, adjacent chunk seam edges, terrain worker scheduling/raster caching, new species behaviour, model mapping and browser-page wiring. CI and browser visual/performance verification are still required; this work does not close Phase 6.
+
+
+### P6-8 · Performance profiling and optional GPU compute
+
+**Assessment recorded · 12 November 2026:** see [PERFORMANCE_GPU.md](PERFORMANCE_GPU.md). The live habitat has no reproducible ordinary-hardware frame-time baseline yet, so no GPU speedup is claimed and no live rendering or simulation backend has been changed.
+
+- [ ] Instrument and record simulation, Canvas terrain/render, Three.js model sync/render, frame-time p50/p95 and worker queue metrics at 10/50/100/200 creatures.
+- [ ] Run representative desktop and mobile-class browser profiles and record browser, OS, GPU and power mode.
+- [x] Build an isolated WebGPU/Three.js TSL instance-motion and deformation prototype with WebGL2 fallback and explicit backend reporting. Prototype implementation is present at [webgpu-lab.html](webgpu-lab.html); runtime comparison and visual review remain outstanding.
+- [ ] Extend the prototype to production GLB models and evaluate batched GPU visibility/LOD after the first benchmark.
+- [ ] Measure GPU-resident terrain generation/rendering only if the full path can avoid CPU readback and preserve voxel/contact parity.
+- [ ] Reconsider GPU simulation only if profiling shows the CPU simulation is the dominant bottleneck; retain a CPU reference and deterministic parity tests.
+- [ ] Adopt no GPU path without a measured material improvement, low-end fallback, visual parity and user review.
+
+**Initial decision:** retain CPU-authoritative behaviour, locomotion and terrain contact. The most promising first GPU experiment is batched model deformation/transforms and visibility work. The current particle count is too small to justify a compute pipeline. Terrain compute is deferred until renderer unification allows generated data to remain GPU-resident.
