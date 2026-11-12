@@ -178,10 +178,16 @@ export function createHabitatVoxelTerrainStream({
   }
 
   function draw(context,project,width,height,zoom=1){
-    let rendered=0,triangles=0;
-    const drawables=[];
+    let rendered=0,triangles=0,rasterisedThisFrame=0;
+    const drawables=[],projectionKey=[width,height,zoom].join(':');
     for(const item of chunks.values()){
       if(!item.visible||!item.mesh)continue;
+      if(item.projection?.key!==projectionKey){
+        // Spread expensive triangle projection across frames instead of
+        // rasterising the whole visible ring in one long main-thread task.
+        if(rasterisedThisFrame>=2)continue;
+        rasterisedThisFrame++;
+      }
       const raster=rasterise(item,project,width,height,zoom);
       if(!raster.canvas)continue;
       drawables.push(raster);triangles+=item.mesh.triangleCount;
