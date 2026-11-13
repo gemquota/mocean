@@ -50,27 +50,40 @@ export function createGeologicalField({
     points:makePath(random,bounds,10,()=>0,(i-(ridgeCount-1)*.5)*span*.19),
     width:4.8+random()*2.8,height:3.2+random()*2.6
   }));
-  const ravines=Array.from({length:ravineCount},(_,i)=>Object.freeze({
-    id:'ravine-'+i,
-    points:makePath(random,bounds,12,()=>0,(i-(ravineCount-1)*.5)*span*.22),
-    width:2.8+random()*2.2,depth:3.5+random()*2.8
-  }));
+  const ravines=Array.from({length:ravineCount},(_,i)=>{
+    const points=makePath(random,bounds,12,()=>0,(i-(ravineCount-1)*.5)*span*.22);
+    // Tributaries branch from an exact point on the trunk, then arc away from
+    // it. Their endpoints remain inside the field so the drainage network is
+    // continuous rather than a collection of unrelated grooves.
+    const junctionIndex=3+Math.floor(random()*7),junction=points[junctionIndex];
+    const side=random()<.5?-1:1,reach=7+random()*5,along=(random()<.5?-1:1)*(5+random()*5);
+    const endX=clamp(junction.x+along,bounds.minX+2,bounds.maxX-2);
+    const endZ=clamp(junction.z+side*reach,bounds.minZ+2,bounds.maxZ-2);
+    const branch=Object.freeze(Array.from({length:5},(_,j)=>{
+      const t=j/4,bend=Math.sin(t*Math.PI)*side*1.8;
+      return Object.freeze({x:mix(junction.x,endX,t),y:0,z:mix(junction.z,endZ,t)+bend});
+    }));
+    return Object.freeze({
+      id:'ravine-'+i,points,junctionIndex,branches:Object.freeze([branch]),
+      width:2.8+random()*2.2,depth:3.5+random()*2.8
+    });
+  });
   const caves=Array.from({length:caveCount},(_,i)=>{
     // Extend the cave centre-lines beyond the study bounds so passages have
     // genuine cut-through mouths rather than sealed spherical end caps.
     const caveBounds={...bounds,minX:bounds.minX-10,maxX:bounds.maxX+10};
-    const points=makePath(random,caveBounds,10,t=>baseDepth+3.5-Math.sin(t*Math.PI)*4,
+    const points=makePath(random,caveBounds,10,t=>baseDepth-4.4-Math.sin(t*Math.PI)*.5,
       (i-(caveCount-1)*.5)*span*.16);
     const junction=points[5],direction=i%2===0?1:-1;
     const branchEndZ=clamp(junction.z+direction*7,bounds.minZ+3,bounds.maxZ-3);
     const branch=Object.freeze([
       junction,
-      Object.freeze({x:junction.x+2.5,y:junction.y-.25,z:mix(junction.z,branchEndZ,.35)}),
-      Object.freeze({x:junction.x+5.5,y:junction.y-.65,z:mix(junction.z,branchEndZ,.72)}),
-      Object.freeze({x:junction.x+8,y:junction.y-1,z:branchEndZ})
+      Object.freeze({x:junction.x+2.5,y:junction.y-.2,z:mix(junction.z,branchEndZ,.35)}),
+      Object.freeze({x:junction.x+5.5,y:junction.y-.45,z:mix(junction.z,branchEndZ,.72)}),
+      Object.freeze({x:junction.x+8,y:junction.y-.7,z:branchEndZ})
     ]);
-    return Object.freeze({id:'cave-'+i,points,branches:Object.freeze([branch]),radius:1.25+random()*.7,
-      chamber:Object.freeze({x:junction.x,y:junction.y,z:junction.z,radius:2.8+random()*1.2})});
+    return Object.freeze({id:'cave-'+i,points,branches:Object.freeze([branch]),radius:1.25+random()*.55,
+      chamber:Object.freeze({x:junction.x,y:junction.y,z:junction.z,radius:2.5+random()*.45})});
   });
   const pathDistance=(x,z,points)=>{
     let d=Infinity;
@@ -89,30 +102,49 @@ export function createGeologicalField({
       height+=ridge.height*shoulder*broken;
     }
     for(const ravine of ravines){
-      const d=pathDistance(x,z,ravine.points);
-      height-=ravine.depth*Math.exp(-.5*(d/ravine.width)**2);
-      height+=.48*Math.exp(-.5*((d-ravine.width*1.7)/(ravine.width*.55))**2);
+      const trunkDistance=pathDistance(x,z,ravine.points);
+      height-=ravine.depth*Math.exp(-.5*(trunkDistance/ravine.width)**2);
+      height+=.48*Math.exp(-.5*((trunkDistance-ravine.width*1.7)/(ravine.width*.55))**2);
+      for(const branch of ravine.branches||[]) {
+        const tributaryDistance=pathDistance(x,z,branch);
+        const tributaryWidth=ravine.width*.68;
+        height-=ravine.depth*.62*Math.exp(-.5*(tributaryDistance/tributaryWidth)**2);
+        height+=.28*Math.exp(-.5*((tributaryDistance-tributaryWidth*1.65)/(tributaryWidth*.6))**2);
+      }
     }
     return height;
   }
-  function sampleDistance(x,y,z) {
-    if(![x,y,z].every(Number.isFinite)) throw new TypeError('Distance query coordinates must be finite');
+  // A column sampler amortises the macro-surface height and normal across
+  // every vertical voxel in the same x/z column. The cave distance remains
+  // evaluated per y, but the comparatively expensive geological height field
+  // and its finite-difference gradient are no longer recomputed per voxel.
+  function sampleDistanceColumn(x,z) {
+    if(!Number.isFinite(x)||!Number.isFinite(z)) throw new TypeError('Distance query coordinates must be finite');
     const surface=sampleHeight(x,z),eps=.12;
     const dx=(sampleHeight(x+eps,z)-sampleHeight(x-eps,z))/(2*eps);
     const dz=(sampleHeight(x,z+eps)-sampleHeight(x,z-eps))/(2*eps);
-    let distance=(y-surface)/Math.sqrt(1+dx*dx+dz*dz);
-    for(const cave of caves){
-      let tunnel=Infinity;
-      for(let i=1;i<cave.points.length;i++)
-        tunnel=Math.min(tunnel,distance3({x,y,z},cave.points[i-1],cave.points[i])-cave.radius);
-      for(const branch of cave.branches||[]) for(let i=1;i<branch.length;i++)
-        tunnel=Math.min(tunnel,distance3({x,y,z},branch[i-1],branch[i])-cave.radius*.82);
-      const c=cave.chamber;
-      const chamber=Math.hypot(x-c.x,y-c.y,z-c.z)-c.radius;
-      distance=Math.max(distance,-Math.min(tunnel,chamber));
-    }
-    return distance;
+    const inverseSlope=1/Math.sqrt(1+dx*dx+dz*dz);
+    return y=>{
+      if(!Number.isFinite(y)) throw new TypeError('Distance query coordinates must be finite');
+      let distance=(y-surface)*inverseSlope;
+      for(const cave of caves){
+        let tunnel=Infinity;
+        const p={x,y,z};
+        for(let i=1;i<cave.points.length;i++)
+          tunnel=Math.min(tunnel,distance3(p,cave.points[i-1],cave.points[i])-cave.radius);
+        for(const branch of cave.branches||[]) for(let i=1;i<branch.length;i++)
+          tunnel=Math.min(tunnel,distance3(p,branch[i-1],branch[i])-cave.radius*.82);
+        const c=cave.chamber;
+        const chamber=Math.hypot(x-c.x,y-c.y,z-c.z)-c.radius;
+        distance=Math.max(distance,-Math.min(tunnel,chamber));
+      }
+      return distance;
+    };
+  }
+  function sampleDistance(x,y,z) {
+    if(!Number.isFinite(y)) throw new TypeError('Distance query coordinates must be finite');
+    return sampleDistanceColumn(x,z)(y);
   }
   function describe(){return Object.freeze({seed:seed>>>0,bounds:Object.freeze({...bounds}),ridges,ravines,caves});}
-  return Object.freeze({sampleHeight,sampleDistance,describe});
+  return Object.freeze({sampleHeight,sampleDistance,sampleDistanceColumn,describe});
 }

@@ -9,7 +9,8 @@ self.onmessage = () => {
       min: [-48, -24, -36],
       max: [48, 5, 36],
       cells: [96, 36, 72],
-      sampleDistance: (x, y, z) => field.sampleDistance(x, y, z)
+      sampleDistance: (x, y, z) => field.sampleDistance(x, y, z),
+      sampleColumn: (x, z) => field.sampleDistanceColumn(x, z)
     });
     const elapsed = performance.now() - started;
     self.postMessage({

@@ -36,3 +36,41 @@ test('seed, feature budgets and query coordinates are validated', () => {
   assert.throws(()=>field.sampleHeight(NaN,0),TypeError);
   assert.throws(()=>field.sampleDistance(0,Infinity,0),TypeError);
 });
+
+test('ravines form connected tributary networks rather than parallel isolated cuts', () => {
+  const field=createGeologicalField({seed:314,ravineCount:3});
+  const {ravines}=field.describe();
+  assert.ok(ravines.every(r=>r.branches.length===1));
+  for(const ravine of ravines) {
+    const branch=ravine.branches[0],junction=ravine.points[ravine.junctionIndex];
+    assert.equal(branch[0].x,junction.x);
+    assert.equal(branch[0].z,junction.z);
+    assert.ok(branch.length>=4);
+    assert.ok(branch.at(-1).x>field.describe().bounds.minX);
+    assert.ok(branch.at(-1).x<field.describe().bounds.maxX);
+  }
+  const junction=ravines[0].branches[0][0];
+  const control=createGeologicalField({seed:314,ravineCount:0});
+  assert.ok(field.sampleHeight(junction.x,junction.z)<control.sampleHeight(junction.x,junction.z)-2,
+    'ravine network measurably lowers the terrain at its connected junction');
+});
+
+test('cave chambers retain a solid roof and floor while opening through the study sidewall', () => {
+  const field=createGeologicalField({seed:88,ridgeCount:0,ravineCount:0,caveCount:1});
+  const cave=field.describe().caves[0],junction=cave.points[5],bounds=field.describe().bounds;
+  assert.ok(field.sampleDistance(junction.x,junction.y,junction.z)>0,
+    'chamber centre is navigable water');
+  assert.ok(field.sampleDistance(junction.x,junction.y+cave.chamber.radius+.5,junction.z)<0,
+    'rock remains above the chamber');
+  assert.ok(field.sampleDistance(junction.x,junction.y-cave.chamber.radius-.5,junction.z)<0,
+    'rock remains below the chamber');
+  const segment=cave.points.find((p,i)=>i<cave.points.length-1
+    &&p.x<=bounds.minX&&cave.points[i+1].x>=bounds.minX);
+  assert.ok(segment,'main passage crosses the study sidewall');
+  const next=cave.points[cave.points.indexOf(segment)+1];
+  const u=(bounds.minX-segment.x)/(next.x-segment.x);
+  const mouthY=segment.y+(next.y-segment.y)*u;
+  const mouthZ=segment.z+(next.z-segment.z)*u;
+  assert.ok(field.sampleDistance(bounds.minX,mouthY,mouthZ)>0,
+    'tunnel intersects the clipped sidewall as an open mouth');
+});
