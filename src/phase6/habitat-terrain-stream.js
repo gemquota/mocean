@@ -9,9 +9,11 @@ import { selectTerrainChunks } from './streamed-voxel-terrain.js';
 import { classifyHabitatBiome } from './biomes.js';
 
 const TERRAIN_SEED = 6102026;
-const CELL_SIZE = 1;
-const MIN_Y = -14.2;
-const MAX_Y = -5.2;
+// 0.8 m cells add roughly 1.9x the volumetric sampling density while
+// keeping chunk and vertical extents exactly aligned to the voxel lattice.
+const CELL_SIZE = 0.8;
+const MIN_Y = -14.4;
+const MAX_Y = -5.6;
 const biomeCache = new Map();
 
 function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
@@ -169,7 +171,7 @@ export function createHabitatVoxelTerrainStream({
       minX=Math.min(minX,a.x,b.x,c.x);maxX=Math.max(maxX,a.x,b.x,c.x);
       minY=Math.min(minY,a.y,b.y,c.y);maxY=Math.max(maxY,a.y,b.y,c.y);
     }
-    if(!triangles.length){item.projection={key,canvas:null,left:0,top:0};return item.projection;}
+    if(!triangles.length){item.projection={key,canvas:null,left:0,top:0,zoom,width,height};return item.projection;}
     const left=Math.max(0,Math.floor(minX)),top=Math.max(0,Math.floor(minY));
     const right=Math.min(width,Math.ceil(maxX)),bottom=Math.min(height,Math.ceil(maxY));
     const canvas=document.createElement('canvas');
@@ -183,7 +185,7 @@ export function createHabitatVoxelTerrainStream({
       context.lineTo(triangle.c.x-left,triangle.c.y-top);
       context.closePath();context.fillStyle=triangle.fill;context.fill();
     }
-    item.projection={key,canvas,left,top,depth:depthTotal/triangles.length};
+    item.projection={key,canvas,left,top,depth:depthTotal/triangles.length,zoom,width,height};
     return item.projection;
   }
 
@@ -195,7 +197,13 @@ export function createHabitatVoxelTerrainStream({
       if(item.projection?.key!==projectionKey){
         // Spread expensive triangle projection across frames instead of
         // rasterising the whole visible ring in one long main-thread task.
-        if(rasterisedThisFrame>=2)continue;
+        if(rasterisedThisFrame>=2){
+          // Keep the previous tile on screen while its replacement is built.
+          // Scale it around the fixed camera centre so zooming never blanks a
+          // chunk for the several frames needed to refresh the visible ring.
+          if(item.projection?.canvas){drawables.push({...item.projection,fallback:true});triangles+=item.mesh.triangleCount;}
+          continue;
+        }
         rasterisedThisFrame++;
       }
       const raster=rasterise(item,project,width,height,zoom);
@@ -204,7 +212,15 @@ export function createHabitatVoxelTerrainStream({
     }
     drawables.sort((a,b)=>b.depth-a.depth);
     for(const raster of drawables){
-      context.drawImage(raster.canvas,raster.left,raster.top);
+      if(raster.fallback&&typeof context.save==='function'&&typeof context.translate==='function'&&typeof context.scale==='function'&&typeof context.restore==='function'){
+        const scale=zoom/(raster.zoom||zoom);
+        context.save();
+        context.translate(width*.5,height*.5);
+        context.scale(scale,scale);
+        context.translate(-width*.5,-height*.5);
+        context.drawImage(raster.canvas,raster.left,raster.top);
+        context.restore();
+      }else context.drawImage(raster.canvas,raster.left,raster.top);
       rendered++;
     }
     return {...stats(),visible:rendered,triangles};
