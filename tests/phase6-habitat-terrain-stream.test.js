@@ -33,7 +33,7 @@ test('live habitat terrain workers use the shared voxel field and a bounded visi
     assert.equal(jobs.length,2);
     assert.ok(jobs.every(job=>job.type==='generate-chunk'));
     assert.ok(jobs.every(job=>job.includeStreamRocks===false));
-    assert.ok(jobs.every(job=>job.cellSize===1&&job.minY===-14.2&&job.maxY===-5.2));
+    assert.ok(jobs.every(job=>job.cellSize===0.8&&job.minY===-14.4&&job.maxY===-5.6));
     assert.ok(jobs.every(job=>job.worldSize.x===100&&job.worldSize.y===100&&job.worldSize.z===100));
     assert.ok(stream.stats.pending>0);
     stream.dispose();
@@ -79,11 +79,20 @@ test('visible chunk rasterisation is spread across frames to avoid a large main-
       const job=jobs[index];
       FakeWorker.instances[index].listeners.message({data:{type:'complete',key:job.key,token:job.token,mesh}});
     }
-    const context={drawImage(){}},project=point=>({x:50+point.x,y:50+point.z,depth:20,size:2});
+    const transforms=[];
+    const context={drawImage(){},save(){transforms.push('save');},restore(){transforms.push('restore');},translate(x,y){transforms.push(['translate',x,y]);},scale(x,y){transforms.push(['scale',x,y]);}};
+    const project=point=>({x:50+point.x,y:50+point.z,depth:20,size:2});
     const first=stream.draw(context,project,100,100,1);
     const second=stream.draw(context,project,100,100,1);
     assert.equal(first.visible,2);
     assert.equal(second.visible,3);
+    // A zoom invalidates all three projected tiles, but the two-tile refresh
+    // budget must not make the third previously visible chunk disappear.
+    const zoomed=stream.draw(context,project,100,100,1.5);
+    assert.equal(zoomed.visible,3);
+    assert.ok(transforms.includes('save'));
+    assert.ok(transforms.includes('restore'));
+    assert.ok(transforms.some(entry=>Array.isArray(entry)&&entry[0]==='scale'&&entry[1]===1.5));
     stream.dispose();
   });
 });
