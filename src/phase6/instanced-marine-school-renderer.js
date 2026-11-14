@@ -11,7 +11,6 @@ import { applySwimMaterial, SWIM_CONFIGS } from './polyfish-swim-material.js';
 import { SPECIES_MODEL_MAP } from './species-model-map.js';
 
 const MODEL_LENGTH = 0.78;
-const FORWARD = null;
 
 function promoteQuantizedAttributes(THREE, geometry) {
   for (const name of ['position', 'normal', 'tangent']) {
@@ -44,6 +43,14 @@ function flatten(THREE, source) {
     root.add(new THREE.Mesh(geometry, material));
   });
   return root;
+}
+
+export function advanceMarineAnimation(fish, dt) {
+  const mapping = SPECIES_MODEL_MAP[fish.species];
+  const config = SWIM_CONFIGS[mapping?.motion] ?? SWIM_CONFIGS.fish;
+  const step = Math.min(Math.max(dt, 0), 0.05);
+  fish._marinePhase = (fish._marinePhase ?? (((fish.id * 0.61803398875) % 1) * Math.PI * 2)) + step * (config.idleSpeed ?? 2.8);
+  fish._marinePulsePhase = (fish._marinePulsePhase ?? (((fish.id * 0.38196601125) % 1) * Math.PI * 2)) + step * 1.7;
 }
 
 export class InstancedMarineSchoolRenderer {
@@ -142,7 +149,6 @@ export class InstancedMarineSchoolRenderer {
           const bodyScale = fish.bodyScale ?? 1;
           if (fish._marinePhase === undefined) fish._marinePhase = ((fish.id * 0.61803398875) % 1) * Math.PI * 2;
           if (swimData) {
-            fish._marinePhase += Math.min(Math.max(dt, 0), 0.05) * swimData.config.idleSpeed;
             phaseArray[i] = fish._marinePhase;
             amplitudeArray[i] = 1 / Math.max(0.1, bodyScale);
           } else {
@@ -158,7 +164,7 @@ export class InstancedMarineSchoolRenderer {
             dummy.quaternion.setFromUnitVectors(forward, direction);
           }
           const scale = MODEL_LENGTH * bodyScale;
-          const pulse = motion === 'pulse' ? 1 + 0.035 * Math.sin((fish._marinePhase += dt * 1.7)) : 1;
+          const pulse = motion === 'pulse' ? 1 + 0.035 * Math.sin(fish._marinePulsePhase ?? 0) : 1;
           dummy.scale.set(scale, scale * pulse, scale);
           dummy.updateMatrix();
           for (const mesh of meshes) mesh.setMatrixAt(i, dummy.matrix);
