@@ -139,14 +139,17 @@ export function createHabitatVoxelTerrainStream({
     lastFocus={x,z};dispatch();
   }
 
-  function rasterise(item,project,width,height,zoom){
-    const key=[width,height,zoom].join(':');
+  function rasterise(item,project,width,height){
+    // Focal-length zoom is a uniform scale around the camera centre. Cache
+    // each chunk at zoom 1, then transform the cached tile at draw time.
+    // This prevents every pinch event from invalidating expensive projections.
+    const key=[width,height].join(':');
     if(item.projection?.key===key)return item.projection;
     const {positions,normals,indices}=item.mesh;
     const projected=new Array(positions.length/3);
     for(let index=0;index<projected.length;index++){
       const offset=index*3;
-      projected[index]=project({x:positions[offset],y:positions[offset+1],z:positions[offset+2]});
+      projected[index]=project({x:positions[offset],y:positions[offset+1],z:positions[offset+2]},1);
     }
     const triangles=[];
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,depthTotal=0;
@@ -171,9 +174,11 @@ export function createHabitatVoxelTerrainStream({
       minX=Math.min(minX,a.x,b.x,c.x);maxX=Math.max(maxX,a.x,b.x,c.x);
       minY=Math.min(minY,a.y,b.y,c.y);maxY=Math.max(maxY,a.y,b.y,c.y);
     }
-    if(!triangles.length){item.projection={key,canvas:null,left:0,top:0,zoom,width,height};return item.projection;}
-    const left=Math.max(0,Math.floor(minX)),top=Math.max(0,Math.floor(minY));
-    const right=Math.min(width,Math.ceil(maxX)),bottom=Math.min(height,Math.ceil(maxY));
+    if(!triangles.length){item.projection={key,canvas:null,left:0,top:0,depth:0,zoom:1,width,height};return item.projection;}
+    // Keep the complete chunk bounds, not just the portion inside the
+    // unzoomed viewport. Zooming out can then reveal already-cached terrain.
+    const left=Math.floor(minX),top=Math.floor(minY);
+    const right=Math.ceil(maxX),bottom=Math.ceil(maxY);
     const canvas=document.createElement('canvas');
     canvas.width=Math.max(1,right-left);canvas.height=Math.max(1,bottom-top);
     const context=canvas.getContext('2d');
@@ -185,46 +190,41 @@ export function createHabitatVoxelTerrainStream({
       context.lineTo(triangle.c.x-left,triangle.c.y-top);
       context.closePath();context.fillStyle=triangle.fill;context.fill();
     }
-    item.projection={key,canvas,left,top,depth:depthTotal/triangles.length,zoom,width,height};
+    item.projection={key,canvas,left,top,depth:depthTotal/triangles.length,zoom:1,width,height};
     return item.projection;
   }
 
   function draw(context,project,width,height,zoom=1){
     let rendered=0,triangles=0,rasterisedThisFrame=0;
-    const drawables=[],projectionKey=[width,height,zoom].join(':');
+    const drawables=[],projectionKey=[width,height].join(':');
     for(const item of chunks.values()){
       if(!item.visible||!item.mesh)continue;
       if(item.projection?.key!==projectionKey){
-        // Spread expensive triangle projection across frames instead of
-        // rasterising the whole visible ring in one long main-thread task.
+        // Resize refreshes are budgeted; zoom itself never invalidates a tile.
         if(rasterisedThisFrame>=2){
-          // Keep the previous tile on screen while its replacement is built.
-          // Scale it around the fixed camera centre so zooming never blanks a
-          // chunk for the several frames needed to refresh the visible ring.
           if(item.projection?.canvas){drawables.push({...item.projection,fallback:true});triangles+=item.mesh.triangleCount;}
           continue;
         }
         rasterisedThisFrame++;
       }
-      const raster=rasterise(item,project,width,height,zoom);
+      const raster=rasterise(item,project,width,height);
       if(!raster.canvas)continue;
       drawables.push(raster);triangles+=item.mesh.triangleCount;
     }
     drawables.sort((a,b)=>b.depth-a.depth);
+    const canTransform=typeof context.save==='function'&&typeof context.translate==='function'
+      &&typeof context.scale==='function'&&typeof context.restore==='function';
+    if(canTransform){
+      context.save();
+      context.translate(width*.5,height*.52);
+      context.scale(zoom,zoom);
+      context.translate(-width*.5,-height*.52);
+    }
     for(const raster of drawables){
-      if(raster.fallback&&typeof context.save==='function'&&typeof context.translate==='function'&&typeof context.scale==='function'&&typeof context.restore==='function'){
-        const scale=zoom/(raster.zoom||zoom);
-        context.save();
-        // project() centres the vertical camera axis at 52% of the viewport.
-        // Match that exact pivot so the cached tile follows focal zoom without drift.
-        context.translate(width*.5,height*.52);
-        context.scale(scale,scale);
-        context.translate(-width*.5,-height*.52);
-        context.drawImage(raster.canvas,raster.left,raster.top);
-        context.restore();
-      }else context.drawImage(raster.canvas,raster.left,raster.top);
+      context.drawImage(raster.canvas,raster.left,raster.top);
       rendered++;
     }
+    if(canTransform)context.restore();
     return {...stats(),visible:rendered,triangles};
   }
 
