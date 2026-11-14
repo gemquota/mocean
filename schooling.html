@@ -153,7 +153,7 @@ setPopulation(populationSlider.value);
 const worldUp=vec3(0,1,0),camera={p:vec3(0,21,77.5),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1;
 function minimumCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x,baseCameraPosition.y,baseCameraPosition.z);return baseDistance/worldExtent;}
-function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(3.5,minimum*3.5),zoom));camera.p.x=baseCameraPosition.x/zoom;camera.p.y=baseCameraPosition.y/zoom;camera.p.z=baseCameraPosition.z/zoom;}
+function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(3.5,minimum*3.5),zoom));camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;}
 applyZoom();
 const activePointers=new Map();let pinchDistance=0;
 function pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
@@ -258,7 +258,7 @@ function syncMarineModels(ordered,dt){
 let viewWidth=1,viewHeight=1;
 initialiseFishVisualState(school);
 function project(point){
- const relative=sub(point,camera.p),depth=dot3(relative,cameraForward),focal=Math.min(viewWidth,viewHeight)*1.08,size=focal/Math.max(4,depth);
+ const relative=sub(point,camera.p),depth=dot3(relative,cameraForward),focal=Math.min(viewWidth,viewHeight)*1.08*zoom,size=focal/Math.max(4,depth);
  return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};
 }
 function makeMesh(){
