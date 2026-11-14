@@ -45,11 +45,7 @@ const SHELVES=[
  [-25,-7.55,-2.5,5.6,1.05,2.15,-.24],
  [4,-7.45,-6.5,5.2,1.15,2.0,.32],
  [25,-7.8,12.0,4.6,.95,2.2,-.42],
- [-5,-7.7,18.0,4.0,.9,1.7,.18],
- // Broken outer ledges create stepped silhouettes instead of isolated lumps.
- [-22.5,-7.65,-9.0,3.8,.82,2.25,-.38],
- [21.5,-7.72,3.5,3.25,.72,2.05,.52],
- [2.5,-7.62,-17.2,3.4,.78,1.85,-.18]
+ [-5,-7.7,18.0,4.0,.9,1.7,.18]
 ];
 const TERRACE_BLOCKS=[
  // Eroded table-rock caps with visible overhangs and abrupt shoulders.
