@@ -93,6 +93,9 @@ test('visible chunk rasterisation is spread across frames to avoid a large main-
     assert.ok(transforms.includes('save'));
     assert.ok(transforms.includes('restore'));
     assert.ok(transforms.some(entry=>Array.isArray(entry)&&entry[0]==='scale'&&entry[1]===1.5));
+    // The camera's projected vertical centre is 52% of viewport height.
+    // Fallback tiles must scale around the same point to avoid visible drift.
+    assert.ok(transforms.some(entry=>Array.isArray(entry)&&entry[0]==='translate'&&entry[1]===50&&entry[2]===52));
     stream.dispose();
   });
 });
