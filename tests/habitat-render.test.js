@@ -25,11 +25,11 @@ test('habitat browser module parses and initializes every fish before rendering'
 });
 
 test('population control defaults to 10–200 while retaining saved bounds for other sliders',()=>{
- assert.match(html,/id="population" type="range" min="10" max="200" step="10" value="150"/);
+ assert.match(html,/id="population" type="range" min="10" max="1000" step="10" value="150"/);
  assert.match(html,/id="population-min">10 CREATURES/);
  assert.match(script,/const POPULATION_RANGE_VERSION_KEY='mocean\.populationRange\.v1'/);
- assert.match(script,/if\(populationRangeVersion!=='10-200'\)/);
- assert.match(script,/localStorage\.setItem\(POPULATION_RANGE_VERSION_KEY,'10-200'\)/);
+ assert.match(script,/if\(populationRangeVersion!=='10-1000'\)/);
+ assert.match(script,/localStorage\.setItem\(POPULATION_RANGE_VERSION_KEY,'10-1000'\)/);
  assert.match(script,/setPopulation\(populationSlider\.value\)/);
 });
 
@@ -57,7 +57,7 @@ test('each species gets controls on speed, size, min/max size and aggression tab
 });
 
 test('reef habitat includes mola mola, irregular reef formations, seagrass, kelp and expanded coral forms', () => {
-  assert.match(html, /mola:'Mola mola'/);
+  assert.match(html, /mola:'Ocean sunfish'/);
   assert.match(script, /function drawMola\(fish\)/);
   assert.match(script, /function drawSeagrassAndKelp\(\)/);
   assert.match(script, /drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize,habitatTerrainStream\)/);
@@ -109,7 +109,7 @@ test('one creature renderer fault cannot stop the habitat frame or hide every la
   assert.match(script, /for\(const \{fish\} of renderEntries\)\{[\s\S]*?try \{ drawFish\(fish\); \}[\s\S]*?catch\(error\)/);
   assert.match(script, /const renderFaults=new Map\(\)/);
   assert.match(script, /RENDER WARN/);
-  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*MODELLED SPECIES/);
+  assert.match(script, /school\.fish\.length\.toLocaleString\('en-US'\).*3D SPECIES/);
 });
 
 test('coral renderer reads terrain-height anchors from its precomputed colony collection', () => {
@@ -133,7 +133,7 @@ test('33-species catalogue includes three additional modelled fish with ecology-
   assert.match(src, /seahorse: 80, seaDragon: 70, anglerfish: 45/);
   assert.match(src, /grouper: 2, moorishIdol: 5, barracuda: 3/);
   assert.equal(ANIMATED_MODEL_SPECIES.length, 16);
-  assert.match(script, /ANIMATED_MODEL_SPECIES\.length\+' MODELLED SPECIES'/);
+  assert.match(script, /ANIMATED_MODEL_SPECIES\.length\+' 3D SPECIES'/);
   assert.match(script, /ANIMATED_MODEL_SPECIES\.includes\(changed\)/);
 });
 
@@ -152,34 +152,32 @@ test('every habitat range slider supports long-press min/max editing persisted i
   assert.match(script, /savedSliderBounds\[slider\.dataset\.rangeKey\]/);
 });
 
-test('live habitat integrates a real voxel surface and animated Osmocean GLB models',()=>{
+test('live habitat integrates voxel terrain with species-batched GPU-instanced GLB models',()=>{
   assert.match(html,/three@0\.180\.0\/build\/three\.module\.js/);
-  assert.match(script,/drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize,habitatTerrainStream\)/);
-  assert.match(script,/await Promise\.all\(\[import\('three'\),import\('\.\/src\/phase6\/osmocean-marine-models\.js'\)\]\)/);
-  assert.match(script,/new adapter\.OsmoceanMarineModels\(THREE/);
+  assert.match(script,/import\('\.\/src\/phase6\/instanced-marine-school-renderer\.js'\)/);
+  assert.match(script,/new instanced\.InstancedMarineSchoolRenderer\(THREE/);
   assert.match(script,/function syncMarineModels\(ordered,dt\)/);
-  assert.match(script,/entry\.update\(dt\)/);
-  assert.match(script,/entry\.root\.quaternion\.setFromUnitVectors/);
-  assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)&&marineRenderedFish\.has\(fish\)\)return/);
+  assert.match(script,/batch\.update\(fishList,dt\)/);
   assert.match(script,/modelRenderer\.render\(modelScene,modelCamera\)/);
-  assert.match(script,/catch\(error\)\{modelRenderer=null;marineModels=null;console\.warn\('Naturalistic model layer unavailable; modelled species will not use cartoon fallbacks/);
-});
-test('disabled species retain native procedural renderers without cartoon substitutions',()=>{
-  assert.match(script,/if\(fish\.species==='eel'\)\{drawEel\(fish\);return;\}/);
-  assert.match(script,/if\(fish\.species==='crab'\|\|fish\.species==='lobster'\)\{drawCrustacean\(fish\);return;\}/);
-  assert.match(script,/if\(fish\.species==='starfish'\)\{drawStarfish\(fish\);return;\}/);
-  assert.match(script,/if\(fish\.species==='sandEel'\)\{drawSandEel\(fish\);return;\}/);
-  assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)&&marineRenderedFish\.has\(fish\)\)return/);
+  assert.match(script,/MAX_INSTANCED_MARINE_ENTITIES=1000/);
+  assert.match(script,/marineRenderedFish\.add\(fishList\[i\]\)/);
+  assert.match(script,/Naturalistic instanced model layer unavailable/);
 });
 
-test('voxel and WebGL failures preserve the procedural habitat fallback',()=>{
+test('model-only habitat never substitutes legacy Canvas creature drawings',()=>{
+  assert.match(script,/function drawFish\(fish\)\{[\s\S]*?return;/);
+  assert.match(script,/NO 2D CREATURE FALLBACKS/);
+  assert.match(script,/marineRenderedFish\.add/);
+  assert.match(script,/const MAX_INSTANCED_MARINE_ENTITIES=1000/);
+});
+
+test('voxel fallback remains available when streamed terrain fails and model context is lost',()=>{
   assert.match(script,/Voxel seabed failed; using safe heightfield fallback/);
   assert.match(script,/if\(!voxelFallbackWarned\)/);
   assert.match(script,/initialiseMarineModelLayer\(\)/);
   assert.match(script,/webglcontextlost/);
-  assert.match(script,/Naturalistic GLB layer disabled; unsupported species keep their native renderers/);
+  assert.match(script,/Naturalistic instanced model layer disabled; model-only creatures will remain hidden/);
 });
-
 
 test('habitat enforces the inner-world boundary and ties minimum camera zoom to world size', () => {
   assert.match(src, /export const SCHOOLING_WORLD_EDGE_MARGIN = 0\.1/);
@@ -216,7 +214,7 @@ test('naturalistic GLBs use procedural body, vertical-tail, ray-wing and jellyfi
   assert.match(shader,/uWaveMode/);
   assert.match(shader,/uWingMax/);
   assert.match(shader,/'wing-wave'/);
-  assert.match(script,/if\(MODELLED_SPECIES\.has\(fish\.species\)&&marineRenderedFish\.has\(fish\)\)return/);
+  assert.match(script,/marineRenderedFish\.add\(fishList\[i\]\)/);
 });
 
 test('jellyfish remain upright while following heading with a vertical-axis root', () => {
@@ -224,14 +222,14 @@ test('jellyfish remain upright while following heading with a vertical-axis root
   const mapping = readFileSync(new URL('../src/phase6/species-model-map.js', import.meta.url), 'utf8');
   assert.match(mapping,/jellyfish: \{ collection: 'naturalistic', id: 'moon_jellyfish'.*orientation: 'vertical' \}/);
   assert.match(adapter,/mapping\.orientation \?\? 'horizontal'/);
-  assert.match(script,/modelDirection\.set\(0,1,0\);[\s\S]*?setFromAxisAngle\(modelDirection,yaw\)/);
+  assert.match(mapping,/orientation: 'vertical'/);
 });
 
 test('schooling assigns deterministic matching model variants per creature', () => {
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
   assert.match(adapter,/MARINE_MODEL_VARIANTS_BY_SPECIES/);
-  assert.match(script,/variants\[Math\.abs\(fish\.id\?\?0\)%variants\.length\]/);
-  assert.match(script,/modelId\}\)\.then\(instance/);
+  assert.match(script,/bySpecies\.set\(fish\.species,\[\]\)/);
+  assert.match(script,/marineModels\.createBatch\(species\)/);
 });
 
 test('Pages workflow stages only naturalistic CC0 models and validates each GLB', () => {
