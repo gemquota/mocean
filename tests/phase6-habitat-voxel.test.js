@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHabitatVoxelTerrain } from '../src/phase6/habitat-voxel-terrain.js';
+import { seabedHeight } from '../src/phase6/seabed-height.js';
 
 test('habitat voxel field contains solid seabed, open water and connected cave voids',()=>{
  const terrain=createHabitatVoxelTerrain();
@@ -48,4 +49,16 @@ test('habitat voxel field contains solid seabed, open water and connected cave v
  for(const point of [[-16,-8,-2.4],[-12.8,-8,-12.1],[4,-7.45,-6.5],[-14,-9.2,0],[7,-9.1,11.5]]){
   assert.equal(terrain.field(...point),repeat.field(...point),'geological field is deterministic');
  }
+});
+
+test('shared seabed relief is deterministic and matches the voxel contact surface',()=>{
+ const samples=[];
+ for(let z=-20;z<=20;z+=5)for(let x=-20;x<=20;x+=5)samples.push(seabedHeight(x,z));
+ assert.ok(samples.every(Number.isFinite));
+ assert.ok(Math.max(...samples)-Math.min(...samples)>.8,'multi-scale relief must be visible in the shared height field');
+ assert.equal(seabedHeight(12.5,-8.25),seabedHeight(12.5,-8.25));
+ const terrain=createHabitatVoxelTerrain();
+ const floor=seabedHeight(40,40);
+ assert.ok(terrain.field(40,floor+.5,40)>0,'water remains above the shared floor');
+ assert.ok(terrain.field(40,floor-.5,40)<0,'solid seabed remains below the shared floor');
 });
