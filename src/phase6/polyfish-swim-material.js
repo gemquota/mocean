@@ -242,6 +242,7 @@ export function applySwimMaterial(meshRoot, creatureType, { instanced = false } 
             '#include <skinning_vertex>\n' + vertexMain
           );
         };
+        mat.customProgramCacheKey = () => instanced ? 'mocean-swim-instanced-v1' : 'mocean-swim-v1';
         mat.needsUpdate = true;
         mat._swimPatched = true;
         mat._swimUniforms = uniforms;
