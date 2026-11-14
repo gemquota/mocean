@@ -176,7 +176,7 @@ let modelViewportWidth=0,modelViewportHeight=0,modelLayerLost=false;
 function disableMarineModelLayer(error){
  modelLayerLost=true;marineRenderedFish.clear();
  for(const batch of marineBatches.values()){modelScene?.remove(batch.group);batch.dispose();}
- marineBatches.clear();
+ marineBatches.clear();marineModels?.batches?.clear();
  if(error)console.warn('Naturalistic instanced model layer disabled; model-only creatures will remain hidden.',error);
 }
 modelCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();disableMarineModelLayer(new Error('WebGL context lost'));});
