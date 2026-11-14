@@ -6,7 +6,7 @@ test('habitat camera brings vegetation and creatures closer without changing mod
   const html = readFileSync(new URL('../schooling.html', import.meta.url), 'utf8');
   const camera = html.match(/const worldUp=vec3\(0,1,0\),camera=\{p:vec3\(([-\d.]+),([-\d.]+),([-\d.]+)\),target:vec3\(\)\};/);
   assert.ok(camera, 'shared habitat camera is declared');
-  const [, x, y, z] = camera.map(Number);
+  const [x, y, z] = camera.slice(1).map(Number);
   assert.equal(x, 0);
   assert.ok(z > 0 && z <= 56, 'camera is materially closer to the habitat');
   assert.ok(Math.abs(y / z - 0.27) < 0.02, 'camera keeps approximately the existing downward viewing angle');
