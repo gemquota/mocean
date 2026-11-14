@@ -215,9 +215,11 @@ export function createHabitatVoxelTerrainStream({
       if(raster.fallback&&typeof context.save==='function'&&typeof context.translate==='function'&&typeof context.scale==='function'&&typeof context.restore==='function'){
         const scale=zoom/(raster.zoom||zoom);
         context.save();
-        context.translate(width*.5,height*.5);
+        // project() centres the vertical camera axis at 52% of the viewport.
+        // Match that exact pivot so the cached tile follows focal zoom without drift.
+        context.translate(width*.5,height*.52);
         context.scale(scale,scale);
-        context.translate(-width*.5,-height*.5);
+        context.translate(-width*.5,-height*.52);
         context.drawImage(raster.canvas,raster.left,raster.top);
         context.restore();
       }else context.drawImage(raster.canvas,raster.left,raster.top);
