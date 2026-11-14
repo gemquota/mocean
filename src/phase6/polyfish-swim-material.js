@@ -157,7 +157,7 @@ const SWIM_VERTEX_MAIN = /* glsl */`
  * @param {string} creatureType — 'fish', 'dolphin', or 'manatee'
  * @returns {{ uniforms: object, config: object }} — uniform refs + config for editor
  */
-export function applySwimMaterial(meshRoot, creatureType) {
+export function applySwimMaterial(meshRoot, creatureType, { instanced = false } = {}) {
   const config = SWIM_CONFIGS[creatureType] || SWIM_CONFIGS.fish;
 
   // ── Fast path: reuse uniforms already wired into the compiled shader ──
@@ -225,17 +225,24 @@ export function applySwimMaterial(meshRoot, creatureType) {
         mat.onBeforeCompile = (shader) => {
           if (origCompile) origCompile(shader);
           Object.assign(shader.uniforms, uniforms);
+          const vertexPars = instanced
+            ? SWIM_VERTEX_PARS.replace('uniform float uPhase;', 'attribute float aSwimPhase;\n  attribute float aSwimAmplitude;')
+            : SWIM_VERTEX_PARS;
+          const vertexMain = instanced
+            ? SWIM_VERTEX_MAIN.replace('- uPhase', '- aSwimPhase').replace('uAmplitude * amp', 'uAmplitude * aSwimAmplitude * amp')
+            : SWIM_VERTEX_MAIN;
           shader.vertexShader = shader.vertexShader.replace(
             '#include <common>',
-            '#include <common>\n' + SWIM_VERTEX_PARS
+            '#include <common>\n' + vertexPars
           );
           // Apply the travelling wave after skeletal deformation so the shader
           // supplements, rather than fights, the imported bone animation.
           shader.vertexShader = shader.vertexShader.replace(
             '#include <skinning_vertex>',
-            '#include <skinning_vertex>\n' + SWIM_VERTEX_MAIN
+            '#include <skinning_vertex>\n' + vertexMain
           );
         };
+        mat.customProgramCacheKey = () => instanced ? 'mocean-swim-instanced-v1' : 'mocean-swim-v1';
         mat.needsUpdate = true;
         mat._swimPatched = true;
         mat._swimUniforms = uniforms;

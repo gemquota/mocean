@@ -30,8 +30,8 @@ a:hover{text-decoration:underline}
 </head>
 <body>
 <canvas id="school" aria-label="A marine habitat populated exclusively by naturalistic 3D-model species, with coral reefs, kelp and rocky seabed"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 SIMULATED · 16 3D SPECIES · 72 MODEL BUDGET</div></header><div class="species-counts" id="species-counts">16 NATURALISTIC 3D SPECIES<br>NO 2D CREATURE FALLBACKS<br>UP TO 72 MODELS RENDERED</div>
-<button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><p class="slider-bounds-hint">LONG-PRESS ANY SLIDER TO EDIT ITS MINIMUM AND MAXIMUM. BOUNDS ARE SAVED ON THIS DEVICE.</p><nav class="config-tabs" role="tablist"><button class="active" data-tab="prevalence">Prevalence</button><button data-tab="speed">Speed</button><button data-tab="size">Size</button><button data-tab="range">Min / max size</button><button data-tab="aggression">Aggression</button><button data-tab="world">World</button></nav><section class="config-page active" data-page="prevalence"><p>Species population share. Setting any species to 100% clears all others.</p><div id="species-mix"></div></section><section class="config-page" data-page="speed"><p>Speed multiplier, independently adjustable for every species.</p><div id="species-speed"></div></section><section class="config-page" data-page="size"><p>Body-size multiplier for each species. Existing species proportions are preserved.</p><div id="species-size"></div></section><section class="config-page" data-page="range"><p>Each species gets its own minimum and maximum body-size variation.</p><div id="species-size-range"></div></section><section class="config-page" data-page="aggression"><p>Species-specific pursuit and feeding drive. Zero suppresses active pursuit.</p><div id="species-aggression"></div></section><section class="config-page" data-page="world"><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">100</output><input id="world-x" type="range" min="1" max="1000" step="1" value="100"></label><label>Y <output id="world-y-value">100</output><input id="world-y" type="range" min="1" max="1000" step="1" value="100"></label><label>Z <output id="world-z-value">100</output><input id="world-z" type="range" min="1" max="1000" step="1" value="100"></label></div></section></aside><section class="population-control" aria-label="Simulated creature population control"><div class="population-heading"><label for="population">SIMULATED POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="10" max="200" step="10" value="150" aria-label="Number of simulated creatures" title="Long-press to customise minimum and maximum"><div class="population-scale"><button id="population-min">10 CREATURES</button><button id="population-max">200 CREATURES</button></div></section>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 SIMULATED · 16 3D SPECIES · GPU INSTANCING</div></header><div class="species-counts" id="species-counts">16 NATURALISTIC 3D SPECIES<br>NO 2D CREATURE FALLBACKS<br>UP TO 1,000 INSTANCED MODELS</div>
+<button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><p class="slider-bounds-hint">LONG-PRESS ANY SLIDER TO EDIT ITS MINIMUM AND MAXIMUM. BOUNDS ARE SAVED ON THIS DEVICE.</p><nav class="config-tabs" role="tablist"><button class="active" data-tab="prevalence">Prevalence</button><button data-tab="speed">Speed</button><button data-tab="size">Size</button><button data-tab="range">Min / max size</button><button data-tab="aggression">Aggression</button><button data-tab="world">World</button></nav><section class="config-page active" data-page="prevalence"><p>Species population share. Setting any species to 100% clears all others.</p><div id="species-mix"></div></section><section class="config-page" data-page="speed"><p>Speed multiplier, independently adjustable for every species.</p><div id="species-speed"></div></section><section class="config-page" data-page="size"><p>Body-size multiplier for each species. Existing species proportions are preserved.</p><div id="species-size"></div></section><section class="config-page" data-page="range"><p>Each species gets its own minimum and maximum body-size variation.</p><div id="species-size-range"></div></section><section class="config-page" data-page="aggression"><p>Species-specific pursuit and feeding drive. Zero suppresses active pursuit.</p><div id="species-aggression"></div></section><section class="config-page" data-page="world"><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">100</output><input id="world-x" type="range" min="1" max="1000" step="1" value="100"></label><label>Y <output id="world-y-value">100</output><input id="world-y" type="range" min="1" max="1000" step="1" value="100"></label><label>Z <output id="world-z-value">100</output><input id="world-z" type="range" min="1" max="1000" step="1" value="100"></label></div></section></aside><section class="population-control" aria-label="Simulated creature population control"><div class="population-heading"><label for="population">SIMULATED POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="10" max="1000" step="10" value="150" aria-label="Number of simulated creatures" title="Long-press to customise minimum and maximum"><div class="population-scale"><button id="population-min">10 CREATURES</button><button id="population-max">1,000 CREATURES</button></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./single-fish.html">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
@@ -81,7 +81,7 @@ function setPopulation(value){
  initialiseFishVisualState(nextSchool);
  school=nextSchool;
  populationSlider.value=String(count);populationValue.textContent=count.toLocaleString('en-US');
- status.textContent=count.toLocaleString('en-US')+' SIMULATED · '+ANIMATED_MODEL_SPECIES.length+' 3D SPECIES · 72 MODEL BUDGET';
+ status.textContent=count.toLocaleString('en-US')+' SIMULATED · '+ANIMATED_MODEL_SPECIES.length+' 3D SPECIES · 1,000 INSTANCED 3D BUDGET';
 }
 populationSlider.addEventListener('input',event=>{
  const count=Math.max(Number(populationSlider.min),Math.min(Number(populationSlider.max),Math.round(Number(event.target.value)/10)*10));
@@ -108,14 +108,14 @@ function applySliderBounds(slider,bounds){
  if(value<min)slider.value=String(min);else if(value>max)slider.value=String(max);
 }
 function saveSliderBounds(){try{localStorage.setItem(SLIDER_BOUNDS_STORAGE_KEY,JSON.stringify(savedSliderBounds));}catch(error){console.warn('Could not save slider bounds:',error);}}
-// Migrate the population slider to 10–200 once. After that, long-press edits
+// Migrate the population slider to 10–1000 once. After that, long-press edits
 // to this slider are saved and restored just like the other device-local bounds.
 const POPULATION_RANGE_VERSION_KEY='mocean.populationRange.v1';
 let populationRangeVersion=null;
 try{populationRangeVersion=localStorage.getItem(POPULATION_RANGE_VERSION_KEY);}catch{}
-if(populationRangeVersion!=='10-200'){
+if(populationRangeVersion!=='10-1000'){
  delete savedSliderBounds.population;saveSliderBounds();
- try{localStorage.setItem(POPULATION_RANGE_VERSION_KEY,'10-200');}catch(error){console.warn('Could not save population range version:',error);}
+ try{localStorage.setItem(POPULATION_RANGE_VERSION_KEY,'10-1000');}catch(error){console.warn('Could not save population range version:',error);}
 }
 // Reset only the three world-dimension slider bounds once: the new shared
 // world-size range is 1–1000 and the intended starting habitat is 100 × 100 × 100.
@@ -168,96 +168,71 @@ const cameraForward=normalize3(sub(camera.target,camera.p));
 const cameraRight=normalize3(cross3(cameraForward,worldUp));
 const cameraUp=normalize3(cross3(cameraRight,cameraForward));
 const modelCanvas=document.createElement('canvas');modelCanvas.id='school-models';modelCanvas.setAttribute('aria-hidden','true');canvas.after(modelCanvas);
-let THREE=null,modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null,modelDirection=null,modelForward=null,MARINE_MODEL_BY_SPECIES={},MARINE_MODEL_VARIANTS_BY_SPECIES={},MARINE_MODEL_ORIENTATION={};
-const marineModelEntries=new Map(),marinePending=new WeakSet(),marineFailedSpecies=new Set(),marineRenderedFish=new Set();
-const MAX_VISIBLE_3D_MODELS=72;
+let THREE=null,modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null,advanceMarineAnimation=null,MARINE_MODEL_BY_SPECIES={},MARINE_MODEL_ORIENTATION={};
+const marineBatches=new Map(),marineBatchPending=new Set(),marineFailedSpecies=new Set(),marineRenderedFish=new Set();
+let marineOverflow=0;
+const MAX_INSTANCED_MARINE_ENTITIES=1000;
 const MODELLED_SPECIES=new Set(ANIMATED_MODEL_SPECIES);
 let modelViewportWidth=0,modelViewportHeight=0,modelLayerLost=false;
 function disableMarineModelLayer(error){
- modelLayerLost=true;
- marineRenderedFish.clear();
- for(const entry of marineModelEntries.values()){modelScene?.remove(entry.root);entry.dispose();}
- marineModelEntries.clear();
- if(error)console.warn('Naturalistic GLB layer disabled; model-only creatures will remain hidden.',error);
+ modelLayerLost=true;marineRenderedFish.clear();
+ for(const batch of marineBatches.values()){modelScene?.remove(batch.group);batch.dispose();}
+ marineBatches.clear();marineModels?.batches?.clear();
+ if(error)console.warn('Naturalistic instanced model layer disabled; model-only creatures will remain hidden.',error);
 }
 modelCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();disableMarineModelLayer(new Error('WebGL context lost'));});
 modelCanvas.addEventListener('webglcontextrestored',()=>{modelLayerLost=false;if(!modelRenderer)initialiseMarineModelLayer();});
 async function initialiseMarineModelLayer(){
  try{
-  const loaded=await Promise.all([import('three'),import('./src/phase6/osmocean-marine-models.js')]);
+  const loaded=await Promise.all([import('three'),import('./src/phase6/osmocean-marine-models.js'),import('./src/phase6/instanced-marine-school-renderer.js')]);
   if(modelLayerLost)return;
-  THREE=loaded[0];modelDirection=new THREE.Vector3();modelForward=new THREE.Vector3(1,0,0);const adapter=loaded[1];MARINE_MODEL_BY_SPECIES=adapter.MARINE_MODEL_BY_SPECIES;MARINE_MODEL_VARIANTS_BY_SPECIES=adapter.MARINE_MODEL_VARIANTS_BY_SPECIES;MARINE_MODEL_ORIENTATION=adapter.MARINE_MODEL_ORIENTATION;
-  modelRenderer=new THREE.WebGLRenderer({canvas:modelCanvas,alpha:true,antialias:false,powerPreference:'low-power'});
+  THREE=loaded[0];const adapter=loaded[1],instanced=loaded[2];
+  MARINE_MODEL_BY_SPECIES=adapter.MARINE_MODEL_BY_SPECIES;MARINE_MODEL_ORIENTATION=adapter.MARINE_MODEL_ORIENTATION;
+  modelRenderer=new THREE.WebGLRenderer({canvas:modelCanvas,alpha:true,antialias:false,powerPreference:'high-performance'});
   modelRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));modelRenderer.setClearColor(0x000000,0);modelRenderer.outputColorSpace=THREE.SRGBColorSpace;
   modelScene=new THREE.Scene();modelScene.add(new THREE.HemisphereLight(0xc8e8e4,0x263b3a,1.45));
   const modelKey=new THREE.DirectionalLight(0xffedcf,2.0);modelKey.position.set(-18,25,20);modelScene.add(modelKey);
   const modelFill=new THREE.DirectionalLight(0x5aa6b3,.65);modelFill.position.set(15,3,-18);modelScene.add(modelFill);
   modelCamera=new THREE.PerspectiveCamera(48,1,.1,220);modelCamera.up.set(0,1,0);
-  marineModels=new adapter.OsmoceanMarineModels(THREE,{baseUrl:'./assets/models/osmocean/naturalistic/'});
- }catch(error){modelRenderer=null;marineModels=null;console.warn('Naturalistic model layer unavailable; modelled species will not use cartoon fallbacks.',error);}
+  marineModels=new instanced.InstancedMarineSchoolRenderer(THREE,{baseUrl:'./assets/models/osmocean/naturalistic/',capacity:MAX_INSTANCED_MARINE_ENTITIES});
+  advanceMarineAnimation=instanced.advanceMarineAnimation;
+ }catch(error){modelRenderer=null;marineModels=null;console.warn('Naturalistic instanced model layer unavailable; modelled species will remain hidden.',error);}
 }
 initialiseMarineModelLayer();
+function ensureMarineBatch(species){
+ if(!marineModels||modelLayerLost||marineFailedSpecies.has(species)||marineBatches.has(species)||marineBatchPending.has(species))return;
+ marineBatchPending.add(species);
+ marineModels.createBatch(species).then(batch=>{
+  marineBatchPending.delete(species);
+  if(!batch)return;
+  if(modelLayerLost){batch.dispose();return;}
+  modelScene.add(batch.group);marineBatches.set(species,batch);
+ }).catch(error=>{marineBatchPending.delete(species);marineFailedSpecies.add(species);console.warn('Instanced marine model load failed for '+species+':',error);});
+}
 function updateMarineCamera(){
  if(!modelRenderer||!modelCamera)return;
  if(modelViewportWidth!==viewWidth||modelViewportHeight!==viewHeight){modelViewportWidth=viewWidth;modelViewportHeight=viewHeight;modelRenderer.setSize(viewWidth,viewHeight,false);modelCamera.aspect=viewWidth/Math.max(1,viewHeight);}
  const focal=Math.min(viewWidth,viewHeight)*1.08*zoom;modelCamera.fov=2*Math.atan(viewHeight/(2*focal))*180/Math.PI;
  modelCamera.position.set(camera.p.x,camera.p.y,camera.p.z);modelCamera.lookAt(camera.target.x,camera.target.y,camera.target.z);modelCamera.updateProjectionMatrix();
 }
-function ensureMarineModel(fish){
- if(!marineModels||modelLayerLost||marineFailedSpecies.has(fish.species)||!MODELLED_SPECIES.has(fish.species)||marineModelEntries.has(fish)||marinePending.has(fish))return;
- marinePending.add(fish);
- const variants=MARINE_MODEL_VARIANTS_BY_SPECIES[fish.species]??[];
- const modelId=variants.length?variants[Math.abs(fish.id??0)%variants.length]:MARINE_MODEL_BY_SPECIES[fish.species];
- marineModels.createInstance(fish.species,{targetLength:.78*(fish.bodyScale??1),modelId}).then(instance=>{
-  marinePending.delete(fish);
-  if(!instance)return;
-  if(modelLayerLost||!school.fish.includes(fish)){instance.dispose();return;}
-  const root=new THREE.Group();root.add(instance.visual);modelScene.add(root);
-  marineModelEntries.set(fish,{...instance,root,baseScale:instance.visual.scale.x,initialBodyScale:fish.bodyScale??1});
- }).catch(error=>{marinePending.delete(fish);const firstFailure=!marineFailedSpecies.has(fish.species);marineFailedSpecies.add(fish.species);if(firstFailure)console.warn('Marine model load failed for '+fish.species+':',error);});
-}
 function syncMarineModels(ordered,dt){
  if(!modelRenderer||!marineModels||modelLayerLost)return;
- const population=new Set(school.fish),candidates=[];
- marineRenderedFish.clear();
+ marineRenderedFish.clear();marineOverflow=0;
+ const bySpecies=new Map();
+ // Advance animation state for every simulated fish, not only visible instances.
+ for(const fish of school.fish)if(advanceMarineAnimation)advanceMarineAnimation(fish,dt);
  for(const item of ordered){
   const fish=item.fish,screen=item.screen;
   if(!MODELLED_SPECIES.has(fish.species)||!MARINE_MODEL_BY_SPECIES[fish.species])continue;
   if(screen.depth<2.5||screen.x<-80||screen.x>viewWidth+80||screen.y<-80||screen.y>viewHeight+80)continue;
-  candidates.push({fish,depth:screen.depth});
+  if(!bySpecies.has(fish.species))bySpecies.set(fish.species,[]);
+  bySpecies.get(fish.species).push(fish);
  }
- // Keep the nearest visible model instances on the GPU. Every other creature
- // still has its animated Canvas renderer, so the budget never hides animals.
- candidates.sort((a,b)=>a.depth-b.depth);
- const selected=new Set(candidates.slice(0,MAX_VISIBLE_3D_MODELS).map(item=>item.fish));
- for(const [fish,entry] of marineModelEntries){
-  if(!population.has(fish)){modelScene.remove(entry.root);entry.dispose();marineModelEntries.delete(fish);}
-  else{
-   entry.root.visible=selected.has(fish);
-   // Animation time is independent of visibility. Otherwise zoom-driven
-   // culling pauses GLB mixers and creatures appear frozen when they return.
-   if(!selected.has(fish))entry.update(dt);
-  }
- }
- for(const {fish} of candidates.slice(0,MAX_VISIBLE_3D_MODELS)){
-  if(!marineModelEntries.has(fish)&&marineModelEntries.size>=MAX_VISIBLE_3D_MODELS){
-   const victim=[...marineModelEntries].find(([other])=>!selected.has(other));
-   if(victim){modelScene.remove(victim[1].root);victim[1].dispose();marineModelEntries.delete(victim[0]);}
-  }
-  ensureMarineModel(fish);
-  const entry=marineModelEntries.get(fish);if(!entry)continue;
-  marineRenderedFish.add(fish);entry.root.visible=true;
-  entry.root.position.set(fish.p.x,fish.p.y,fish.p.z);
-  if(MARINE_MODEL_ORIENTATION[fish.species]==='vertical'){
-   const yaw=Math.atan2(fish.forward.x,fish.forward.z);
-   modelDirection.set(0,1,0);
-   entry.root.quaternion.setFromAxisAngle(modelDirection,yaw);
-  }else{
-   modelDirection.set(fish.forward.x,fish.forward.y,fish.forward.z).normalize();
-   entry.root.quaternion.setFromUnitVectors(modelForward,modelDirection);
-  }
-  const bodyScale=fish.bodyScale??1;entry.visual.scale.setScalar(entry.baseScale*bodyScale/Math.max(.001,entry.initialBodyScale));
-  entry.update(dt);
+ for(const [species] of bySpecies)ensureMarineBatch(species);
+ for(const [species,batch] of marineBatches){
+  const fishList=bySpecies.get(species)??[];
+  batch.update(fishList,dt);marineOverflow+=batch.overflow;
+  for(let i=0;i<batch.rendered;i++)marineRenderedFish.add(fishList[i]);
  }
 }
 let viewWidth=1,viewHeight=1;
@@ -1024,7 +999,7 @@ function animate(now){
  performanceMonitor.record('simulation',performance.now()-simulationStarted);
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/24){const renderStarted=performance.now();render();performanceMonitor.record('render',performance.now()-renderStarted);renderAccumulator%=1/24;}
- if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0,seahorse:0,seaDragon:0,anglerfish:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' SIMULATED · '+ANIMATED_MODEL_SPECIES.length+' 3D SPECIES · 72 MODEL BUDGET · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).filter(([species])=>ANIMATED_MODEL_SPECIES.includes(species)).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+' · VOXEL '+(voxelTerrainError?'FALLBACK '+voxelTerrainError:(voxelTerrainStats?.triangles??0)+' TRI')+' · CHUNKS '+(voxelTerrainStats?.visible??0)+'/'+(voxelTerrainStats?.loaded??0)+' · STREAM QUEUE '+(voxelTerrainStats?.pending??0)+' · 3D MODELS '+marineModelEntries.size+' · CPU P95 F/S/R '+['frame','simulation','render'].map(key=>{const value=performanceMonitor.snapshot()[key]?.p95;return value===null||value===undefined?'--':value.toFixed(1);}).join('/')+'ms'+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
+ if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0,seahorse:0,seaDragon:0,anglerfish:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' SIMULATED · '+ANIMATED_MODEL_SPECIES.length+' 3D SPECIES · 1,000 INSTANCED 3D BUDGET · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).filter(([species])=>ANIMATED_MODEL_SPECIES.includes(species)).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+' · VOXEL '+(voxelTerrainError?'FALLBACK '+voxelTerrainError:(voxelTerrainStats?.triangles??0)+' TRI')+' · CHUNKS '+(voxelTerrainStats?.visible??0)+'/'+(voxelTerrainStats?.loaded??0)+' · STREAM QUEUE '+(voxelTerrainStats?.pending??0)+' · 3D INSTANCES '+marineRenderedFish.size+' · CPU P95 F/S/R '+['frame','simulation','render'].map(key=>{const value=performanceMonitor.snapshot()[key]?.p95;return value===null||value===undefined?'--':value.toFixed(1);}).join('/')+'ms · GPU CALLS '+(modelRenderer?.info.render.calls??0)+' · GPU TRI '+(modelRenderer?.info.render.triangles??0)+' · INSTANCE OVERFLOW '+marineOverflow+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
  } catch(error) {
   if(!animationFault) {
    animationFault=error;
