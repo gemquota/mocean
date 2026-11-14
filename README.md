@@ -67,6 +67,10 @@ These are review surfaces and experiments, not alternate main simulations:
 - [Naturalistic marine model review](creature-model-review.html)
 - [Development blueprint](development.html)
 
+## Instanced habitat rendering
+
+The Schooling habitat now batches naturalistic GLB mesh parts by species with `THREE.InstancedMesh`. Each instance retains its own transform and travelling-wave phase/amplitude attributes; the CPU simulation remains authoritative. The population control and instance buffers support up to 1,000 creatures. This is a render-capacity target, not a guarantee of 60 FPS on every device: actual performance depends on model complexity, visible species mix, GPU and viewport. Use the live render metrics (instances, draw calls, triangles and frame timing) when evaluating performance. No 2D creature proxy is used when a model fails to load.
+
 ## Tests and local development
 
 Requirements: Node.js 22 or later.
