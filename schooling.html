@@ -200,7 +200,7 @@ initialiseMarineModelLayer();
 function updateMarineCamera(){
  if(!modelRenderer||!modelCamera)return;
  if(modelViewportWidth!==viewWidth||modelViewportHeight!==viewHeight){modelViewportWidth=viewWidth;modelViewportHeight=viewHeight;modelRenderer.setSize(viewWidth,viewHeight,false);modelCamera.aspect=viewWidth/Math.max(1,viewHeight);}
- const focal=Math.min(viewWidth,viewHeight)*1.08;modelCamera.fov=2*Math.atan(viewHeight/(2*focal))*180/Math.PI;
+ const focal=Math.min(viewWidth,viewHeight)*1.08*zoom;modelCamera.fov=2*Math.atan(viewHeight/(2*focal))*180/Math.PI;
  modelCamera.position.set(camera.p.x,camera.p.y,camera.p.z);modelCamera.lookAt(camera.target.x,camera.target.y,camera.target.z);modelCamera.updateProjectionMatrix();
 }
 function ensureMarineModel(fish){
@@ -232,7 +232,12 @@ function syncMarineModels(ordered,dt){
  const selected=new Set(candidates.slice(0,MAX_VISIBLE_3D_MODELS).map(item=>item.fish));
  for(const [fish,entry] of marineModelEntries){
   if(!population.has(fish)){modelScene.remove(entry.root);entry.dispose();marineModelEntries.delete(fish);}
-  else entry.root.visible=selected.has(fish);
+  else{
+   entry.root.visible=selected.has(fish);
+   // Animation time is independent of visibility. Otherwise zoom-driven
+   // culling pauses GLB mixers and creatures appear frozen when they return.
+   if(!selected.has(fish))entry.update(dt);
+  }
  }
  for(const {fish} of candidates.slice(0,MAX_VISIBLE_3D_MODELS)){
   if(!marineModelEntries.has(fish)&&marineModelEntries.size>=MAX_VISIBLE_3D_MODELS){
