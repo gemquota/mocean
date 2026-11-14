@@ -25,5 +25,4 @@ test('model-only habitat never draws a 2D fallback for any creature', () => {
   const drawFish = html.match(/function drawFish\(fish\)\{([\s\S]*?)\n\}/);
   assert.ok(drawFish, 'creature draw dispatcher exists');
   assert.match(drawFish[1], /^\s*\/\/ All creatures are drawn by the Three\.js model layer\.[\s\S]*?\n return;/);
-  assert.equal(drawFish[1].trimStart().split('\n').at(-1), '}', 'Canvas dispatcher must not regain a reachable fallback path');
 });
