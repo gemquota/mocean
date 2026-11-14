@@ -82,13 +82,13 @@ test('visible chunk rasterisation is spread across frames to avoid a large main-
     }
     const transforms=[];
     const context={drawImage(){},save(){transforms.push('save');},restore(){transforms.push('restore');},translate(x,y){transforms.push(['translate',x,y]);},scale(x,y){transforms.push(['scale',x,y]);}};
-    const project=point=>({x:50+point.x,y:50+point.z,depth:20,size:2});
+    let projectedVertices=0;
+    const project=(point,projectionZoom)=>{projectedVertices++;assert.equal(projectionZoom,1);return {x:50+point.x,y:50+point.z,depth:20,size:2};};
     const first=stream.draw(context,project,100,100,1);
     const second=stream.draw(context,project,100,100,1);
     assert.equal(first.visible,2);
     assert.equal(second.visible,3);
-    // A zoom invalidates all three projected tiles, but the two-tile refresh
-    // budget must not make the third previously visible chunk disappear.
+    // Zoom must reuse all cached base-projection tiles without re-projecting vertices.
     const projectedAtRest=projectedVertices;
     const zoomed=stream.draw(context,project,100,100,1.5);
     assert.equal(zoomed.visible,3);
