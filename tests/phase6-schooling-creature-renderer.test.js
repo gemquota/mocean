@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from '../src/phase6/animated-species-filter.js';
 
 test('only species with naturalistic models and procedural swimming remain eligible', () => {
@@ -17,4 +18,11 @@ test('empty supported population falls back to the first reviewed naturalistic s
   assert.equal(result.barracuda,100);
   assert.equal(result.tuna,0);
   assert.equal(result.clownfish,0);
+});
+
+test('model-only habitat never draws a 2D fallback for any creature', () => {
+  const html = readFileSync(new URL('../schooling.html', import.meta.url), 'utf8');
+  const drawFish = html.match(/function drawFish\(fish\)\{([\s\S]*?)\n\}/);
+  assert.ok(drawFish, 'creature draw dispatcher exists');
+  assert.match(drawFish[1], /^\s*\/\/ All creatures are drawn by the Three\.js model layer\.[\s\S]*?\n return;/);
 });

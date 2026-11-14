@@ -1,4 +1,5 @@
 import { createHabitatVoxelField, resolveVoxelTerrainContact, sampleVoxelSurfaceHeight } from './phase6/voxel-field.js';
+import { seabedHeight } from './phase6/seabed-height.js';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const length = v => Math.hypot(v.x, v.y, v.z);
 const normalize = v => {
@@ -12,7 +13,7 @@ const limit = (v, maximum) => {
 const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 const subtract = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
-export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 + Math.sin(z * .31 - x * .045) * .22 + Math.cos(x * .075 + z * .19) * .16;
+export { seabedHeight };
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });

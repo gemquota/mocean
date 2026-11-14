@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHabitatVoxelTerrain } from '../src/phase6/habitat-voxel-terrain.js';
+import { seabedHeight } from '../src/phase6/seabed-height.js';
 
 test('habitat voxel field contains solid seabed, open water and connected cave voids',()=>{
  const terrain=createHabitatVoxelTerrain();
@@ -33,6 +34,12 @@ test('habitat voxel field contains solid seabed, open water and connected cave v
  assert.ok(terrain.field(-6.8,-10.0,-7.0)>0,'first deep ravine is carved through the seabed');
  assert.ok(terrain.field(-6.8,-12.0,-7.0)>0,'ravine retains a deep lower channel');
  assert.ok(terrain.field(-6.8,-13.1,-7.0)<0,'ravine floor remains solid below its cut');
+ assert.ok(terrain.field(-22,-10,0)>0,'cross-cut ravine opens a second deep channel');
+ assert.ok(terrain.field(-22,-13.1,0)<0,'cross-cut ravine retains a solid floor');
+ assert.ok(terrain.field(4,-10,14)>0,'southern ravine branch cuts through the reef');
+ assert.ok(terrain.field(-22.5,-7.65,-9)<0,'stepped table-rock ledge has a solid cap');
+ assert.ok(terrain.field(21.5,-7.72,3.5)<0,'outer shelf has a second raised ledge');
+ assert.ok(terrain.field(-23,-8,-13.4)<0,'angular outer reef buttress adds solid relief');
  assert.ok(terrain.field(-17.5,-6.5,-14.2)<0,'angular outcrop rises above the sediment floor');
  assert.ok(terrain.field(-13,-9.65,-5)>0,'first enlarged cave chamber is hollow');
  assert.ok(terrain.field(8,-9.55,9)>0,'second enlarged cave chamber is hollow');
@@ -42,4 +49,16 @@ test('habitat voxel field contains solid seabed, open water and connected cave v
  for(const point of [[-16,-8,-2.4],[-12.8,-8,-12.1],[4,-7.45,-6.5],[-14,-9.2,0],[7,-9.1,11.5]]){
   assert.equal(terrain.field(...point),repeat.field(...point),'geological field is deterministic');
  }
+});
+
+test('shared seabed relief is deterministic and matches the voxel contact surface',()=>{
+ const samples=[];
+ for(let z=-20;z<=20;z+=5)for(let x=-20;x<=20;x+=5)samples.push(seabedHeight(x,z));
+ assert.ok(samples.every(Number.isFinite));
+ assert.ok(Math.max(...samples)-Math.min(...samples)>.8,'multi-scale relief must be visible in the shared height field');
+ assert.equal(seabedHeight(12.5,-8.25),seabedHeight(12.5,-8.25));
+ const terrain=createHabitatVoxelTerrain();
+ const floor=seabedHeight(40,40);
+ assert.ok(terrain.field(40,floor+.5,40)>0,'water remains above the shared floor');
+ assert.ok(terrain.field(40,floor-.5,40)<0,'solid seabed remains below the shared floor');
 });
