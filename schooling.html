@@ -818,9 +818,9 @@ function drawAnglerfish(fish){
  ctx.restore();
 }
 function drawFish(fish){
- // This habitat is deliberately model-only: never fall back to screen-space
- // creature illustrations while a GLB loads or after a model failure.
- if(!MODELLED_SPECIES.has(fish.species)||!marineRenderedFish.has(fish))return;
+ // All creatures are drawn by the Three.js model layer. The Canvas creature
+ // renderer is intentionally disabled, including during asynchronous loads.
+ return;
  if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
  if(fish.species==='seahorse'){drawSeahorse(fish);return;}
  if(fish.species==='seaDragon'){drawSeaDragon(fish);return;}
