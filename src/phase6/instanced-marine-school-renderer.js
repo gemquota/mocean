@@ -53,6 +53,14 @@ export function advanceMarineAnimation(fish, dt) {
   fish._marinePulsePhase = (fish._marinePulsePhase ?? (((fish.id * 0.38196601125) % 1) * Math.PI * 2)) + step * 1.7;
 }
 
+export function advanceMarineAnimation(fish, dt) {
+  const mapping = SPECIES_MODEL_MAP[fish.species];
+  const config = SWIM_CONFIGS[mapping?.motion] ?? SWIM_CONFIGS.fish;
+  const step = Math.min(Math.max(dt, 0), 0.05);
+  fish._marinePhase = (fish._marinePhase ?? (((fish.id * 0.61803398875) % 1) * Math.PI * 2)) + step * (config.idleSpeed ?? 2.8);
+  fish._marinePulsePhase = (fish._marinePulsePhase ?? (((fish.id * 0.38196601125) % 1) * Math.PI * 2)) + step * 1.7;
+}
+
 export class InstancedMarineSchoolRenderer {
   constructor(THREE, { baseUrl = './assets/models/osmocean/naturalistic/', loader = new GLTFLoader(), capacity = 1000 } = {}) {
     this.THREE = THREE;
