@@ -108,14 +108,14 @@ function applySliderBounds(slider,bounds){
  if(value<min)slider.value=String(min);else if(value>max)slider.value=String(max);
 }
 function saveSliderBounds(){try{localStorage.setItem(SLIDER_BOUNDS_STORAGE_KEY,JSON.stringify(savedSliderBounds));}catch(error){console.warn('Could not save slider bounds:',error);}}
-// Migrate the population slider to 10–200 once. After that, long-press edits
+// Migrate the population slider to 10–1000 once. After that, long-press edits
 // to this slider are saved and restored just like the other device-local bounds.
 const POPULATION_RANGE_VERSION_KEY='mocean.populationRange.v1';
 let populationRangeVersion=null;
 try{populationRangeVersion=localStorage.getItem(POPULATION_RANGE_VERSION_KEY);}catch{}
-if(populationRangeVersion!=='10-200'){
+if(populationRangeVersion!=='10-1000'){
  delete savedSliderBounds.population;saveSliderBounds();
- try{localStorage.setItem(POPULATION_RANGE_VERSION_KEY,'10-200');}catch(error){console.warn('Could not save population range version:',error);}
+ try{localStorage.setItem(POPULATION_RANGE_VERSION_KEY,'10-1000');}catch(error){console.warn('Could not save population range version:',error);}
 }
 // Reset only the three world-dimension slider bounds once: the new shared
 // world-size range is 1–1000 and the intended starting habitat is 100 × 100 × 100.
