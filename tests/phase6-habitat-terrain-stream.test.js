@@ -54,8 +54,9 @@ test('completed visible terrain chunks are projected and cached for the Canvas h
       }
     }});
     const draws=[];
-    const context={drawImage(...args){draws.push(args);}};
-    const project=point=>({x:50+point.x,y:50+point.z,depth:20,size:2});
+    const context={drawImage(...args){draws.push(args);},save(){},restore(){},translate(){},scale(){}};
+    let projectedVertices=0;
+    const project=(point,projectionZoom)=>{projectedVertices++;assert.equal(projectionZoom,1);return {x:50+point.x,y:50+point.z,depth:20,size:2};};
     const first=stream.draw(context,project,100,100,1);
     const second=stream.draw(context,project,100,100,1);
     assert.equal(first.visible,1);
@@ -88,8 +89,10 @@ test('visible chunk rasterisation is spread across frames to avoid a large main-
     assert.equal(second.visible,3);
     // A zoom invalidates all three projected tiles, but the two-tile refresh
     // budget must not make the third previously visible chunk disappear.
+    const projectedAtRest=projectedVertices;
     const zoomed=stream.draw(context,project,100,100,1.5);
     assert.equal(zoomed.visible,3);
+    assert.equal(projectedVertices,projectedAtRest,'zoom must reuse the world-aligned terrain projection cache');
     assert.ok(transforms.includes('save'));
     assert.ok(transforms.includes('restore'));
     assert.ok(transforms.some(entry=>Array.isArray(entry)&&entry[0]==='scale'&&entry[1]===1.5));
