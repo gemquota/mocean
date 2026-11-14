@@ -45,7 +45,17 @@ const SHELVES=[
  [-25,-7.55,-2.5,5.6,1.05,2.15,-.24],
  [4,-7.45,-6.5,5.2,1.15,2.0,.32],
  [25,-7.8,12.0,4.6,.95,2.2,-.42],
- [-5,-7.7,18.0,4.0,.9,1.7,.18]
+ [-5,-7.7,18.0,4.0,.9,1.7,.18],
+ // Broken outer ledges create stepped silhouettes instead of isolated lumps.
+ [-22.5,-7.65,-9.0,3.8,.82,2.25,-.38],
+ [21.5,-7.72,3.5,3.25,.72,2.05,.52],
+ [2.5,-7.62,-17.2,3.4,.78,1.85,-.18]
+];
+const TERRACE_BLOCKS=[
+ // Eroded table-rock caps with visible overhangs and abrupt shoulders.
+ [-22.5,-7.65,-9.0,3.8,.72,2.25,-.38,.22],
+ [21.5,-7.72,3.5,3.25,.66,2.05,.52,.2],
+ [2.5,-7.62,-17.2,3.4,.7,1.85,-.18,.2]
 ];
 const CAVE_TUNNELS=[
  [[-19,-9.05,-5],[-8,-9.25,-5],1.35],
@@ -72,13 +82,22 @@ const ANGULAR_ROCKS=[
  [18.0,-8.35,-10.5,2.2,1.5,2.1,-.2,3.8],
  [-2.0,-8.2,17.0,2.3,1.55,2.4,.5,3.4],
  [-19.0,-8.3,10.8,2.0,1.45,2.0,-.3,3.7],
- [8.2,-8.0,0.5,2.1,1.65,1.8,.7,3.4]
+ [8.2,-8.0,0.5,2.1,1.65,1.8,.7,3.4],
+ [-23.0,-8.15,-13.4,2.7,1.75,2.2,-.62,4.0],
+ [23.0,-8.25,-13.0,2.8,1.85,2.35,.44,4.1],
+ [-23.5,-8.3,13.2,2.55,1.7,2.1,.28,3.9],
+ [23.0,-8.35,10.2,2.65,1.8,2.25,-.36,4.0],
+ [3.2,-8.3,-2.2,2.45,1.55,2.0,.68,4.2],
+ [-3.0,-8.35,18.0,2.2,1.5,1.85,-.22,3.8]
 ];
 const RAVINES=[
  // Deep, open-sided trenches cut into the reef, not shallow colour channels.
  [-6.8,-9.55,-7.0,2.15,3.25,12.5,.28],
  [11.5,-9.55,-2.0,1.9,3.2,11.5,-.52],
- [-17.0,-9.55,8.0,1.65,3.15,8.8,.08]
+ [-17.0,-9.55,8.0,1.65,3.15,8.8,.08],
+ // Two cross-cut channels connect the main ravines into a readable drainage system.
+ [-22.0,-9.55,0.0,1.5,3.1,8.2,-.34],
+ [4.0,-9.55,14.0,1.42,3.0,7.2,.62]
 ];
 const CAVE_CHAMBERS=[
  [-13,-9.65,-5,2.25,1.55,2.35],
@@ -131,6 +150,13 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
    const dx=x-cx*sx,dz=z-cz*sz;
    if(Math.abs(dx)>rx*sx+1||Math.abs(dz)>rz*sz+1||Math.abs(y-cy)>ry+1.2)continue;
    solid=smoothMin(solid,rotatedEllipsoid(x,y,z,cx*sx,cy,cz*sz,rx*sx,ry,rz*sz,angle),.42);
+  }
+
+  // Stepped table-rock caps retain flat-ish tops and broken, undercut margins.
+  for(const [cx,cy,cz,hx,hy,hz,angle,bevel] of TERRACE_BLOCKS){
+   const px=cx*sx,pz=cz*sz;
+   if(Math.abs(x-px)>hx*sx+1||Math.abs(z-pz)>hz*sz+1||Math.abs(y-cy)>hy+1)continue;
+   solid=smoothMin(solid,rotatedBox(x,y,z,px,cy,pz,hx*sx,hy,hz*sz,angle,bevel),.18);
   }
 
   // Faceted, blocky superellipsoid outcrops give the reef angular shoulders.
