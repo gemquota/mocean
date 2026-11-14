@@ -33,6 +33,12 @@ test('habitat voxel field contains solid seabed, open water and connected cave v
  assert.ok(terrain.field(-6.8,-10.0,-7.0)>0,'first deep ravine is carved through the seabed');
  assert.ok(terrain.field(-6.8,-12.0,-7.0)>0,'ravine retains a deep lower channel');
  assert.ok(terrain.field(-6.8,-13.1,-7.0)<0,'ravine floor remains solid below its cut');
+ assert.ok(terrain.field(-22,-10,0)>0,'cross-cut ravine opens a second deep channel');
+ assert.ok(terrain.field(-22,-13.1,0)<0,'cross-cut ravine retains a solid floor');
+ assert.ok(terrain.field(4,-10,14)>0,'southern ravine branch cuts through the reef');
+ assert.ok(terrain.field(-22.5,-7.65,-9)<0,'stepped table-rock ledge has a solid cap');
+ assert.ok(terrain.field(21.5,-7.72,3.5)<0,'outer shelf has a second raised ledge');
+ assert.ok(terrain.field(-23,-8,-13.4)<0,'angular outer reef buttress adds solid relief');
  assert.ok(terrain.field(-17.5,-6.5,-14.2)<0,'angular outcrop rises above the sediment floor');
  assert.ok(terrain.field(-13,-9.65,-5)>0,'first enlarged cave chamber is hollow');
  assert.ok(terrain.field(8,-9.55,9)>0,'second enlarged cave chamber is hollow');
