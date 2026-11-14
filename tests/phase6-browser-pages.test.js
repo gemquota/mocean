@@ -62,7 +62,7 @@ test('live habitat wires biome flora, new modelled species and bounded 3D render
   assert.ok(html.includes('drawSoftCorals()'));
   assert.ok(html.includes('drawSeaFans()'));
   assert.ok(html.includes('MAX_INSTANCED_MARINE_ENTITIES=1000'));
-  assert.ok(html.includes('marineRenderedFish.add(fish)'));
+  assert.ok(html.includes('marineRenderedFish.add(fishList[i])'));
   assert.ok(html.includes('renderEntries.sort((a,b)=>b.depth-a.depth)'));
 });
 
