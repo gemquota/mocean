@@ -12,7 +12,8 @@ const limit = (v, maximum) => {
 const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 const subtract = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
-export const seabedHeight = (x, z) => -8.65 + Math.sin(x * .16 + z * .07) * .48 + Math.sin(z * .31 - x * .045) * .22 + Math.cos(x * .075 + z * .19) * .16 + Math.sin(x * .34 + z * .23) * Math.cos(z * .29 - x * .17) * .18 + Math.sin(x * .57 - z * .41) * .07;
+export { seabedHeight } from './phase6/seabed-height.js';
+import { seabedHeight } from './phase6/seabed-height.js';
 
 export const SCHOOLING_DEFAULT_COUNT = 150;
 export const SCHOOLING_LIMITS = Object.freeze({ x: 41, y: 15.5, z: 31 });
