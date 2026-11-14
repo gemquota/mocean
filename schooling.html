@@ -262,8 +262,8 @@ function syncMarineModels(ordered,dt){
 }
 let viewWidth=1,viewHeight=1;
 initialiseFishVisualState(school);
-function project(point){
- const relative=sub(point,camera.p),depth=dot3(relative,cameraForward),focal=Math.min(viewWidth,viewHeight)*1.08*zoom,size=focal/Math.max(4,depth);
+function project(point,projectionZoom=zoom){
+ const relative=sub(point,camera.p),depth=dot3(relative,cameraForward),focal=Math.min(viewWidth,viewHeight)*1.08*projectionZoom,size=focal/Math.max(4,depth);
  return{x:viewWidth*.5+dot3(relative,cameraRight)*size,y:viewHeight*.52-dot3(relative,cameraUp)*size,depth,size};
 }
 function makeMesh(){
