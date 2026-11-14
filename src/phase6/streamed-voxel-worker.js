@@ -1,15 +1,9 @@
 import { buildDualContourSurface } from './dual-contouring.js';
 import { createHabitatVoxelField } from './voxel-field.js';
+import { seabedHeight } from './seabed-height.js';
 
 const CHUNK_SIZE = 32;
 const WORLD_SIZE = Object.freeze({ x: 82, y: 31, z: 62 });
-const floorAt = (x, z) => -8.65
-  + Math.sin(x * 0.16 + z * 0.07) * 0.48
-  + Math.sin(z * 0.31 - x * 0.045) * 0.22
-  + Math.cos(x * 0.075 + z * 0.19) * 0.16
-  + Math.sin(x * 0.34 + z * 0.23) * Math.cos(z * 0.29 - x * 0.17) * 0.18
-  + Math.sin(x * 0.57 - z * 0.41) * 0.07;
-
 function randomFor(seed, x, z) {
   let state = (seed ^ Math.imul(x, 0x9e3779b1) ^ Math.imul(z, 0x85ebca77)) >>> 0;
   return () => {
@@ -37,7 +31,7 @@ const smoothMin = (a, b, k) => {
 };
 
 function makeChunkField(seed, chunkX, chunkZ, worldSize = WORLD_SIZE, includeStreamRocks = true) {
-  const base = createHabitatVoxelField(worldSize, floorAt);
+  const base = createHabitatVoxelField(worldSize, seabedHeight);
   if (!includeStreamRocks) return base;
   const rocks = [];
   // Include neighbouring feature cells so a boulder that straddles a chunk
