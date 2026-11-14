@@ -29,8 +29,8 @@ a:hover{text-decoration:underline}
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 </head>
 <body>
-<canvas id="school" aria-label="A mixed habitat of regular and dedicated schooling fish, moray eels, crabs, lobsters, mantis shrimp, manta rays, stingrays, reef sharks, whale sharks, ocean sunfish, starfish, dolphins, sea turtles, jellyfish, burrowing sand eels, coral reefs and plankton"></canvas>
-<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 15 MODELLED SPECIES</div></header><div class="species-counts" id="species-counts">15 ANIMATED SPECIES ACTIVE<br>15 SPECIES TEMPORARILY DISABLED<br>MODEL COVERAGE: QUATERNIUS + POLYFISH</div>
+<canvas id="school" aria-label="A marine habitat populated exclusively by naturalistic 3D-model species, with coral reefs, kelp and rocky seabed"></canvas>
+<header><div class="brand"><span class="mark">M</span><span>MOCEAN / MIXED-SPECIES HABITAT</span></div><div class="status" id="status">150 CREATURES · 16 3D SPECIES</div></header><div class="species-counts" id="species-counts">16 NATURALISTIC 3D SPECIES<br>NON-3D SPECIES HIDDEN<br>MODEL COVERAGE: QUATERNIUS + POLYFISH</div>
 <button id="config-toggle" class="config-toggle" aria-expanded="false">CONFIGURE HABITAT</button><aside id="config-panel" class="config-panel" hidden><div class="config-head"><strong>HABITAT CONFIGURATION</strong><button id="config-close" aria-label="Close">×</button></div><p class="slider-bounds-hint">LONG-PRESS ANY SLIDER TO EDIT ITS MINIMUM AND MAXIMUM. BOUNDS ARE SAVED ON THIS DEVICE.</p><nav class="config-tabs" role="tablist"><button class="active" data-tab="prevalence">Prevalence</button><button data-tab="speed">Speed</button><button data-tab="size">Size</button><button data-tab="range">Min / max size</button><button data-tab="aggression">Aggression</button><button data-tab="world">World</button></nav><section class="config-page active" data-page="prevalence"><p>Species population share. Setting any species to 100% clears all others.</p><div id="species-mix"></div></section><section class="config-page" data-page="speed"><p>Speed multiplier, independently adjustable for every species.</p><div id="species-speed"></div></section><section class="config-page" data-page="size"><p>Body-size multiplier for each species. Existing species proportions are preserved.</p><div id="species-size"></div></section><section class="config-page" data-page="range"><p>Each species gets its own minimum and maximum body-size variation.</p><div id="species-size-range"></div></section><section class="config-page" data-page="aggression"><p>Species-specific pursuit and feeding drive. Zero suppresses active pursuit.</p><div id="species-aggression"></div></section><section class="config-page" data-page="world"><div class="world-controls"><strong>WORLD XYZ DIMENSIONS</strong><label>X <output id="world-x-value">100</output><input id="world-x" type="range" min="1" max="1000" step="1" value="100"></label><label>Y <output id="world-y-value">100</output><input id="world-y" type="range" min="1" max="1000" step="1" value="100"></label><label>Z <output id="world-z-value">100</output><input id="world-z" type="range" min="1" max="1000" step="1" value="100"></label></div></section></aside><section class="population-control" aria-label="Visible creature population control"><div class="population-heading"><label for="population">VISIBLE POPULATION</label><output id="population-value" for="population">150</output></div><input id="population" type="range" min="10" max="200" step="10" value="150" aria-label="Number of visible creatures" title="Long-press to customise minimum and maximum"><div class="population-scale"><button id="population-min">10 CREATURES</button><button id="population-max">200 CREATURES</button></div></section>
 <footer><span id="metrics">SEPARATION · ALIGNMENT · COHESION</span><a href="./single-fish.html">RETURN TO SINGLE FISH ↗</a></footer>
 <script type="importmap">
@@ -55,7 +55,7 @@ const populationSlider=document.getElementById('population'),populationValue=doc
 const speciesMix=filterToAnimatedSpecies(SCHOOLING_SPECIES_PERCENTAGES),worldSize={x:100,y:100,z:100};
 let vegetationField=null,vegetationLayout=null,coralColonies=[],anemoneSites=[],habitatTerrainStream=null;
 const mixRoot=document.getElementById('species-mix'),configPanel=document.getElementById('config-panel'),configToggle=document.getElementById('config-toggle');
-const speciesLabels={fish:'Regular fish',schoolFish:'Dedicated shoaling fish',grouper:'Giant Queensland grouper',moorishIdol:'Moorish idol',barracuda:'Great barracuda',clownfish:'Clownfish',parrotfish:'Parrotfish',blueTang:'Blue tang',angelfish:'Angelfish',butterflyfish:'Butterflyfish',wobbegong:'Wobbegong shark',marlin:'Marlin',tuna:'Tuna',eel:'Moray eels',crab:'Crabs',lobster:'Lobsters',mantis:'Mantis shrimp',manta:'Manta rays',stingray:'Stingrays',shark:'Reef sharks',whaleShark:'Whale sharks',mola:'Mola mola',orca:'Orcas',spermWhale:'Sperm whales',seal:'Seals',starfish:'Starfish',dolphin:'Dolphins',turtle:'Sea turtles',jellyfish:'Jellyfish',sandEel:'Burrowing sand eels',seahorse:'Lined seahorses',seaDragon:'Leafy seadragons',anglerfish:'Deep-sea anglerfish'};
+const speciesLabels={barracuda:'Great barracuda',marlin:'Blue marlin',tuna:'Bluefin tuna',shark:'Reef shark',whaleShark:'Whale shark',mola:'Ocean sunfish',manta:'Manta ray',stingray:'Southern stingray',orca:'Orca',spermWhale:'Sperm whale',dolphin:'Bottlenose dolphin',jellyfish:'Moon jellyfish',turtle:'Loggerhead turtle',seahorse:'Lined seahorse',seaDragon:'Leafy seadragon',anglerfish:'Deep-sea anglerfish'};
 const speciesSettings=Object.fromEntries(Object.keys(speciesLabels).map(key=>[key,{speed:1,size:1,minSize:.8,maxSize:1.2,aggression:1}]));
 function applySpeciesBodySettings(fish){const setting=speciesSettings[fish.species]??speciesSettings.fish,base=fish._baseBodyScale??fish.bodyScale??1;fish._baseBodyScale=base;const variation=((fish.id*0.61803398875)%1);fish.bodyScale=base*setting.size*(setting.minSize+variation*(setting.maxSize-setting.minSize));fish.aggression=setting.aggression;}
 function initialiseFishVisualState(nextSchool){for(const fish of nextSchool.fish){fish.gait=createGait();fish.heading=0;fish.pitch=0;fish._appliedSpeed=1;applySpeciesBodySettings(fish);}}
@@ -178,7 +178,7 @@ function disableMarineModelLayer(error){
  marineRenderedFish.clear();
  for(const entry of marineModelEntries.values()){modelScene?.remove(entry.root);entry.dispose();}
  marineModelEntries.clear();
- if(error)console.warn('Naturalistic GLB layer disabled; unsupported species keep their native renderers.',error);
+ if(error)console.warn('Naturalistic GLB layer disabled; model-only creatures will remain hidden.',error);
 }
 modelCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();disableMarineModelLayer(new Error('WebGL context lost'));});
 modelCanvas.addEventListener('webglcontextrestored',()=>{modelLayerLost=false;if(!modelRenderer)initialiseMarineModelLayer();});
@@ -818,7 +818,9 @@ function drawAnglerfish(fish){
  ctx.restore();
 }
 function drawFish(fish){
- if(MODELLED_SPECIES.has(fish.species)&&marineRenderedFish.has(fish))return;
+ // This habitat is deliberately model-only: never fall back to screen-space
+ // creature illustrations while a GLB loads or after a model failure.
+ if(!MODELLED_SPECIES.has(fish.species)||!marineRenderedFish.has(fish))return;
  if(fish.species==='schoolFish'){drawSchoolFish(fish);return;}
  if(fish.species==='seahorse'){drawSeahorse(fish);return;}
  if(fish.species==='seaDragon'){drawSeaDragon(fish);return;}
