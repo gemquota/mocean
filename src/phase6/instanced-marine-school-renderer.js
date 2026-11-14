@@ -77,7 +77,6 @@ export class InstancedMarineSchoolRenderer {
     if (!visual.children.length) throw new Error('Naturalistic marine GLB contains no mesh geometry: ' + mapping.id);
 
     // Normalize once. Individual fish then need only one compact instance matrix.
-    visual.rotation.y = Math.PI / 2;
     visual.updateMatrixWorld(true);
     const bounds = new this.THREE.Box3().setFromObject(visual);
     const extent = bounds.getSize(new this.THREE.Vector3());
@@ -131,6 +130,7 @@ export class InstancedMarineSchoolRenderer {
     const dummy = new this.THREE.Object3D();
     const forward = new this.THREE.Vector3(1, 0, 0);
     const up = new this.THREE.Vector3(0, 1, 0);
+    const modelForwardRotation = new this.THREE.Quaternion().setFromAxisAngle(up, Math.PI / 2);
     const direction = new this.THREE.Vector3();
     const batch = {
       species,
@@ -163,6 +163,9 @@ export class InstancedMarineSchoolRenderer {
             direction.set(fish.forward.x, fish.forward.y, fish.forward.z).normalize();
             dummy.quaternion.setFromUnitVectors(forward, direction);
           }
+          // Keep the GLB's +Z body axis local for the swim shader, then rotate
+          // it onto the simulation's +X heading exactly as the legacy root did.
+          dummy.quaternion.multiply(modelForwardRotation);
           const scale = MODEL_LENGTH * bodyScale;
           const pulse = motion === 'pulse' ? 1 + 0.035 * Math.sin(fish._marinePulsePhase ?? 0) : 1;
           dummy.scale.set(scale, scale * pulse, scale);
