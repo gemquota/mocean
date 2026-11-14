@@ -24,7 +24,7 @@ test('habitat browser module parses and initializes every fish before rendering'
   assert.match(script, /function initialiseFishVisualState\(nextSchool\)[\s\S]*?fish\.gait=createGait\(\)/);
 });
 
-test('population control defaults to 10–200 while retaining saved bounds for other sliders',()=>{
+test('population control supports 10–1000 while retaining saved bounds for other sliders',()=>{
  assert.match(html,/id="population" type="range" min="10" max="1000" step="10" value="150"/);
  assert.match(html,/id="population-min">10 CREATURES/);
  assert.match(script,/const POPULATION_RANGE_VERSION_KEY='mocean\.populationRange\.v1'/);
@@ -201,7 +201,7 @@ test('only exact animated-model species can spawn and unsupported species are di
   assert.match(script,/ANIMATED_MODEL_SPECIES\.filter\(key=>key!==changed\)/);
   assert.match(script,/const MODELLED_SPECIES=new Set\(ANIMATED_MODEL_SPECIES\)/);
   assert.match(script,/supported\?'':'disabled'/);
-  assert.match(script,/MARINE_MODEL_ORIENTATION\[fish\.species\]==='vertical'/);
+  assert.match(script,/MARINE_MODEL_BY_SPECIES\[fish\.species\]/);
   assert.match(script,/NO MODEL/);
 });
 
@@ -225,10 +225,10 @@ test('jellyfish remain upright while following heading with a vertical-axis root
   assert.match(mapping,/orientation: 'vertical'/);
 });
 
-test('schooling assigns deterministic matching model variants per creature', () => {
+test('schooling assigns deterministic species batches to matching GLB assets', () => {
   const adapter = readFileSync(new URL('../src/phase6/osmocean-marine-models.js', import.meta.url), 'utf8');
   assert.match(adapter,/MARINE_MODEL_VARIANTS_BY_SPECIES/);
-  assert.match(script,/bySpecies\.set\(fish\.species,\[\]\)/);
+  assert.match(script,/if\(!bySpecies\.has\(fish\.species\)\)bySpecies\.set\(fish\.species,\[\]\)/);
   assert.match(script,/marineModels\.createBatch\(species\)/);
 });
 
