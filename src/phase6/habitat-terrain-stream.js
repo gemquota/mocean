@@ -20,9 +20,12 @@ function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
 
 function terrainColour(normal,position){
   const up=clamp(normal[1],0,1);
+  const slope=clamp(1-up,0,1);
   const light=Math.max(0,normal[0]*-.28+normal[1]*.82+normal[2]*.49);
   const sediment=clamp((up-.68)*2.6,0,1);
   const height=clamp((position[1]+11.5)/5,0,1);
+  const grain=.5+.5*Math.sin(position[0]*.37+position[2]*.19)*Math.cos(position[2]*.31-position[0]*.23);
+  const strata=Math.pow(Math.max(0,Math.sin(position[1]*2.15+position[0]*.075+position[2]*.045)),10);
   const biomeKey=[Math.round(position[0]*.5),Math.round(position[2]*.5),Math.round(position[1]*2),Math.round(up*4)].join(':');
   let biome=biomeCache.get(biomeKey);
   if(!biome){biome=classifyHabitatBiome(position[0],position[2],{y:position[1],normalY:up});biomeCache.set(biomeKey,biome);if(biomeCache.size>8192)biomeCache.clear();}
@@ -36,7 +39,9 @@ function terrainColour(normal,position){
   };
   const palette=palettes[biome]??palettes['open-sand'];
   const base=palette.rock.map((value,index)=>value*(1-sediment)+palette.sand[index]*sediment);
-  return 'rgb('+base.map((value,index)=>Math.round((value*(.68+light*.38)+palette.deep[index]*.12)*(.92+height*.08))).join(',')+')';
+  const weathering=.88+grain*.2+strata*.055;
+  const illumination=(.66+light*.4)*(1-slope*.16)*(.92+height*.08);
+  return 'rgb('+base.map((value,index)=>Math.round((value*weathering*illumination+palette.deep[index]*(.1+slope*.045)))).join(',')+')';
 }
 
 export function createHabitatVoxelTerrainStream({
