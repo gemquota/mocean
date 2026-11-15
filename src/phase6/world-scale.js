@@ -36,10 +36,16 @@ export function createWorldScaleController() {
       if (!Number.isFinite(relativeZoom) || relativeZoom < 1) {
         throw new RangeError('relativeZoom must be finite and at least one.');
       }
-      if (level === 'ocean' && relativeZoom >= 2.05) level = 'geology';
-      else if (level === 'geology' && relativeZoom < 1.78) level = 'ocean';
-      else if (level === 'geology' && relativeZoom >= 4.25) level = 'ecology';
-      else if (level === 'ecology' && relativeZoom < 3.72) level = 'geology';
+      if (level === 'ocean') {
+        if (relativeZoom >= 4.25) level = 'ecology';
+        else if (relativeZoom >= 2.05) level = 'geology';
+      } else if (level === 'geology') {
+        if (relativeZoom < 1.78) level = 'ocean';
+        else if (relativeZoom >= 4.25) level = 'ecology';
+      } else if (level === 'ecology') {
+        if (relativeZoom < 1.78) level = 'ocean';
+        else if (relativeZoom < 3.72) level = 'geology';
+      }
 
       const geologyBlend = smoothstep(1.45, 2.3, relativeZoom);
       const ecologyBlend = smoothstep(3.35, 4.65, relativeZoom);
