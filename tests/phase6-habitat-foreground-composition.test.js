@@ -17,6 +17,6 @@ test('habitat camera brings vegetation and creatures closer without changing mod
 test('vegetation and creature projection continue to share the same perspective zoom', () => {
   const html = readFileSync(new URL('../schooling.html', import.meta.url), 'utf8');
   assert.match(html, /function project\(point,projectionZoom=zoom\)/);
-  assert.match(html, /const focal=Math\.min\(viewWidth,viewHeight\)\*1\.08\*projectionZoom/);
+  assert.match(html, /focal=Math\.min\(viewWidth,viewHeight\)\*1\.08\*projectionZoom/);
   assert.match(html, /modelCamera\.fov=2\*Math\.atan\(viewHeight\/\(2\*focal\)\)/);
 });

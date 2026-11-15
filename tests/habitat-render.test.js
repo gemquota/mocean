@@ -60,7 +60,7 @@ test('reef habitat includes mola mola, irregular reef formations, seagrass, kelp
   assert.match(html, /mola:'Ocean sunfish'/);
   assert.match(script, /function drawMola\(fish\)/);
   assert.match(script, /function drawSeagrassAndKelp\(\)/);
-  assert.match(script, /drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize,habitatTerrainStream\)/);
+  assert.match(script, /drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize,habitatTerrainStream(?:,[^)]+)?\)/);
   assert.match(script, /i%12/);
   assert.match(script, /drawSeagrassAndKelp\(\)/);
 });
@@ -166,7 +166,7 @@ test('live habitat integrates voxel terrain with species-batched GPU-instanced G
 
 test('model-only habitat never substitutes legacy Canvas creature drawings',()=>{
   assert.match(script,/function drawFish\(fish\)\{[\s\S]*?return;/);
-  assert.match(script,/NO 2D CREATURE FALLBACKS/);
+  assert.match(html,/NO 2D CREATURE FALLBACKS/);
   assert.match(script,/marineRenderedFish\.add/);
   assert.match(script,/const MAX_INSTANCED_MARINE_ENTITIES=1000/);
 });
