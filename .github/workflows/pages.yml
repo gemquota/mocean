@@ -17,6 +17,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Checkout voxel experiment
+        uses: actions/checkout@v7
+        with:
+          ref: experiment/procedural-voxel-creatures
+          path: experiment
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Test procedural voxel creature implementation
+        working-directory: experiment
+        run: node --test tests/phase6-procedural-voxel-creatures.test.js
       - name: Stage naturalistic CC0 marine models
         run: |
           set -euo pipefail
@@ -39,6 +51,14 @@ jobs:
           curl -fsSL "$base/39346/v1/model.glb" -o assets/models/osmocean/naturalistic/leafy_seadragon.glb
           curl -fsSL "$base/5890/v1/model.glb" -o assets/models/osmocean/naturalistic/anglerfish.glb
           node scripts/verify-naturalistic-marine-models.mjs assets/models/osmocean/naturalistic
+      - name: Mount voxel experiment under isolated subpath
+        run: |
+          set -euo pipefail
+          target="experiments/procedural-voxel-creatures"
+          mkdir -p "$target"
+          rsync -a --delete --exclude='.git' --exclude='.github' --exclude='node_modules' experiment/ "$target/"
+          test -f "$target/schooling.html"
+          test -f "$target/src/phase6/procedural-voxel-creature-renderer.js"
       - name: Configure Pages
         uses: actions/configure-pages@v6
       - name: Upload site
