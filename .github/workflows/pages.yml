@@ -20,7 +20,7 @@ jobs:
       - name: Checkout voxel experiment
         uses: actions/checkout@v7
         with:
-          ref: experiment/procedural-voxel-creatures
+          ref: fix/planetary-world-coherence
           path: experiment
       - name: Set up Node
         uses: actions/setup-node@v7
@@ -28,7 +28,7 @@ jobs:
           node-version: 22
       - name: Test procedural voxel creature implementation
         working-directory: experiment
-        run: node --test tests/phase6-procedural-voxel-creatures.test.js
+        run: node --test tests/phase6-procedural-voxel-creatures.test.js tests/phase6-habitat-terrain-stream.test.js tests/phase6-world-scale.test.js tests/phase6-planetary-navigation.test.js tests/phase6-planetary-integration.test.js
       - name: Stage naturalistic CC0 marine models
         run: |
           set -euo pipefail
