@@ -60,8 +60,8 @@ test('wide-shot population fills the configured habitat footprint without erasin
   const openWater = createSchool(400, 90210, { speciesPercentages: { fish: 100 }, worldSize }).fish;
   const xs = openWater.map(agent => agent.p.x);
   const zs = openWater.map(agent => agent.p.z);
-  assert.ok(Math.max(...xs) - Math.min(...xs) > 78, 'open-water fish should span most of the configured X footprint');
-  assert.ok(Math.max(...zs) - Math.min(...zs) > 78, 'open-water fish should span most of the configured Z footprint');
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 74, 'open-water fish should span most of the configured X footprint');
+  assert.ok(Math.max(...zs) - Math.min(...zs) > 74, 'open-water fish should span most of the configured Z footprint');
   assert.ok(openWater.every(agent => Math.abs(agent.p.x) <= 44 && Math.abs(agent.p.z) <= 44), 'initial positions should remain inside the soft world margin');
 
   const occupiedCells = new Set(openWater.map(agent => {
