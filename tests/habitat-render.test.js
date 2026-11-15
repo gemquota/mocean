@@ -60,7 +60,7 @@ test('reef habitat includes mola mola, irregular reef formations, seagrass, kelp
   assert.match(html, /mola:'Ocean sunfish'/);
   assert.match(script, /function drawMola\(fish\)/);
   assert.match(script, /function drawSeagrassAndKelp\(\)/);
-  assert.match(script, /drawHabitatVoxelTerrain\\(ctx,project,viewWidth,viewHeight,zoom,school\\.worldSize,habitatTerrainStream(?:,[^)]+)?\\)/);
+  assert.match(script, /drawHabitatVoxelTerrain\(ctx,project,viewWidth,viewHeight,zoom,school\.worldSize,habitatTerrainStream(?:,[^)]+)?\)/);
   assert.match(script, /i%12/);
   assert.match(script, /drawSeagrassAndKelp\(\)/);
 });
