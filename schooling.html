@@ -47,7 +47,10 @@ import { createVegetationLayout, sampleTerrainTop } from './src/phase6/vegetatio
 import { classifyHabitatBiome } from './src/phase6/biomes.js';
 import { createHabitatVoxelTerrainStream } from './src/phase6/habitat-terrain-stream.js';
 import { createPerformanceMonitor } from './src/phase6/performance-monitor.js';
+import { createWorldScaleController, normaliseWorldZoom, screenDragToHabitatPan } from './src/phase6/world-scale.js';
 const performanceMonitor=createPerformanceMonitor({windowSize:120});
+const worldScaleController=createWorldScaleController();
+let currentWorldScale=null,previousHabitatTerrainStream=null,activeTerrainCellSize=NaN,terrainLodTransitionStart=0,lastTerrainFocusKey='';
 
 const canvas=document.getElementById('school'),ctx=canvas.getContext('2d',{alpha:false});
 const status=document.getElementById('status'),metrics=document.getElementById('metrics'),speciesCounts=document.getElementById('species-counts');
@@ -155,10 +158,28 @@ const baseCameraPosition={...camera.p};let zoom=1;
 function minimumCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x,baseCameraPosition.y,baseCameraPosition.z);return baseDistance/worldExtent;}
 function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(3.5,minimum*3.5),zoom));camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;}
 applyZoom();
+currentWorldScale=worldScaleController.update(normaliseWorldZoom(zoom,minimumCameraZoom()));
 const activePointers=new Map();let pinchDistance=0;
 function pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
+function panHabitat(dx,dy){
+ const rect=canvas.getBoundingClientRect(),forward=normalize3(sub(camera.target,camera.p));
+ const right=normalize3(cross3(forward,worldUp)),up=normalize3(cross3(right,forward));
+ const pan=screenDragToHabitatPan({deltaX:dx,deltaY:dy,depth:Math.hypot(camera.target.x-camera.p.x,camera.target.y-camera.p.y,camera.target.z-camera.p.z),focalLength:Math.min(rect.width,rect.height)*1.08*zoom,viewRight:right,viewUp:up});
+ const nextX=Math.max(-worldSize.x*.5,Math.min(worldSize.x*.5,camera.target.x+pan.x));
+ const nextZ=Math.max(-worldSize.z*.5,Math.min(worldSize.z*.5,camera.target.z+pan.z));
+ const moveX=nextX-camera.target.x,moveZ=nextZ-camera.target.z;
+ camera.target.x+=moveX;camera.target.z+=moveZ;camera.p.x+=moveX;camera.p.z+=moveZ;
+ baseCameraPosition.x+=moveX;baseCameraPosition.z+=moveZ;
+ updateTerrainStreamsForCamera();
+}
 canvas.addEventListener("pointerdown",event=>{activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});canvas.setPointerCapture?.(event.pointerId);if(activePointers.size===2)pinchDistance=pointerDistance();});
-canvas.addEventListener("pointermove",event=>{if(!activePointers.has(event.pointerId))return;activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(minimumCameraZoom(),Math.min(Math.max(3.5,minimumCameraZoom()*3.5),zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}});
+canvas.addEventListener("pointermove",event=>{
+ if(!activePointers.has(event.pointerId))return;
+ const previous=activePointers.get(event.pointerId),dx=event.clientX-previous.x,dy=event.clientY-previous.y;
+ activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+ if(activePointers.size===1){if(Math.abs(dx)+Math.abs(dy)>0)panHabitat(dx,dy);}
+ else if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(minimumCameraZoom(),Math.min(Math.max(3.5,minimumCameraZoom()*3.5),zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}
+});
 function releasePointer(event){activePointers.delete(event.pointerId);pinchDistance=activePointers.size===2?pointerDistance():0;}
 canvas.addEventListener("pointerup",releasePointer);canvas.addEventListener("pointercancel",releasePointer);canvas.addEventListener("lostpointercapture",releasePointer);
 for(const name of ["gesturestart","gesturechange","gestureend"])document.addEventListener(name,event=>event.preventDefault(),{passive:false});
@@ -585,16 +606,43 @@ function drawPlankton(){
  ctx.restore();
 }
 const coralReefs=[{x:-17,z:-13,rx:3.8,rz:3.0},{x:-12,z:5,rx:3.2,rz:4.1},{x:-7,z:-14,rx:3.5,rz:2.8},{x:1,z:8,rx:4.2,rz:3.3},{x:14,z:-13,rx:3.6,rz:2.8},{x:17,z:9,rx:3.8,rz:3.2},{x:18,z:-5,rx:2.8,rz:3.6},{x:-1,z:15,rx:3.1,rz:2.5},{x:-15,z:13,rx:3.4,rz:2.8},{x:8,z:14,rx:3.2,rz:2.5}];
+function createHabitatTerrainStream(cellSize){
+ return createHabitatVoxelTerrainStream({
+  worldSize,workerCount:2,chunkSize:32,radius:2,prefetchRadius:2,maxChunks:25,cellSize
+ });
+}
+function updateTerrainStreamsForCamera(){
+ const focusKey=Math.floor(camera.target.x/32)+':'+Math.floor(camera.target.z/32);
+ if(focusKey===lastTerrainFocusKey)return;
+ lastTerrainFocusKey=focusKey;
+ const forward=normalize3(sub(camera.target,camera.p));
+ for(const stream of [habitatTerrainStream,previousHabitatTerrainStream]){
+  stream?.update({x:camera.target.x,z:camera.target.z,forwardX:forward.x,forwardZ:forward.z});
+ }
+}
 function rebuildHabitatTerrainStream(){
+ previousHabitatTerrainStream?.dispose();previousHabitatTerrainStream=null;
  habitatTerrainStream?.dispose();
  try{
-  habitatTerrainStream=createHabitatVoxelTerrainStream({
-   worldSize,workerCount:2,chunkSize:32,radius:2,prefetchRadius:2,maxChunks:25
-  });
+  activeTerrainCellSize=currentWorldScale?.terrainCellSize??0.8;
+  habitatTerrainStream=createHabitatTerrainStream(activeTerrainCellSize);
+  lastTerrainFocusKey='';
+  updateTerrainStreamsForCamera();
  }catch(error){
   habitatTerrainStream=null;
   console.warn('Streamed habitat terrain unavailable; using synchronous voxel fallback.',error);
  }
+}
+function requestTerrainLod(cellSize){
+ if(!Number.isFinite(cellSize)||cellSize===activeTerrainCellSize)return;
+ try{
+  const next=createHabitatTerrainStream(cellSize);
+  previousHabitatTerrainStream?.dispose();
+  previousHabitatTerrainStream=habitatTerrainStream;
+  habitatTerrainStream=next;activeTerrainCellSize=cellSize;
+  terrainLodTransitionStart=performance.now();lastTerrainFocusKey='';
+  updateTerrainStreamsForCamera();
+ }catch(error){console.warn('Could not create replacement terrain LOD; keeping current terrain.',error);}
 }
 function rebuildPlantLayout(){
  rebuildHabitatTerrainStream();
@@ -636,7 +684,18 @@ function drawCoral(){
  }
 }
 function drawSeabed(){
- try{voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,habitatTerrainStream);voxelTerrainError=null;}
+ try{
+  if(previousHabitatTerrainStream){
+   const nextReady=habitatTerrainStream?.stats.visible>0;
+   if(nextReady){
+    const blend=Math.max(0,Math.min(1,(performance.now()-terrainLodTransitionStart)/650));
+    drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,previousHabitatTerrainStream,1-blend);
+    voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,habitatTerrainStream,blend);
+    if(blend>=1){previousHabitatTerrainStream.dispose();previousHabitatTerrainStream=null;}
+   }else voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,previousHabitatTerrainStream,1);
+  }else voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,habitatTerrainStream,1);
+  voxelTerrainError=null;
+ }
  catch(error){
   voxelTerrainError=String(error?.message??error).slice(0,100);
   if(!voxelFallbackWarned){voxelFallbackWarned=true;console.warn('Voxel seabed failed; using safe heightfield fallback.',error);}
@@ -953,16 +1012,23 @@ function render(){
  ctx.setTransform(dpr,0,0,dpr,0,0);viewWidth=rect.width;viewHeight=rect.height;
  const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
  gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
+ currentWorldScale=worldScaleController.update(normaliseWorldZoom(zoom,minimumCameraZoom()));
+ requestTerrainLod(currentWorldScale.terrainCellSize);
  drawSeabed();
- drawCoral();
- drawAnemones();
- drawSeagrassAndKelp();
- drawSpongeGardens();
- drawSoftCorals();
- drawSeaFans();
- drawPlankton();
+ const ecologyAlpha=currentWorldScale.ecologyBlend;
+ if(currentWorldScale.showLocalEcology){
+  ctx.save();ctx.globalAlpha*=ecologyAlpha;
+  drawCoral();
+  drawAnemones();
+  drawSeagrassAndKelp();
+  drawSpongeGardens();
+  drawSoftCorals();
+  drawSeaFans();
+  drawPlankton();
+  ctx.restore();
+ }
  const renderEntries=[];
- for(const fish of school.fish){
+ if(currentWorldScale.showIndividualAnimals)for(const fish of school.fish){
   const screen=project(fish.p);
   if(screen.depth>2.5&&screen.x>-100&&screen.x<viewWidth+100&&screen.y>-100&&screen.y<viewHeight+100)renderEntries.push({fish,depth:screen.depth,screen});
  }
@@ -977,7 +1043,7 @@ function render(){
  }
  if(modelRenderer&&!modelLayerLost){try{updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}}
 }
-addEventListener('pagehide',()=>habitatTerrainStream?.dispose(),{once:true});
+addEventListener('pagehide',()=>{habitatTerrainStream?.dispose();previousHabitatTerrainStream?.dispose();},{once:true});
 const renderFaults=new Map();
 let previous=performance.now(),accumulator=0,renderAccumulator=0,frame=0,animationFault=null,voxelTerrainStats=null,voxelTerrainError=null,voxelFallbackWarned=false;
 function animate(now){
@@ -999,7 +1065,7 @@ function animate(now){
  performanceMonitor.record('simulation',performance.now()-simulationStarted);
  renderAccumulator+=elapsed;
  if(renderAccumulator>=1/24){const renderStarted=performance.now();render();performanceMonitor.record('render',performance.now()-renderStarted);renderAccumulator%=1/24;}
- if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0,seahorse:0,seaDragon:0,anglerfish:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' SIMULATED · '+ANIMATED_MODEL_SPECIES.length+' 3D SPECIES · 1,000 INSTANCED 3D BUDGET · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).filter(([species])=>ANIMATED_MODEL_SPECIES.includes(species)).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent='SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+' · VOXEL '+(voxelTerrainError?'FALLBACK '+voxelTerrainError:(voxelTerrainStats?.triangles??0)+' TRI')+' · CHUNKS '+(voxelTerrainStats?.visible??0)+'/'+(voxelTerrainStats?.loaded??0)+' · STREAM QUEUE '+(voxelTerrainStats?.pending??0)+' · 3D INSTANCES '+marineRenderedFish.size+' · CPU P95 F/S/R '+['frame','simulation','render'].map(key=>{const value=performanceMonitor.snapshot()[key]?.p95;return value===null||value===undefined?'--':value.toFixed(1);}).join('/')+'ms · GPU CALLS '+(modelRenderer?.info.render.calls??0)+' · GPU TRI '+(modelRenderer?.info.render.triangles??0)+' · INSTANCE OVERFLOW '+marineOverflow+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
+ if(frame++%30===0){const counts={fish:0,schoolFish:0,grouper:0,moorishIdol:0,barracuda:0,wobbegong:0,marlin:0,tuna:0,clownfish:0,parrotfish:0,blueTang:0,angelfish:0,butterflyfish:0,eel:0,crab:0,lobster:0,mantis:0,manta:0,stingray:0,shark:0,whaleShark:0,mola:0,orca:0,spermWhale:0,seal:0,starfish:0,dolphin:0,turtle:0,jellyfish:0,sandEel:0,seahorse:0,seaDragon:0,anglerfish:0};for(const agent of school.fish)counts[agent.species]++;status.textContent=school.fish.length.toLocaleString('en-US')+' SIMULATED · '+ANIMATED_MODEL_SPECIES.length+' 3D SPECIES · 1,000 INSTANCED 3D BUDGET · '+(school.metrics.eaten??0)+' EATEN';speciesCounts.innerHTML=Object.entries(speciesLabels).filter(([species])=>ANIMATED_MODEL_SPECIES.includes(species)).map(([species,label])=>'<b>'+label.toUpperCase()+'</b> '+(counts[species]??0)).join('<br>');metrics.textContent=(currentWorldScale?.level??'OCEAN').toUpperCase()+' SCALE · SIM '+school.time.toFixed(1)+'s · MEAN SPEED '+school.metrics.averageSpeed.toFixed(2)+' · CONTACTS '+school.metrics.collisions+' · PREY CAPTURE '+(school.metrics.eaten??0)+' · VOXEL '+(voxelTerrainError?'FALLBACK '+voxelTerrainError:(voxelTerrainStats?.triangles??0)+' TRI')+' · CHUNKS '+(voxelTerrainStats?.visible??0)+'/'+(voxelTerrainStats?.loaded??0)+' · STREAM QUEUE '+(voxelTerrainStats?.pending??0)+' · 3D INSTANCES '+marineRenderedFish.size+' · CPU P95 F/S/R '+['frame','simulation','render'].map(key=>{const value=performanceMonitor.snapshot()[key]?.p95;return value===null||value===undefined?'--':value.toFixed(1);}).join('/')+'ms · GPU CALLS '+(modelRenderer?.info.render.calls??0)+' · GPU TRI '+(modelRenderer?.info.render.triangles??0)+' · INSTANCE OVERFLOW '+marineOverflow+(renderFaults.size?' · RENDER WARN '+[...renderFaults].map(([species,message])=>species+': '+message).join(' | '):'');}
  } catch(error) {
   if(!animationFault) {
    animationFault=error;
