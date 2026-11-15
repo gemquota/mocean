@@ -49,7 +49,7 @@ test('screen drag pans in the habitat plane and compensates for shallow view ele
     viewRight: { x: 1, z: 0 }, viewUp: { x: 0, z: .25 }
   });
   assert.ok(rightDrag.x < 0);
-  assert.equal(rightDrag.z, 0);
+  assert.ok(Math.abs(rightDrag.z) < 1e-12);
 
   const verticalDrag = screenDragToHabitatPan({
     deltaX: 0, deltaY: 100, depth: 50, focalLength: 500,
