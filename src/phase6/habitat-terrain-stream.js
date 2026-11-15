@@ -150,7 +150,7 @@ export function createHabitatVoxelTerrainStream({
     // each chunk at zoom 1, then transform the cached tile at draw time.
     // This prevents every pinch event from invalidating expensive projections.
     const key=[width,height].join(':');
-    if(item.projection?.key===key)return item.projection;
+    if(item.projection?.key===key&&!item.projection.stale)return item.projection;
     const {positions,normals,indices}=item.mesh;
     const projected=new Array(positions.length/3);
     for(let index=0;index<projected.length;index++){
@@ -205,7 +205,7 @@ export function createHabitatVoxelTerrainStream({
     const drawables=[],projectionKey=[width,height].join(':');
     for(const item of chunks.values()){
       if(!item.visible||!item.mesh)continue;
-      if(item.projection?.key!==projectionKey){
+      if(item.projection?.key!==projectionKey||item.projection.stale){
         // Resize refreshes are budgeted; zoom itself never invalidates a tile.
         if(rasterisedThisFrame>=2){
           if(item.projection?.canvas){drawables.push({...item.projection,fallback:true});triangles+=item.mesh.triangleCount;}
@@ -237,7 +237,7 @@ export function createHabitatVoxelTerrainStream({
     return {...stats(),visible:rendered,triangles};
   }
 
-  function invalidateProjection(){for(const item of chunks.values())item.projection=null;}
+  function invalidateProjection(){for(const item of chunks.values())if(item.projection)item.projection.stale=true;}
 
   function dispose(){
     if(disposed)return;
