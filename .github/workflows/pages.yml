@@ -20,7 +20,7 @@ jobs:
       - name: Checkout voxel experiment
         uses: actions/checkout@v7
         with:
-          ref: fix/planetary-world-coherence
+          ref: 486cc09b51d73644729c14b21b5423aa8d69e9dc # reviewed planetary handoff and streaming build
           path: experiment
       - name: Set up Node
         uses: actions/setup-node@v7
