@@ -640,7 +640,7 @@ function requestTerrainLod(cellSize){
   previousHabitatTerrainStream?.dispose();
   previousHabitatTerrainStream=habitatTerrainStream;
   habitatTerrainStream=next;activeTerrainCellSize=cellSize;
-  terrainLodTransitionStart=performance.now();lastTerrainFocusKey='';
+  terrainLodTransitionStart=0;lastTerrainFocusKey='';
   updateTerrainStreamsForCamera();
  }catch(error){console.warn('Could not create replacement terrain LOD; keeping current terrain.',error);}
 }
@@ -688,6 +688,7 @@ function drawSeabed(){
   if(previousHabitatTerrainStream){
    const nextReady=habitatTerrainStream?.stats.visible>0;
    if(nextReady){
+    if(!terrainLodTransitionStart)terrainLodTransitionStart=performance.now();
     const blend=Math.max(0,Math.min(1,(performance.now()-terrainLodTransitionStart)/650));
     drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,previousHabitatTerrainStream,1-blend);
     voxelTerrainStats=drawHabitatVoxelTerrain(ctx,project,viewWidth,viewHeight,zoom,school.worldSize,habitatTerrainStream,blend);
