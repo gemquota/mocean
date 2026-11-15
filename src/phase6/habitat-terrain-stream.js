@@ -237,6 +237,8 @@ export function createHabitatVoxelTerrainStream({
     return {...stats(),visible:rendered,triangles};
   }
 
+  function invalidateProjection(){for(const item of chunks.values())item.projection=null;}
+
   function dispose(){
     if(disposed)return;
     disposed=true;
@@ -245,5 +247,5 @@ export function createHabitatVoxelTerrainStream({
   }
 
   update({x:0,z:0,forwardX:0,forwardZ:-1});
-  return Object.freeze({update,draw,dispose,get stats(){return stats();}});
+  return Object.freeze({update,draw,dispose,invalidateProjection,get stats(){return stats();}});
 }
