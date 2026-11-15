@@ -11,9 +11,6 @@ import { classifyHabitatBiome } from './biomes.js';
 const TERRAIN_SEED = 6102026;
 // 0.8 m cells add roughly 1.9x the volumetric sampling density while
 // keeping chunk and vertical extents exactly aligned to the voxel lattice.
-const CELL_SIZE = 0.8;
-const MIN_Y = -14.4;
-const MAX_Y = -5.6;
 const biomeCache = new Map();
 
 function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
@@ -46,7 +43,7 @@ function terrainColour(normal,position){
 
 export function createHabitatVoxelTerrainStream({
   worldSize={x:100,y:100,z:100},workerCount=2,chunkSize=32,radius=2,
-  prefetchRadius=3,maxChunks=49,onUpdate=()=>{}
+  prefetchRadius=3,maxChunks=49,cellSize=0.8,minY=-17.6,maxY=-4.8,onUpdate=()=>{}
 }={}){
   if(!worldSize||![worldSize.x,worldSize.y,worldSize.z].every(value=>Number.isFinite(value)&&value>0)){
     throw new RangeError('worldSize must contain positive finite XYZ dimensions.');
@@ -56,6 +53,7 @@ export function createHabitatVoxelTerrainStream({
     !Number.isInteger(prefetchRadius)||prefetchRadius<radius||!Number.isInteger(maxChunks)||maxChunks<1){
     throw new RangeError('Invalid habitat terrain chunk dimensions or radii.');
   }
+  if(![0.8,1.6,3.2].includes(cellSize)||!Number.isInteger(chunkSize/cellSize)||!Number.isInteger((maxY-minY)/cellSize))throw new RangeError('Terrain LOD cell size must align to chunk and vertical bounds.');
   const workers=[],chunks=new Map(),queue=[];
   let sequence=0,disposed=false,lastFocus={x:NaN,z:NaN};
   const size={...worldSize};
@@ -69,7 +67,7 @@ export function createHabitatVoxelTerrainStream({
     for(const slot of workers)if(slot.busy)busy++;
     return {
       loaded,pending:workers.some(slot=>!slot.failed)?queue.length+busy:0,
-      visible,triangles,failed,focus:{...lastFocus}
+      visible,triangles,failed,focus:{...lastFocus},cellSize
     };
   }
   function report(){onUpdate(stats());}
@@ -83,7 +81,7 @@ export function createHabitatVoxelTerrainStream({
       try{slot.worker.postMessage({
         type:'generate-chunk',key:job.key,token:job.token,
         chunkX:job.x,chunkZ:job.z,chunkSize,seed:TERRAIN_SEED,
-        worldSize:size,minY:MIN_Y,maxY:MAX_Y,cellSize:CELL_SIZE,
+        worldSize:size,minY,maxY,cellSize,
         includeStreamRocks:false
       });}catch(error){slot.busy=false;slot.failed=true;item.error=String(error?.message??error);slot.key=null;}
     }
@@ -120,7 +118,10 @@ export function createHabitatVoxelTerrainStream({
 
   function update({x=0,z=0,forwardX=0,forwardZ=0}={}){
     if(disposed)return;
-    const desired=selectTerrainChunks({x,z,forwardX,forwardZ,chunkSize,radius,prefetchRadius});
+    const desired=selectTerrainChunks({x,z,forwardX,forwardZ,chunkSize,radius,prefetchRadius}).filter(item=>{
+      const minX=item.x*chunkSize,minZ=item.z*chunkSize;
+      return minX<size.x*.5&&minX+chunkSize>-size.x*.5&&minZ<size.z*.5&&minZ+chunkSize>-size.z*.5;
+    });
     const keep=new Set(desired.map(item=>item.key));
     for(const [key] of chunks)if(!keep.has(key))chunks.delete(key);
     const byKey=new Map(desired.map(item=>[item.key,item]));
@@ -199,7 +200,7 @@ export function createHabitatVoxelTerrainStream({
     return item.projection;
   }
 
-  function draw(context,project,width,height,zoom=1){
+  function draw(context,project,width,height,zoom=1,opacity=1){
     let rendered=0,triangles=0,rasterisedThisFrame=0;
     const drawables=[],projectionKey=[width,height].join(':');
     for(const item of chunks.values()){
@@ -225,11 +226,14 @@ export function createHabitatVoxelTerrainStream({
       context.scale(zoom,zoom);
       context.translate(-width*.5,-height*.52);
     }
+    const previousAlpha=context.globalAlpha??1;
+    if('globalAlpha' in context)context.globalAlpha=previousAlpha*clamp(opacity,0,1);
     for(const raster of drawables){
       context.drawImage(raster.canvas,raster.left,raster.top);
       rendered++;
     }
     if(canTransform)context.restore();
+    if('globalAlpha' in context)context.globalAlpha=previousAlpha;
     return {...stats(),visible:rendered,triangles};
   }
 
