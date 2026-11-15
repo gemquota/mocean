@@ -41,7 +41,7 @@ import { createSchool, stepSchool, SCHOOLING_FISH_SCALE, SCHOOLING_SPECIES_PERCE
 import { ANIMATED_MODEL_SPECIES, filterToAnimatedSpecies } from './src/phase6/animated-species-filter.js';
 import { createGait, stepGait, deformPoint, articulateFinPoint } from './src/core/body.js';
 import { quatFromEuler, quatRotate, vec3, add3, cross3, dot3, normalize3, scale3, angleDelta, TAU } from './src/core/math.js';
-import { drawHabitatVoxelTerrain } from './src/phase6/habitat-voxel-terrain.js';
+import { drawHabitatVoxelTerrain, invalidateHabitatVoxelProjection } from './src/phase6/habitat-voxel-terrain.js';
 import { createHabitatVoxelField } from './src/phase6/voxel-field.js';
 import { createVegetationLayout, sampleTerrainTop } from './src/phase6/vegetation-layout.js';
 import { classifyHabitatBiome } from './src/phase6/biomes.js';
