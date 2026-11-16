@@ -40,7 +40,9 @@ function seamEdgeIncidence(meshes){
         const midpointX=(ax+bx)*.5,midpointY=(ay+by)*.5,midpointZ=(az+bz)*.5;
         // Inspect only the interior seam band. Exclude the outer chunk halo,
         // top/bottom extraction limits and z-side boundaries.
-        if(midpointX<31||midpointX>33||midpointY<-13.2||midpointY>-6.2||midpointZ<2||midpointZ>30)continue;
+        const crossesChunkPlane=(ax-32)*(bx-32)<=0;
+        const liesOnChunkPlane=Math.abs(ax-32)<.05&&Math.abs(bx-32)<.05;
+        if((!crossesChunkPlane&&!liesOnChunkPlane)||midpointY<-13.2||midpointY>-6.2||midpointZ<2||midpointZ>30)continue;
         const pa=pointKey(mesh,a),pb=pointKey(mesh,b),key=pa<pb?pa+'|'+pb:pb+'|'+pa;
         incidence.set(key,(incidence.get(key)||0)+1);
       }
