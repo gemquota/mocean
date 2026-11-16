@@ -55,6 +55,34 @@ test('school initialisation is reproducible for a fixed seed', () => {
   assert.notDeepEqual(createSchool(100, 1234), createSchool(100, 4321));
 });
 
+test('wide-shot population fills the configured habitat footprint without erasing school structure', () => {
+  const worldSize = { x: 100, y: 100, z: 100 };
+  const openWater = createSchool(400, 90210, { speciesPercentages: { fish: 100 }, worldSize }).fish;
+  const xs = openWater.map(agent => agent.p.x);
+  const zs = openWater.map(agent => agent.p.z);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 74, 'open-water fish should span most of the configured X footprint');
+  assert.ok(Math.max(...zs) - Math.min(...zs) > 74, 'open-water fish should span most of the configured Z footprint');
+  assert.ok(openWater.every(agent => Math.abs(agent.p.x) <= 44 && Math.abs(agent.p.z) <= 44), 'initial positions should remain inside the soft world margin');
+
+  const occupiedCells = new Set(openWater.map(agent => {
+    const x = Math.floor((agent.p.x + 44) / 17.6);
+    const z = Math.floor((agent.p.z + 44) / 17.6);
+    return x + ':' + z;
+  }));
+  assert.ok(occupiedCells.size >= 22, 'a wide view should contain a broad, naturally varied spread rather than one central cluster');
+
+  const shoal = createSchool(180, 90211, { speciesPercentages: { schoolFish: 100 }, worldSize }).fish;
+  const schoolCentres = Array.from({ length: 6 }, (_, group) => {
+    const members = shoal.filter(agent => agent.socialGroupId === group);
+    return {
+      x: members.reduce((sum, agent) => sum + agent.p.x, 0) / members.length,
+      z: members.reduce((sum, agent) => sum + agent.p.z, 0) / members.length
+    };
+  });
+  assert.ok(Math.max(...schoolCentres.map(point => point.x)) - Math.min(...schoolCentres.map(point => point.x)) > 45, 'shoal groups should be distributed across the habitat');
+  assert.ok(Math.max(...schoolCentres.map(point => point.z)) - Math.min(...schoolCentres.map(point => point.z)) > 35, 'shoal groups should occupy different depth lanes');
+});
+
 test('local separation pushes close neighbours apart', () => {
   const school = createSchool(2, 1);
   school.fish.forEach(agent => { agent.species = 'fish'; agent.bodyScale = 0.9; agent.schoolAffinity = 0; agent.feedingCooldown = 10; });
