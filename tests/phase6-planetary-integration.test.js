@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { planetarySurfaceElevation } from '../src/phase6/planetary-renderer.js';
 import { seabedHeight } from '../src/phase6/seabed-height.js';
+import { PLANETARY_WORLD_RADIUS } from '../src/phase6/planetary-navigation.js';
 
 const source = await readFile(new URL('../schooling.html', import.meta.url), 'utf8');
 
@@ -111,7 +112,7 @@ test('planetary overview samples the exact local seabed field at its geographic 
  assert.ok(Math.abs(planetarySurfaceElevation(0,0)-expected)<1e-12);
 });
 test('planetary and local bathymetry agree throughout the active tangent patch',()=>{
- const radius=250;
+ const radius=PLANETARY_WORLD_RADIUS;
  for(const [east,north] of [[0,0],[12,-8],[-24,19],[42,31],[-55,-35]]){
   const distance=Math.hypot(east,north),angle=distance/radius;
   const longitude=distance<1e-12?0:Math.atan2(east/distance*Math.sin(angle),Math.cos(angle));
