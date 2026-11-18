@@ -67,6 +67,22 @@ export function localTangentToGeographic({ longitude, latitude }, east, north, r
   });
 }
 
+
+/** Geographic point that moves to the screen centre after a globe drag. */
+export function planetFocusAtScreenCentre(focus,yaw,pitch){
+  if(!focus||!finite(focus.longitude,focus.latitude,yaw,pitch))throw new RangeError('A finite focus and orbit angles are required.');
+  const lon=wrapLongitude(focus.longitude),lat=clampLatitude(focus.latitude);
+  const east={x:Math.cos(lon),y:0,z:-Math.sin(lon)};
+  const north={x:-Math.sin(lat)*Math.sin(lon),y:Math.cos(lat),z:-Math.sin(lat)*Math.cos(lon)};
+  const up=geographicToUnitVector(lon,lat),cp=Math.cos(pitch),sp=Math.sin(pitch),cy=Math.cos(yaw),sy=Math.sin(yaw);
+  const x=-cp*sy,y=sp,z=cp*cy;
+  return unitVectorToGeographic({
+    x:east.x*x+north.x*y+up.x*z,
+    y:east.y*x+north.y*y+up.y*z,
+    z:east.z*x+north.z*y+up.z*z
+  });
+}
+
 /** Great-circle distance in metres between two geographic positions. */
 export function greatCircleDistance(a, b, radius) {
   if (!a || !b || !finite(a.longitude, a.latitude, b.longitude, b.latitude, radius) || radius <= 0) {
@@ -102,6 +118,24 @@ export function orbitCameraPose({ target, yaw, pitch, distance, minDistance = 0.
     yaw: wrapLongitude(yaw),
     pitch: p
   });
+}
+
+/** Spherically interpolate from a radial planetary view to the authored local camera pose. */
+export function blendCameraToLocalSurface({target,localPosition,blend}){
+  if(!target||!localPosition||!finite(target.x,target.y,target.z,localPosition.x,localPosition.y,localPosition.z,blend))throw new RangeError('Camera pose inputs must be finite.');
+  const offset={x:localPosition.x-target.x,y:localPosition.y-target.y,z:localPosition.z-target.z};
+  const distance=Math.hypot(offset.x,offset.y,offset.z);
+  if(distance<1e-9)throw new RangeError('Camera must remain offset from its target.');
+  const end={x:offset.x/distance,y:offset.y/distance,z:offset.z/distance};
+  const start={x:0,y:1,z:0},dot=clamp(end.y,-1,1),angle=Math.acos(dot),t=clamp(blend,0,1);
+  let direction;
+  if(angle<1e-8)direction=start;
+  else if(Math.abs(Math.sin(angle))<1e-8)direction={x:end.x*t,y:Math.cos(Math.PI*t),z:end.z*t};
+  else{
+    const a=Math.sin((1-t)*angle)/Math.sin(angle),b=Math.sin(t*angle)/Math.sin(angle);
+    direction={x:start.x*a+end.x*b,y:start.y*a+end.y*b,z:start.z*a+end.z*b};
+  }
+  return Object.freeze({x:target.x+direction.x*distance,y:target.y+direction.y*distance,z:target.z+direction.z*distance,elevation:direction.y,distance});
 }
 
 /** Select planetary/local presentation tier from zoom relative to planet fit. */

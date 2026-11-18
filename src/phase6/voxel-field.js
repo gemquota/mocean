@@ -1,3 +1,4 @@
+import { geologicalProvinceAt } from './seabed-height.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const ellipsoid=(x,y,z,cx,cy,cz,rx,ry,rz)=>{
  const k0=Math.hypot((x-cx)/rx,(y-cy)/ry,(z-cz)/rz);
@@ -110,6 +111,128 @@ const RIDGES=[
  [[-29,-8.35,-8],[-19,-8.1,-6],1.3]
 ];
 
+
+// Deterministic world-space cave complexes. Each 96 m geology cell owns one
+// chamber, a surface throat and two galleries. Neighbouring cells are sampled
+// as well, so tunnels remain continuous when a chunk boundary crosses them.
+function geologyHash(x,z){
+ let h=(Math.imul(x,374761393)+Math.imul(z,668265263)+0x51ed270b)|0;
+ h=Math.imul(h^(h>>>13),1274126177);
+ return (h^(h>>>16))>>>0;
+}
+function geologyRandom(x,z,salt){
+ let h=geologyHash(x+salt*17,z-salt*31);
+ return (h>>>0)/4294967295;
+}
+const geologyCaveSites=new Map();
+function geologyCaveSite(gx,gz,floorAt){
+ const key=gx+','+gz;
+ let site=geologyCaveSites.get(key);
+ if(site)return site;
+ const span=96,cx=(gx+.22+geologyRandom(gx,gz,1)*.56)*span;
+ const cz=(gz+.22+geologyRandom(gx,gz,2)*.56)*span;
+ const floor=floorAt(cx,cz),depth=2.8+geologyRandom(gx,gz,3)*2.4;
+ const chamberY=floor-depth,rx=5.2+geologyRandom(gx,gz,4)*3.8;
+ const rz=4.6+geologyRandom(gx,gz,5)*3.6,angle=geologyRandom(gx,gz,6)*Math.PI*2;
+ const cs=Math.cos(angle),sn=Math.sin(angle);
+ const shaftX=cx+(geologyRandom(gx,gz,7)-.5)*rx*.8;
+ const shaftZ=cz+(geologyRandom(gx,gz,8)-.5)*rz*.8;
+ site={cx,cz,chamberY,rx,rz,cs,sn,shaftX,shaftZ,
+  shaftTop:floorAt(shaftX,shaftZ)+1.1,shaftBottom:chamberY+.8,
+  shaftRadius:.82+geologyRandom(gx,gz,9)*.28};
+ geologyCaveSites.set(key,site);
+ if(geologyCaveSites.size>512)geologyCaveSites.clear();
+ return site;
+}
+function geologyCaveDistance(x,y,z,floorAt){
+ const span=96,ix=Math.floor(x/span),iz=Math.floor(z/span);
+ let cave=Infinity;
+ for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
+  const site=geologyCaveSite(ix+dx,iz+dz,floorAt);
+  const {cx,cz,chamberY,rx,rz,cs,sn,shaftX,shaftZ,shaftTop,shaftBottom,shaftRadius}=site;
+  if(Math.abs(x-cx)>rx+10||Math.abs(z-cz)>rz+10||y<chamberY-3||y>shaftTop+1)continue;
+  const px=(x-cx)*cs-(z-cz)*sn,pz=(x-cx)*sn+(z-cz)*cs;
+  const chamber=(Math.hypot(px/rx,(y-chamberY)/2.1,pz/rz)-1)*Math.min(rx,2.1,rz);
+  cave=Math.min(cave,chamber);
+  const shaftY=clamp(y,shaftBottom,shaftTop);
+  const shaft=Math.hypot(x-shaftX,z-shaftZ,y-shaftY)-shaftRadius;
+  cave=Math.min(cave,shaft);
+  const galleryA=capsule3(x,y,z,
+   [cx+cs*rx*.55,chamberY,cz+sn*rx*.55],
+   [cx+cs*(rx+7),chamberY-1.1,cz+sn*(rx+7)],.92);
+  const galleryB=capsule3(x,y,z,
+   [cx-sn*rz*.55,chamberY,cz+cs*rz*.55],
+   [cx-sn*(rz+6),chamberY+.65,cz+cs*(rz+6)],.78);
+  cave=Math.min(cave,galleryA,galleryB);
+ }
+ return cave;
+}
+function capsule3(x,y,z,a,b,r){
+ const pax=x-a[0],pay=y-a[1],paz=z-a[2],bax=b[0]-a[0],bay=b[1]-a[1],baz=b[2]-a[2];
+ const h=clamp((pax*bax+pay*bay+paz*baz)/(bax*bax+bay*bay+baz*baz||1),0,1);
+ return Math.hypot(pax-bax*h,pay-bay*h,paz-baz*h)-r;
+}
+
+
+const geologyFormationSites=new Map();
+function geologyFormationSite(gx,gz,floorAt){
+ const key=gx+','+gz;
+ let site=geologyFormationSites.get(key);
+ if(site)return site;
+ const span=160,cx=(gx+.18+geologyRandom(gx,gz,21)*.64)*span;
+ const cz=(gz+.18+geologyRandom(gx,gz,22)*.64)*span;
+ const province=geologicalProvinceAt(cx,cz);
+ site={cx,cz,province,floor:floorAt(cx,cz),
+  scale:.75+geologyRandom(gx,gz,23)*.7,
+  angle:geologyRandom(gx,gz,24)*Math.PI*2,
+  spread:5+geologyRandom(gx,gz,25)*5};
+ geologyFormationSites.set(key,site);
+ if(geologyFormationSites.size>512)geologyFormationSites.clear();
+ return site;
+}
+function geologyFormationDistance(x,y,z,floorAt){
+ const span=160,ix=Math.floor(x/span),iz=Math.floor(z/span);
+ let formation=Infinity;
+ for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
+  const site=geologyFormationSite(ix+dx,iz+dz,floorAt);
+  const {cx,cz,province,floor,scale,angle,spread}=site;
+  const localX=x-cx,localZ=z-cz;
+  if(Math.abs(localX)>spread*4+4||Math.abs(localZ)>spread*4+4||y<floor-2||y>floor+10*scale)continue;
+  if(province==='basalt-spires'){
+   for(let i=0;i<3;i++){
+    const a=angle+i*Math.PI*2/3,px=cx+Math.cos(a)*spread*1.15,pz=cz+Math.sin(a)*spread*1.15;
+    const h=(5.5+geologyRandom(ix+dx,iz+dz,30+i)*4.5)*scale;
+    const radius=(1.15+geologyRandom(ix+dx,iz+dz,34+i)*.8)*scale;
+    const tapered=capsule3(x,y,z,[px,floor-.25,pz],[px+Math.cos(a)*.35,floor+h,pz+Math.sin(a)*.35],radius);
+    formation=Math.min(formation,tapered);
+   }
+  }else if(province==='fractured-shelf'){
+   const c=Math.cos(angle),s=Math.sin(angle),lx=localX*c-localZ*s,lz=localX*s+localZ*c;
+   const slab=rotatedBox(x,y,z,cx,floor+1.1*scale,cz,spread*1.8*scale,.8*scale,spread*.82*scale,angle,.28);
+   const cap=rotatedBox(x,y,z,cx+Math.cos(angle)*spread*.9,floor+2.15*scale,cz+Math.sin(angle)*spread*.9,spread*.8*scale,.42*scale,spread*.55*scale,angle+.12,.2);
+   formation=Math.min(formation,slab,cap);
+  }else if(province==='boulder-field'){
+   for(let i=0;i<5;i++){
+    const a=angle+i*2.3999632297,r=spread*(.35+(i%3)*.34);
+    const bx=cx+Math.cos(a)*r,bz=cz+Math.sin(a)*r;
+    const br=(1.25+geologyRandom(ix+dx,iz+dz,40+i)*1.7)*scale;
+    formation=Math.min(formation,ellipsoid(x,y,z,bx,floor+br*.55,bz,br*1.2,br*.78,br));
+   }
+  }else if(province==='limestone-karst'){
+   const a=angle,px=cx+Math.cos(a)*spread,pz=cz+Math.sin(a)*spread;
+   const h=4.5*scale,r=1.5*scale;
+   formation=Math.min(formation,capsule3(x,y,z,[px,floor-.2,pz],[px,floor+h,pz],r));
+   const arch=capsule3(x,y,z,[px,floor+h*.68,pz],[cx,floor+h*.72,cz],.72*scale);
+   formation=Math.min(formation,arch);
+  }else{
+   const a=angle,px=cx+Math.cos(a)*spread,pz=cz+Math.sin(a)*spread;
+   formation=Math.min(formation,ellipsoid(x,y,z,cx,floor+1.25*scale,cz,spread*1.65*scale,1.25*scale,spread*.95*scale));
+   formation=Math.min(formation,ellipsoid(x,y,z,px,floor+2.1*scale,pz,spread*.55*scale,1.9*scale,spread*.55*scale));
+  }
+ }
+ return formation;
+}
+
 /** Shared signed-distance field used by both mesh extraction and creature contact. */
 export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,z)=>-8.65){
  const sx=worldSize.x/41,sz=worldSize.z/31;
@@ -177,6 +300,19 @@ export function createHabitatVoxelField(worldSize={x:41,y:15.5,z:31},floorAt=(x,
    if(Math.abs(x-px)>hx*sx+1||Math.abs(z-pz)>hz*sz+1||Math.abs(y-cy)>hy+1)continue;
    const cut=rotatedBox(x,y,z,px,cy,pz,hx*sx,hy,hz*sz,angle,.16);
    solid=Math.max(solid,-cut);
+  }
+
+  // Beyond the authored starter region, deterministic cave complexes are
+  // embedded in the shared global seabed. Their throats intersect the surface;
+  // chambers and branching galleries are true SDF voids, not visual decals.
+  if(Math.hypot(x,z)>65){
+   const globalCave=geologyCaveDistance(x,y,z,floorAt);
+   solid=Math.max(solid,-globalCave);
+   // Region-specific formations are unions in the same SDF as the seabed:
+   // basalt pinnacles, fractured ledges, boulder fields, karst arches and
+   // eroded sedimentary outcrops therefore mesh and collide as real geometry.
+   const formations=geologyFormationDistance(x,y,z,floorAt);
+   if(formations!==Infinity)solid=smoothMin(solid,formations,.42);
   }
 
   // Fine geological breakup is supplied by the nested rock and ridge forms.

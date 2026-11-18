@@ -45,7 +45,7 @@ function makeChunkField(seed, chunkX, chunkZ, worldSize = WORLD_SIZE, includeStr
       const radius = 1.3 + random() * 2.4;
       const height = radius * (0.55 + random() * 0.75);
       rocks.push({
-        x, z, y: floorAt(x, z) + height * 0.34,
+        x, z, y: seabedHeight(x, z) + height * 0.34,
         rx: radius * (0.8 + random() * 0.35),
         ry: height, rz: radius * (0.72 + random() * 0.42)
       });
