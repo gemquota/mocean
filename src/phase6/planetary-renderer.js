@@ -1,4 +1,3 @@
-import { terrainColour } from './habitat-terrain-stream.js';
 /**
  * Lightweight procedural toy-ocean planet for the outer navigation tier.
  * Drawn into the existing 2D presentation canvas; it is an overview layer,
@@ -13,9 +12,9 @@ function surface(lon,lat){
   return broad*.52+ridge*.19+basin*.29;
 }
 /** Render a lit, rotating spherical ocean world with deterministic bathymetry. */
-export function drawPlanetaryGlobe(ctx,width,height,{yaw=0,pitch=0,focusLongitude=0,focusLatitude=0,scale=1,opacity=1,time=0,terrainMeshes=[],planetaryFrame=null}={}){
+export function drawPlanetaryGlobe(ctx,width,height,{yaw=0,pitch=0,focusLongitude=0,focusLatitude=0,opacity=1,time=0}={}){
   if(!ctx||!Number.isFinite(width)||!Number.isFinite(height)||opacity<=.001)return;
-  const cx=width*.5,cy=height*.49,r=Math.min(width,height)*.335*clamp(scale,.035,1);
+  const cx=width*.5,cy=height*.49,r=Math.min(width,height)*.335;
   ctx.save();ctx.globalAlpha*=clamp(opacity,0,1);
   const space=ctx.createRadialGradient(cx,cy-r*.25,0,cx,cy,Math.max(width,height)*.72);
   space.addColorStop(0,'#102c3d');space.addColorStop(.58,'#071a29');space.addColorStop(1,'#020811');
@@ -52,40 +51,6 @@ export function drawPlanetaryGlobe(ctx,width,height,{yaw=0,pitch=0,focusLongitud
       ctx.beginPath();ctx.ellipse(px,py,size*1.35,size,0,0,TAU);ctx.fill();
     }
   }
-  // Drape the same streamed voxel terrain onto the globe. The local patch is
-  // curved here, then the matching flat world-space mesh fades in as the camera
-  // approaches the habitat. This keeps the geographic hand-off anchored.
-  if(planetaryFrame&&terrainMeshes.length){
-    const triangles=[];
-    let totalTriangles=0;
-    for(const mesh of terrainMeshes)totalTriangles+=Math.floor((mesh.indices?.length??0)/3);
-    const stride=Math.max(1,Math.ceil(totalTriangles/6500));
-    for(const mesh of terrainMeshes){
-      const {positions,normals,indices}=mesh;
-      if(!positions||!normals||!indices)continue;
-      for(let index=0;index<indices.length;index+=3*stride){
-        const points=[],normal=[0,0,0],position=[0,0,0];let front=0,valid=true;
-        for(let vertex=0;vertex<3;vertex++){
-          const offset=indices[index+vertex]*3,x=positions[offset],y=positions[offset+1],z=positions[offset+2];
-          const geographic=planetaryFrame.localToGeographic(x,-z),projected=projectGeo(geographic.longitude,geographic.latitude);
-          if(projected.front<=.015){valid=false;break;}
-          const radial=1+(y+8.65)/Math.max(1,planetaryFrame.radius);
-          points.push({x:cx+projected.x*r*radial,y:cy-projected.y*r*radial});
-          front+=projected.front/3;
-          for(let axis=0;axis<3;axis++){normal[axis]+=normals[offset+axis]/3;position[axis]+=[x,y,z][axis]/3;}
-        }
-        if(!valid)continue;
-        triangles.push({points,front,fill:terrainColour(normal,position)});
-      }
-    }
-    triangles.sort((a,b)=>a.front-b.front);
-    for(const triangle of triangles){
-      ctx.globalAlpha=opacity*(.76+triangle.front*.2);
-      ctx.beginPath();triangle.points.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));
-      ctx.closePath();ctx.fillStyle=triangle.fill;ctx.fill();
-    }
-  }
-  ctx.globalAlpha=opacity;
   ctx.globalAlpha=opacity*.17;ctx.strokeStyle='#a9d9df';ctx.lineWidth=Math.max(.55,r*.0025);
   for(let lat=-1.2;lat<=1.21;lat+=.4){
     ctx.beginPath();for(let i=0;i<=100;i++){const lon=-Math.PI+i/100*TAU,p=projectGeo(lon,lat);if(p.front>0){const px=cx+p.x*r,py=cy-p.y*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}}ctx.stroke();
