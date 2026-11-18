@@ -10,18 +10,17 @@ export const WORLD_SCALE_LEVELS = Object.freeze({
 });
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 /**
- * Camera choreography across the planet-to-geography hand-off.
- * A small ease-back at the surface switch is followed by the final rotation
- * just inside geography mode, while the camera descends beneath the water.
+ * Camera pose changes continuously across the complete planetary hand-off.
+ * There is no late snap from a radial globe view to a tangent geography view.
  */
 export function geographyCameraForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Geography camera blend must be finite.');
  const t=clamp(blend,0,1);
- const rotationBlend=t<.5
-  ?.9*smoothstep(0,.5,t)
-  :.84+.16*smoothstep(.5,.62,t);
- const underwaterBlend=smoothstep(.5,.68,t);
- return Object.freeze({rotationBlend,underwaterBlend,terrainBlur:7*(1-underwaterBlend)});
+ return Object.freeze({
+  rotationBlend:smoothstep(0,1,t),
+  underwaterBlend:smoothstep(.58,.96,t),
+  terrainBlur:0
+ });
 }
 export function planetScaleForZoom(relativeZoom){
  if(!Number.isFinite(relativeZoom)||relativeZoom<=0)throw new RangeError('Planet zoom must be finite and positive.');
@@ -31,18 +30,20 @@ export function planetScaleForZoom(relativeZoom){
 }
 const smoothstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
 /**
- * A staged hand-off avoids compositing two incompatible surface projections.
- * The globe expands to fill the view, then local geography takes over in one
- * presentation switch while the camera itself continues its smooth rotation.
+ * Sequentially hands presentation from the globe to local geography. The
+ * spherical globe is fully gone before the tangent-plane terrain appears;
+ * the camera orientation blends independently over the whole zoom interval.
  */
 export function planetaryHandoffForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Planet hand-off blend must be finite.');
- const t=clamp(blend,0,1),localVisible=t>=.5;
+ const t=clamp(blend,0,1);
+ const planetOpacity=1-smoothstep(.34,.52,t);
+ const localOpacity=smoothstep(.52,.70,t);
  return Object.freeze({
-  planetOpacity:localVisible?0:1,
-  localOpacity:localVisible?1:0,
-  planetScaleMultiplier:1+2.2*smoothstep(0,.5,t),
-  localVisible
+  planetOpacity,
+  localOpacity,
+  planetScaleMultiplier:1+2.2*smoothstep(0,.52,t),
+  localVisible:t>=.52
  });
 }
 export function normaliseWorldZoom(zoom,fitZoom){
