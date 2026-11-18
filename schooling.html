@@ -216,9 +216,17 @@ let cameraForward=normalize3(sub(camera.target,camera.p));
 let cameraRight=normalize3(cross3(cameraForward,worldUp));
 let cameraUp=normalize3(cross3(cameraRight,cameraForward));
 function refreshCameraBasis(){cameraForward=normalize3(sub(camera.target,camera.p));cameraRight=normalize3(cross3(cameraForward,worldUp));cameraUp=normalize3(cross3(cameraRight,cameraForward));}
-function rotateHabitatCamera(angle){
- const c=Math.cos(angle),s=Math.sin(angle);
- for(const point of [camera.p,baseCameraPosition]){const x=point.x-camera.target.x,z=point.z-camera.target.z;point.x=camera.target.x+c*x+s*z;point.z=camera.target.z-s*x+c*z;}
+function rotateHabitatCamera(deltaYaw,deltaPitch=0){
+ for(const point of [camera.p,baseCameraPosition]){
+  const x=point.x-camera.target.x,y=point.y-camera.target.y,z=point.z-camera.target.z;
+  const distance=Math.hypot(x,y,z),horizontal=Math.hypot(x,z);
+  const yaw=Math.atan2(x,z)+deltaYaw;
+  const pitch=Math.max(-.35,Math.min(1.25,Math.atan2(y,horizontal)+deltaPitch));
+  const radius=distance*Math.cos(pitch);
+  point.x=camera.target.x+Math.sin(yaw)*radius;
+  point.y=camera.target.y+Math.sin(pitch)*distance;
+  point.z=camera.target.z+Math.cos(yaw)*radius;
+ }
  refreshCameraBasis();
 }
 const terrainCanvas=document.createElement('canvas');terrainCanvas.id='school-terrain';terrainCanvas.setAttribute('aria-hidden','true');canvas.before(terrainCanvas);
