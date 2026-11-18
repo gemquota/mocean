@@ -23,13 +23,17 @@ test('planet zoom does not rebuild local terrain or reset simulated creatures',(
  assert.doesNotMatch(source,/school\.fish\s*=\s*\[\s*\]/);
 });
 
+test('camera rotation remains available throughout local geography and planetary scales',()=>{
+ assert.match(source,/else rotateHabitatCamera\(dx\*\.0045,dy\*\.0045\)/);
+ assert.match(source,/function rotateHabitatCamera\(deltaYaw,deltaPitch=0\)/);
+ assert.match(source,/pitch=Math\.max\(-\.35,Math\.min\(1\.25/);
+});
 test('two-finger navigation supports pan, twist and zoom without changing simulation state',()=>{
  assert.match(source,/rotateHabitatCamera\(angle-pinchAngle\)/);
  assert.match(source,/zoom\*=next\/pinchDistance/);
  assert.match(source,/rotatePlanetaryView\(dx\*\.0045,dy\*\.0045\)/);
  assert.match(source,/planetYaw\=0;planetPitch\=0/);
 });
-
 test('planet size follows camera zoom and the outer zoom limit permits a distant overview',()=>{
  assert.match(source,/planetScaleForZoom\(currentWorldScale.relativeZoom\)/);
  assert.match(source,/function minimumCameraZoom\(\)\{return fitCameraZoom\(\)\*\.002;\}/);
@@ -51,14 +55,9 @@ test('planet and local presentation use separate canvas layers so the globe is n
  assert.doesNotMatch(source,/useWebGLPlanet/);
 });
 
-test('the planetary overview uses the same streamed terrain meshes as the local habitat',async()=>{
- const renderer=await readFile(new URL('../src/phase6/planetary-renderer.js',import.meta.url),'utf8');
- assert.match(source,/habitatTerrainStream\?\.getVisibleMeshes\?\.\(\)/);
- assert.match(source,/terrainMeshes,planetaryFrame/);
- assert.match(renderer,/planetaryFrame\.localToGeographic\(x,-z\)/);
- assert.match(renderer,/terrainColour\(triangle.normal,triangle.position\)/);
+test('the globe is rendered without a flat streamed-terrain sheet clipping through its sphere',()=>{
+ assert.match(source,/terrainMeshes:\[\],planetaryFrame:null/);
 });
-
 test('dragging the planet moves the local camera target and refreshes streamed terrain focus',()=>{
  assert.match(source,/planetaryFrame\.geographicToLocal\(nextFocus\)/);
  assert.match(source,/camera\.target\.x\+=dx;camera\.target\.z\+=dz/);
@@ -68,14 +67,12 @@ test('dragging the planet moves the local camera target and refreshes streamed t
 test('planetary camera handoff refreshes the shared projection basis before rendering local geography',()=>{
  assert.match(source,/camera\.p\.x=blendedCamera\.x;camera\.p\.y=blendedCamera\.y;camera\.p\.z=blendedCamera\.z;\s*\/\/ The 2D habitat projection and the 3D render camera must share the same pose\.\s*refreshCameraBasis\(\);/);
 });
-test('planetary handoff rotates the shared local camera and foreshortens the globe terrain patch coherently',async()=>{
+test('planetary handoff smoothly rotates the local camera without terrain-sheet foreshortening',async()=>{
  const navigation=await readFile(new URL('../src/phase6/planetary-navigation.js',import.meta.url),'utf8');
- const renderer=await readFile(new URL('../src/phase6/planetary-renderer.js',import.meta.url),'utf8');
  assert.match(source,/blendCameraToLocalSurface\(\{target:camera\.target,localPosition:localCameraPosition,blend:geographyCamera\.rotationBlend\}\)/);
  assert.match(source,/terrainCanvas\.style\.filter=geographyCamera\.terrainBlur/);
- assert.match(source,/surfaceForeshorten:blendedCamera\.elevation/);
+ assert.match(source,/terrainMeshes:\[\],planetaryFrame:null/);
  assert.match(navigation,/export function blendCameraToLocalSurface/);
- assert.match(renderer,/clamp\(surfaceForeshorten,\.01,1\)/);
 });
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
  assert.match(source,/radius:4,prefetchRadius:5,maxChunks:128,cellSize,unbounded:true,includeStreamRocks:true/);
