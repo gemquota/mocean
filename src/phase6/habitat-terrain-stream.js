@@ -1,3 +1,4 @@
+import { geologicalProvinceAt } from './seabed-height.js';
 /**
  * Worker-backed voxel terrain for the live Canvas habitat.
  *
@@ -15,7 +16,7 @@ const biomeCache = new Map();
 
 function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
 
-function terrainColour(normal,position){
+export function terrainColour(normal,position){
   const up=clamp(normal[1],0,1);
   const slope=clamp(1-up,0,1);
   const light=Math.max(0,normal[0]*-.28+normal[1]*.82+normal[2]*.49);
@@ -25,25 +26,49 @@ function terrainColour(normal,position){
   const strata=Math.pow(Math.max(0,Math.sin(position[1]*2.15+position[0]*.075+position[2]*.045)),10);
   const biomeKey=[Math.round(position[0]*.5),Math.round(position[2]*.5),Math.round(position[1]*2),Math.round(up*4)].join(':');
   let biome=biomeCache.get(biomeKey);
-  if(!biome){biome=classifyHabitatBiome(position[0],position[2],{y:position[1],normalY:up});biomeCache.set(biomeKey,biome);if(biomeCache.size>8192)biomeCache.clear();}
+  if(!biome){
+    biome=Math.hypot(position[0],position[2])>65
+      ?geologicalProvinceAt(position[0],position[2])
+      :classifyHabitatBiome(position[0],position[2],{y:position[1],normalY:up});
+    biomeCache.set(biomeKey,biome);if(biomeCache.size>8192)biomeCache.clear();
+  }
   const palettes={
     'coral-reef':{rock:[58,75,64],sand:[139,126,94],deep:[27,43,40]},
     'kelp-forest':{rock:[48,75,57],sand:[111,128,82],deep:[19,39,35]},
     'seagrass-meadow':{rock:[78,82,65],sand:[153,140,105],deep:[39,49,39]},
     'sponge-garden':{rock:[43,64,66],sand:[104,119,105],deep:[17,34,43]},
     'rocky-ravine':{rock:[48,62,69],sand:[93,106,108],deep:[16,29,38]},
+    'basalt-spires':{rock:[35,51,57],sand:[83,99,101],deep:[12,25,33]},
+    'fractured-shelf':{rock:[72,79,76],sand:[133,128,108],deep:[29,38,39]},
+    'boulder-field':{rock:[81,76,65],sand:[143,127,96],deep:[32,35,32]},
+    'limestone-karst':{rock:[75,88,79],sand:[154,151,122],deep:[32,43,39]},
+    'sediment-basin':{rock:[83,91,87],sand:[158,149,119],deep:[37,48,43]},
+    'eroded-rock':{rock:[62,75,72],sand:[125,124,104],deep:[24,36,38]},
     'open-sand':{rock:[70,75,67],sand:[145,137,108],deep:[31,43,39]}
   };
   const palette=palettes[biome]??palettes['open-sand'];
   const base=palette.rock.map((value,index)=>value*(1-sediment)+palette.sand[index]*sediment);
-  const weathering=.88+grain*.2+strata*.055;
-  const illumination=(.66+light*.4)*(1-slope*.16)*(.92+height*.08);
-  return 'rgb('+base.map((value,index)=>Math.round((value*weathering*illumination+palette.deep[index]*(.1+slope*.045)))).join(',')+')';
+  // Broad mineral variation plus thin, height-following strata make cliffs and
+  // exposed ledges read as geology instead of uniformly coloured triangulation.
+  const mineral=.5+.5*Math.sin(position[0]*.13+Math.sin(position[2]*.085)*1.7)
+    *Math.cos(position[2]*.11-position[0]*.065);
+  const bandPhase=position[1]*1.65+Math.sin(position[0]*.045+position[2]*.052)*.72;
+  const band=Math.pow(Math.max(0,Math.sin(bandPhase)),14);
+  const cliff=clamp((slope-.16)/.62,0,1);
+  const weathering=.82+grain*.12+mineral*.13+strata*.075;
+  const illumination=(.58+light*.48)*(1-cliff*.22)*(.94+height*.06);
+  return 'rgb('+base.map((value,index)=>{
+    const mineralTint=[7,10,9][index]*mineral;
+    const bandTint=[10,13,11][index]*band;
+    const cliffShadow=palette.deep[index]*cliff*.14;
+    return Math.round(clamp((value*weathering+mineralTint+bandTint-cliffShadow)*illumination,5,225));
+  }).join(',')+')';
 }
 
 export function createHabitatVoxelTerrainStream({
   worldSize={x:100,y:100,z:100},workerCount=2,chunkSize=32,radius=2,
-  prefetchRadius=3,maxChunks=49,cellSize=0.8,minY=-17.6,maxY=-4.8,onUpdate=()=>{}
+  prefetchRadius=3,maxChunks=49,cellSize=0.8,minY=-17.6,maxY=-4.8,onUpdate=()=>{},
+  unbounded=false,includeStreamRocks=false
 }={}){
   if(!worldSize||![worldSize.x,worldSize.y,worldSize.z].every(value=>Number.isFinite(value)&&value>0)){
     throw new RangeError('worldSize must contain positive finite XYZ dimensions.');
@@ -55,7 +80,7 @@ export function createHabitatVoxelTerrainStream({
   }
   if(![0.8,1.6,3.2].includes(cellSize)||!Number.isInteger(chunkSize/cellSize)||!Number.isInteger((maxY-minY)/cellSize))throw new RangeError('Terrain LOD cell size must align to chunk and vertical bounds.');
   const workers=[],chunks=new Map(),queue=[];
-  let sequence=0,disposed=false,lastFocus={x:NaN,z:NaN};
+  let sequence=0,disposed=false,lastFocus={x:NaN,z:NaN},rendererBinding=null;
   const size={...worldSize};
 
   function stats(){
@@ -82,16 +107,48 @@ export function createHabitatVoxelTerrainStream({
         type:'generate-chunk',key:job.key,token:job.token,
         chunkX:job.x,chunkZ:job.z,chunkSize,seed:TERRAIN_SEED,
         worldSize:size,minY,maxY,cellSize,
-        includeStreamRocks:false
+        includeStreamRocks
       });}catch(error){slot.busy=false;slot.failed=true;item.error=String(error?.message??error);slot.key=null;}
     }
     report();
   }
+  function attachThreeMesh(item){
+    if(!rendererBinding||!item?.mesh||item.threeMesh)return;
+    const {THREE,scene,material}=rendererBinding;
+    const {positions,normals,indices}=item.mesh;
+    const colours=new Float32Array(positions.length),colour=new THREE.Color();
+    for(let i=0;i<positions.length;i+=3){
+      colour.setStyle(terrainColour(
+        [normals[i],normals[i+1],normals[i+2]],
+        [positions[i],positions[i+1],positions[i+2]]
+      ));
+      colours[i]=colour.r;colours[i+1]=colour.g;colours[i+2]=colour.b;
+    }
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+    geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3));
+    geometry.setAttribute('color',new THREE.BufferAttribute(colours,3));
+    geometry.setIndex(new THREE.BufferAttribute(indices,1));
+    geometry.computeBoundingSphere();
+    const object=new THREE.Mesh(geometry,material);
+    object.visible=item.visible;object.frustumCulled=true;
+    scene.add(object);
+    item.threeMesh=object;
+  }
+
+  function releaseThreeMesh(item){
+    if(!item?.threeMesh)return;
+    rendererBinding?.scene.remove(item.threeMesh);
+    item.threeMesh.geometry.dispose();
+    item.threeMesh=null;
+  }
+
   function handleMessage(slot,event){
     slot.busy=false;
     const message=event.data??{},item=chunks.get(message.key);
     if(item&&item.token===message.token&&message.type==='complete'){
       item.mesh=message.mesh;item.projection=null;item.error=null;
+      attachThreeMesh(item);
     }else if(item&&item.token===message.token&&message.type==='error'){
       item.error=message.message||'Habitat terrain worker failed';
     }
@@ -119,11 +176,12 @@ export function createHabitatVoxelTerrainStream({
   function update({x=0,z=0,forwardX=0,forwardZ=0}={}){
     if(disposed)return;
     const desired=selectTerrainChunks({x,z,forwardX,forwardZ,chunkSize,radius,prefetchRadius}).filter(item=>{
+      if(unbounded)return true;
       const minX=item.x*chunkSize,minZ=item.z*chunkSize;
       return minX<size.x*.5&&minX+chunkSize>-size.x*.5&&minZ<size.z*.5&&minZ+chunkSize>-size.z*.5;
     });
     const keep=new Set(desired.map(item=>item.key));
-    for(const [key] of chunks)if(!keep.has(key))chunks.delete(key);
+    for(const [key,item] of chunks)if(!keep.has(key)){releaseThreeMesh(item);chunks.delete(key);}
     const byKey=new Map(desired.map(item=>[item.key,item]));
     for(let index=queue.length-1;index>=0;index--){
       const request=byKey.get(queue[index].key);
@@ -132,8 +190,8 @@ export function createHabitatVoxelTerrainStream({
     }
     for(const request of desired){
       let item=chunks.get(request.key);
-      if(item){item.visible=request.visible;continue;}
-      item={token:++sequence,visible:request.visible,mesh:null,projection:null,error:null};
+      if(item){item.visible=request.visible;if(item.threeMesh)item.threeMesh.visible=request.visible;continue;}
+      item={token:++sequence,visible:request.visible,chunkX:request.x,chunkZ:request.z,mesh:null,projection:null,error:null};
       chunks.set(request.key,item);queue.push({...request,token:item.token});
     }
     queue.sort((a,b)=>a.priority-b.priority);
@@ -201,6 +259,9 @@ export function createHabitatVoxelTerrainStream({
   }
 
   function draw(context,project,width,height,zoom=1,opacity=1){
+    if(rendererBinding){
+      return {...stats(),visible:[...chunks.values()].filter(item=>item.visible&&item.threeMesh).length};
+    }
     let rendered=0,triangles=0,rasterisedThisFrame=0;
     const drawables=[],projectionKey=[width,height].join(':');
     for(const item of chunks.values()){
@@ -237,15 +298,46 @@ export function createHabitatVoxelTerrainStream({
     return {...stats(),visible:rendered,triangles};
   }
 
+  function getVisibleMeshes(){return [...chunks.values()].filter(item=>item.visible&&item.mesh).map(item=>item.mesh);}
+
   function invalidateProjection(){for(const item of chunks.values())if(item.projection)item.projection.stale=true;}
+
+  function detachRenderer(){
+    if(!rendererBinding)return false;
+    for(const item of chunks.values()){releaseThreeMesh(item);item.projection=null;}
+    rendererBinding.material.dispose();
+    rendererBinding=null;
+    return true;
+  }
 
   function dispose(){
     if(disposed)return;
     disposed=true;
     for(const slot of workers)slot.worker.terminate();
-    workers.length=0;chunks.clear();queue.length=0;
+    workers.length=0;
+    detachRenderer();
+    chunks.clear();queue.length=0;
+  }
+
+  function attachRenderer(THREE,scene){
+    if(!THREE?.BufferGeometry||!THREE?.BufferAttribute||!THREE?.MeshStandardMaterial||!scene?.add){
+      throw new TypeError('A compatible Three.js namespace and scene are required.');
+    }
+    if(rendererBinding){
+      if(rendererBinding.scene!==scene)throw new Error('Terrain stream is already attached to another scene.');
+      return true;
+    }
+    const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.96,metalness:0});
+    rendererBinding={THREE,scene,material};
+    for(const item of chunks.values())attachThreeMesh(item);
+    return true;
+  }
+
+  function setOpacity(value){
+    if(rendererBinding)rendererBinding.material.opacity=clamp(value,0,1);
+    if(rendererBinding)rendererBinding.material.transparent=value<.999;
   }
 
   update({x:0,z:0,forwardX:0,forwardZ:-1});
-  return Object.freeze({update,draw,dispose,invalidateProjection,get stats(){return stats();}});
+  return Object.freeze({update,draw,dispose,attachRenderer,detachRenderer,setOpacity,getVisibleMeshes,invalidateProjection,get stats(){return stats();}});
 }

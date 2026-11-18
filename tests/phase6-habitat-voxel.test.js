@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHabitatVoxelTerrain } from '../src/phase6/habitat-voxel-terrain.js';
-import { seabedHeight } from '../src/phase6/seabed-height.js';
+import { seabedHeight, proceduralGeologyRelief } from '../src/phase6/seabed-height.js';
+import { createHabitatVoxelField } from '../src/phase6/voxel-field.js';
 
 test('habitat voxel field contains solid seabed, open water and connected cave voids',()=>{
  const terrain=createHabitatVoxelTerrain();
@@ -61,4 +62,41 @@ test('shared seabed relief is deterministic and matches the voxel contact surfac
  const floor=seabedHeight(40,40);
  assert.ok(terrain.field(40,floor+.5,40)>0,'water remains above the shared floor');
  assert.ok(terrain.field(40,floor-.5,40)<0,'solid seabed remains below the shared floor');
+});
+
+test('global seabed geology is deterministic, continuous and materially varied',()=>{
+ const points=[];
+ for(let z=-420;z<=420;z+=24)for(let x=-420;x<=420;x+=24)points.push([x,z,seabedHeight(x,z)]);
+ const values=points.map(point=>point[2]);
+ assert.ok(values.every(Number.isFinite));
+ assert.ok(Math.max(...values)-Math.min(...values)>7,'global geology should contain meaningful basins and uplands');
+ for(const [x,z] of [[64,96],[-128,224],[316,-88],[400,400]]){
+  assert.equal(proceduralGeologyRelief(x,z),proceduralGeologyRelief(x,z),'world geology is deterministic');
+  const h=seabedHeight(x,z),epsilon=.01;
+  assert.ok(Math.abs(seabedHeight(x+epsilon,z)-h)<.1,'height field must not jump across chunk-scale movement');
+  assert.ok(Math.abs(seabedHeight(x,z+epsilon)-h)<.1,'height field must remain continuous in both axes');
+ }
+ // Preserve the authored starter habitat exactly at its centre.
+ const legacy=-8.65+Math.sin(.16*12.5-.07*8.25)*.48
+  +Math.sin(-.31*8.25-.045*12.5)*.22
+  +Math.cos(.075*12.5+.19*-8.25)*.16
+  +Math.sin(.34*12.5+.23*-8.25)*Math.cos(.29*-8.25-.17*12.5)*.18
+  +Math.sin(.57*12.5-.41*-8.25)*.07;
+ assert.equal(seabedHeight(12.5,-8.25),legacy,'the existing near-origin seabed remains unchanged');
+});
+
+test('world-scale geology contains deterministic connected cave chambers and surface throats',()=>{
+ const floor=()=>-8.65;
+ const field=createHabitatVoxelField({x:41,y:15.5,z:31},floor);
+ // Stable cave site in geology cell (0,1), deliberately beyond the authored reef.
+ const chamberX=45.15712431215614,chamberZ=124.12410919531345;
+ const shaftX=47.5382217015991,shaftZ=124.02810577126283;
+ assert.ok(Math.hypot(chamberX,chamberZ)>65);
+ assert.ok(field(chamberX,-12.473695988260138,chamberZ)>0,'chamber must be a real void below the seabed');
+ assert.ok(field(shaftX,-10.55,shaftZ)>0,'surface throat must connect down into the chamber');
+ assert.ok(field(chamberX+20,-12.47,chamberZ)<0,'surrounding rock must remain solid');
+ const repeat=createHabitatVoxelField({x:41,y:15.5,z:31},floor);
+ for(const point of [[chamberX,-12.47,chamberZ],[shaftX,-10.55,shaftZ],[chamberX+12,-12.47,chamberZ]]){
+  assert.equal(field(...point),repeat(...point),'cave topology must be deterministic in world coordinates');
+ }
 });

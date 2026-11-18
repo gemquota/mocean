@@ -40,9 +40,7 @@ function seamEdgeIncidence(meshes){
         const midpointX=(ax+bx)*.5,midpointY=(ay+by)*.5,midpointZ=(az+bz)*.5;
         // Inspect only the interior seam band. Exclude the outer chunk halo,
         // top/bottom extraction limits and z-side boundaries.
-        const crossesChunkPlane=(ax-32)*(bx-32)<=0;
-        const liesOnChunkPlane=Math.abs(ax-32)<.05&&Math.abs(bx-32)<.05;
-        if((!crossesChunkPlane&&!liesOnChunkPlane)||midpointY<-13.2||midpointY>-6.2||midpointZ<2||midpointZ>30)continue;
+        if(midpointX<31||midpointX>33||midpointY<-13.2||midpointY>-6.2||midpointZ<2||midpointZ>30)continue;
         const pa=pointKey(mesh,a),pb=pointKey(mesh,b),key=pa<pb?pa+'|'+pb:pb+'|'+pa;
         incidence.set(key,(incidence.get(key)||0)+1);
       }
@@ -72,4 +70,14 @@ test('combined adjacent chunks have two incident faces on every interior seam ed
   assert.ok(incidence.size>=20,'the seam band must contain a useful number of mesh edges');
   const open=[...incidence].filter(([,count])=>count!==2);
   assert.deepEqual(open,[],'interior seam edges must have exactly two incident triangles');
+});
+
+test('procedural planetary chunks generate deterministic rock features outside the original habitat bounds',()=>{
+  const mesh=buildVoxelTerrainChunk({
+    ...options,chunkX:5,chunkZ:-5,cellSize:3.2,
+    minY:-17.6,maxY:-4.8,includeStreamRocks:true
+  });
+  assert.ok(mesh.triangleCount>0);
+  assert.ok([...mesh.positions].every(Number.isFinite));
+  assert.ok([...mesh.normals].every(Number.isFinite));
 });

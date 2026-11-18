@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  geographicToUnitVector, unitVectorToGeographic, localTangentToGeographic, geographicToLocalTangent, createPlanetaryWorldFrame,
+  geographicToUnitVector, unitVectorToGeographic, localTangentToGeographic, geographicToLocalTangent, createPlanetaryWorldFrame, planetFocusAtScreenCentre, blendCameraToLocalSurface,
   greatCircleDistance, orbitCameraPose, classifyPlanetaryZoom
 } from '../src/phase6/planetary-navigation.js';
 
@@ -61,4 +61,28 @@ test('spherical local mapping round-trips habitat coordinates at toy planet scal
 });
 test('local tangent inverse rejects ambiguous antipode',()=>{
  assert.throws(()=>geographicToLocalTangent({longitude:0,latitude:0},{longitude:Math.PI,latitude:0},1000),RangeError);
+});
+
+test('planet drag moves the geographic focus to the surface point under screen centre',()=>{
+ const focus={longitude:.72,latitude:-.24};
+ const unchanged=planetFocusAtScreenCentre(focus,0,0);
+ near(unchanged.longitude,focus.longitude);near(unchanged.latitude,focus.latitude);
+ const moved=planetFocusAtScreenCentre(focus,.31,-.17);
+ assert.ok(Math.abs(moved.longitude-focus.longitude)+Math.abs(moved.latitude-focus.latitude)>.01);
+ const frame=createPlanetaryWorldFrame({anchor:{longitude:0,latitude:0},radius:2500});
+ const local=frame.geographicToLocal(moved),roundTrip=frame.localToGeographic(local.east,local.north);
+ near(roundTrip.longitude,moved.longitude,1e-8);near(roundTrip.latitude,moved.latitude,1e-8);
+});
+
+test('planetary-to-local camera orientation rotates continuously without changing camera distance',()=>{
+ const target={x:3,y:-2,z:7},localPosition={x:3,y:12.6,z:61};
+ const start=blendCameraToLocalSurface({target,localPosition,blend:0});
+ const middle=blendCameraToLocalSurface({target,localPosition,blend:.5});
+ const end=blendCameraToLocalSurface({target,localPosition,blend:1});
+ const distance=Math.hypot(localPosition.x-target.x,localPosition.y-target.y,localPosition.z-target.z);
+ near(start.x,target.x);near(start.z,target.z);near(start.y,target.y+distance);
+ near(end.x,localPosition.x);near(end.y,localPosition.y);near(end.z,localPosition.z);
+ near(Math.hypot(middle.x-target.x,middle.y-target.y,middle.z-target.z),distance);
+ assert.ok(middle.elevation> end.elevation && middle.elevation<1);
+ assert.ok(start.elevation>middle.elevation && middle.elevation>end.elevation);
 });

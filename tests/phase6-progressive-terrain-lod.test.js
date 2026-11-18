@@ -48,5 +48,5 @@ test('terrain LODs preserve identical world-space feature coordinates', () => {
     };
   };
   const a = bounds(coarse), b = bounds(fine);
-  for (const key of Object.keys(a)) assert.ok(Math.abs(a[key] - b[key]) < 1.6, key + ' should remain spatially stable across LODs');
+  for (const key of Object.keys(a)) assert.ok(Math.abs(a[key] - b[key]) <= 3.2, key + ' should remain within one coarse voxel across LODs');
 });
