@@ -114,7 +114,7 @@ test('planetary and local bathymetry agree throughout the active tangent patch',
  const radius=250;
  for(const [east,north] of [[0,0],[12,-8],[-24,19],[42,31],[-55,-35]]){
   const distance=Math.hypot(east,north),angle=distance/radius;
-  const longitude=distance<1e-12?0:Math.atan2(east*Math.sin(angle),radius*Math.cos(angle));
+  const longitude=distance<1e-12?0:Math.atan2(east/distance*Math.sin(angle),Math.cos(angle));
   const latitude=distance<1e-12?0:Math.asin(Math.sin(angle)*north/distance);
   const actual=planetarySurfaceElevation(longitude,latitude);
   const expected=.42+(seabedHeight(east,north)+8.65)*.012;
