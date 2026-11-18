@@ -12,22 +12,24 @@ test('planet, ocean, geology and ecology expose distinct presentation tiers',()=
 });
 test('planet zoom policy uses hysteresis while the presentation hand-off never double-renders surfaces',()=>{
  const scales=createWorldScaleController();assert.equal(scales.update(.12).level,'planet');assert.equal(scales.update(.19).level,'planet');const blend=scales.update(.19);assert.ok(blend.planetBlend>0&&blend.localWorldBlend>0);assert.equal(blend.streamLocalWorld,false);
- const before=planetaryHandoffForBlend(.499),after=planetaryHandoffForBlend(.5);
+ const before=planetaryHandoffForBlend(.34),middle=planetaryHandoffForBlend(.52),after=planetaryHandoffForBlend(.70);
  assert.equal(before.planetOpacity,1);assert.equal(before.localOpacity,0);
+ assert.equal(middle.planetOpacity,0);assert.equal(middle.localOpacity,0);
  assert.equal(after.planetOpacity,0);assert.equal(after.localOpacity,1);
+ assert.ok(planetaryHandoffForBlend(.43).planetOpacity<1);
+ assert.ok(planetaryHandoffForBlend(.61).localOpacity>0);
  assert.ok(after.planetScaleMultiplier>before.planetScaleMultiplier);
  assert.throws(()=>planetaryHandoffForBlend(NaN),RangeError);assert.equal(scales.update(.41).level,'ocean');
  assert.equal(scales.update(2.06).level,'geology');assert.equal(scales.update(1.9).level,'geology');assert.equal(scales.update(1.77).level,'ocean');assert.equal(scales.update(4.26).level,'ecology');assert.equal(scales.update(3.9).level,'ecology');assert.equal(scales.update(3.71).level,'geology');
 });
-test('geography entry eases camera rotation, submerges viewpoint and clears terrain blur',()=>{
- const before=geographyCameraForBlend(.499),entry=geographyCameraForBlend(.5),early=geographyCameraForBlend(.56),settled=geographyCameraForBlend(.68);
- assert.ok(before.rotationBlend>.89);
- assert.ok(entry.rotationBlend<before.rotationBlend,'camera should ease back slightly at the presentation switch');
- assert.ok(settled.rotationBlend>early.rotationBlend&&settled.rotationBlend===1,'remaining rotation completes just inside geography mode');
- assert.equal(entry.underwaterBlend,0);
- assert.ok(early.underwaterBlend>0&&early.underwaterBlend<1);
- assert.equal(settled.underwaterBlend,1);
- assert.ok(entry.terrainBlur>early.terrainBlur&&settled.terrainBlur===0);
+test('camera orientation changes continuously across the full zoom handoff',()=>{
+ const start=geographyCameraForBlend(0),early=geographyCameraForBlend(.25),middle=geographyCameraForBlend(.5),late=geographyCameraForBlend(.75),end=geographyCameraForBlend(1);
+ assert.equal(start.rotationBlend,0);
+ assert.ok(start.rotationBlend<early.rotationBlend&&early.rotationBlend<middle.rotationBlend);
+ assert.ok(middle.rotationBlend<late.rotationBlend&&late.rotationBlend<end.rotationBlend);
+ assert.equal(end.rotationBlend,1);
+ assert.equal(start.terrainBlur,0);assert.equal(end.terrainBlur,0);
+ assert.equal(start.underwaterBlend,0);assert.equal(end.underwaterBlend,1);
  assert.throws(()=>geographyCameraForBlend(NaN),RangeError);
 });
 test('screen drag pans in habitat plane and compensates for shallow view elevation',()=>{
