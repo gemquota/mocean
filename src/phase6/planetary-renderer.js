@@ -60,7 +60,7 @@ export function planetarySurfaceElevation(lon,lat){
   if(angularDistance>=LOCAL_FIELD_BLEND_END)return globalElevation;
   const sine=Math.sin(angularDistance);
   const east=angularDistance<1e-10?0:PLANETARY_WORLD_RADIUS*angularDistance*x/sine;
-  const north=angularDistance<1e-10?0:PLANETARY_RADIUS*angularDistance*y/sine;
+  const north=angularDistance<1e-10?0:PLANETARY_WORLD_RADIUS*angularDistance*y/sine;
   const localHeight=seabedHeight(east,north);
   const localElevation=clamp(.42+(localHeight+8.65)*.012,.36,.48);
   const localWeight=1-smoothstep(LOCAL_FIELD_RADIUS,LOCAL_FIELD_BLEND_END,angularDistance);
