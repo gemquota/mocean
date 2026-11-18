@@ -48,6 +48,8 @@ import { classifyHabitatBiome } from './src/phase6/biomes.js';
 import { createHabitatVoxelTerrainStream } from './src/phase6/habitat-terrain-stream.js';
 import { createPerformanceMonitor } from './src/phase6/performance-monitor.js';
 import { createWorldScaleController, normaliseWorldZoom, screenDragToHabitatPan } from './src/phase6/world-scale.js';
+import { drawPlanetaryGlobe } from './src/phase6/planetary-renderer.js';
+import { createPlanetaryWorldFrame } from './src/phase6/planetary-navigation.js';
 const performanceMonitor=createPerformanceMonitor({windowSize:120});
 const worldScaleController=createWorldScaleController();
 let currentWorldScale=null,previousHabitatTerrainStream=null,activeTerrainCellSize=NaN,terrainLodTransitionStart=0,lastTerrainFocusKey='';
@@ -154,13 +156,18 @@ for(const axis of ['x','y','z']){const slider=document.getElementById('world-'+a
 school.worldSize={...worldSize};
 setPopulation(populationSlider.value);
 const worldUp=vec3(0,1,0),camera={p:vec3(0,14.6,54),target:vec3()};
-const baseCameraPosition={...camera.p};let zoom=1;
-function minimumCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x,baseCameraPosition.y,baseCameraPosition.z);return baseDistance/worldExtent;}
+const baseCameraPosition={...camera.p};let zoom=1,planetYaw=0,planetPitch=.12;
+const planetaryFrame=createPlanetaryWorldFrame({anchor:{longitude:0,latitude:0},radius:Math.max(worldSize.x,worldSize.z)*2.5});
+function fitCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x-camera.target.x,baseCameraPosition.y-camera.target.y,baseCameraPosition.z-camera.target.z);return baseDistance/worldExtent;}
+function minimumCameraZoom(){return fitCameraZoom()*.08;}
 function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(3.5,minimum*3.5),zoom));camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;}
 applyZoom();
-currentWorldScale=worldScaleController.update(normaliseWorldZoom(zoom,minimumCameraZoom()));
-const activePointers=new Map();let pinchDistance=0;
-function pointerDistance(){const points=[...activePointers.values()];return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
+currentWorldScale=worldScaleController.update(normaliseWorldZoom(zoom,fitCameraZoom()));
+const activePointers=new Map();let pinchDistance=0,pinchAngle=0,pinchCentre={x:0,y:0};
+function pointerPoints(){return [...activePointers.values()];}
+function pointerDistance(){const points=pointerPoints();return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
+function pointerAngle(){const points=pointerPoints();return points.length<2?0:Math.atan2(points[1].y-points[0].y,points[1].x-points[0].x);}
+function pointerCentre(){const points=pointerPoints();return points.length<2?{x:0,y:0}:{x:(points[0].x+points[1].x)*.5,y:(points[0].y+points[1].y)*.5};}
 function panHabitat(dx,dy){
  const rect=canvas.getBoundingClientRect(),forward=normalize3(sub(camera.target,camera.p));
  const right=normalize3(cross3(forward,worldUp)),up=normalize3(cross3(right,forward));
@@ -172,24 +179,41 @@ function panHabitat(dx,dy){
  baseCameraPosition.x+=moveX;baseCameraPosition.z+=moveZ;
  updateTerrainStreamsForCamera();
 }
-canvas.addEventListener("pointerdown",event=>{activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});canvas.setPointerCapture?.(event.pointerId);if(activePointers.size===2)pinchDistance=pointerDistance();});
+canvas.addEventListener("pointerdown",event=>{activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});canvas.setPointerCapture?.(event.pointerId);if(activePointers.size===2){pinchDistance=pointerDistance();pinchAngle=pointerAngle();pinchCentre=pointerCentre();}});
 canvas.addEventListener("pointermove",event=>{
  if(!activePointers.has(event.pointerId))return;
  const previous=activePointers.get(event.pointerId),dx=event.clientX-previous.x,dy=event.clientY-previous.y;
  activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
- if(activePointers.size===1){if(Math.abs(dx)+Math.abs(dy)>0)panHabitat(dx,dy);}
- else if(activePointers.size===2){const next=pointerDistance();if(pinchDistance>0&&next>0){zoom=Math.max(minimumCameraZoom(),Math.min(Math.max(3.5,minimumCameraZoom()*3.5),zoom*next/pinchDistance));applyZoom();}pinchDistance=next;}
+ if(activePointers.size===1){if(Math.abs(dx)+Math.abs(dy)>0){if((currentWorldScale?.planetBlend??0)>.5){planetYaw+=dx*.0045;planetPitch=Math.max(-1.25,Math.min(1.25,planetPitch+dy*.0045));}else panHabitat(dx,dy);}}
+ else if(activePointers.size===2){
+  const next=pointerDistance(),angle=pointerAngle(),centre=pointerCentre();
+  if(currentWorldScale?.level==='planet'){
+   planetYaw+=(centre.x-pinchCentre.x)*.0045+angle-pinchAngle;
+   planetPitch=Math.max(-1.25,Math.min(1.25,planetPitch+(centre.y-pinchCentre.y)*.0045));
+  }else{
+   panHabitat(centre.x-pinchCentre.x,centre.y-pinchCentre.y);
+   rotateHabitatCamera(angle-pinchAngle);
+  }
+  if(pinchDistance>0&&next>0){zoom*=next/pinchDistance;applyZoom();}
+  pinchDistance=next;pinchAngle=angle;pinchCentre=centre;
+ }
 });
-function releasePointer(event){activePointers.delete(event.pointerId);pinchDistance=activePointers.size===2?pointerDistance():0;}
+function releasePointer(event){activePointers.delete(event.pointerId);pinchDistance=activePointers.size===2?pointerDistance():0;pinchAngle=activePointers.size===2?pointerAngle():0;pinchCentre=activePointers.size===2?pointerCentre():{x:0,y:0};}
 canvas.addEventListener("pointerup",releasePointer);canvas.addEventListener("pointercancel",releasePointer);canvas.addEventListener("lostpointercapture",releasePointer);
 for(const name of ["gesturestart","gesturechange","gestureend"])document.addEventListener(name,event=>event.preventDefault(),{passive:false});
-window.addEventListener("wheel",event=>{if(event.ctrlKey)event.preventDefault();},{passive:false});
+canvas.addEventListener("wheel",event=>{event.preventDefault();zoom*=Math.exp(-event.deltaY*.0012);applyZoom();},{passive:false});
 const sub=(a,b)=>add3(a,scale3(b,-1));
-const cameraForward=normalize3(sub(camera.target,camera.p));
-const cameraRight=normalize3(cross3(cameraForward,worldUp));
-const cameraUp=normalize3(cross3(cameraRight,cameraForward));
+let cameraForward=normalize3(sub(camera.target,camera.p));
+let cameraRight=normalize3(cross3(cameraForward,worldUp));
+let cameraUp=normalize3(cross3(cameraRight,cameraForward));
+function refreshCameraBasis(){cameraForward=normalize3(sub(camera.target,camera.p));cameraRight=normalize3(cross3(cameraForward,worldUp));cameraUp=normalize3(cross3(cameraRight,cameraForward));}
+function rotateHabitatCamera(angle){
+ const c=Math.cos(angle),s=Math.sin(angle);
+ for(const point of [camera.p,baseCameraPosition]){const x=point.x-camera.target.x,z=point.z-camera.target.z;point.x=camera.target.x+c*x+s*z;point.z=camera.target.z-s*x+c*z;}
+ refreshCameraBasis();
+}
 const modelCanvas=document.createElement('canvas');modelCanvas.id='school-models';modelCanvas.setAttribute('aria-hidden','true');canvas.after(modelCanvas);
-let THREE=null,modelRenderer=null,modelScene=null,modelCamera=null,marineModels=null,advanceMarineAnimation=null,MARINE_MODEL_BY_SPECIES={},MARINE_MODEL_ORIENTATION={};
+let THREE=null,modelRenderer=null,modelScene=null,modelCamera=null,planetMesh=null,marineModels=null,advanceMarineAnimation=null,MARINE_MODEL_BY_SPECIES={},MARINE_MODEL_ORIENTATION={};
 const marineBatches=new Map(),marineBatchPending=new Set(),marineFailedSpecies=new Set(),marineRenderedFish=new Set();
 let marineOverflow=0;
 const MAX_INSTANCED_MARINE_ENTITIES=1000;
@@ -215,6 +239,14 @@ async function initialiseMarineModelLayer(){
   const modelKey=new THREE.DirectionalLight(0xffedcf,2.0);modelKey.position.set(-18,25,20);modelScene.add(modelKey);
   const modelFill=new THREE.DirectionalLight(0x5aa6b3,.65);modelFill.position.set(15,3,-18);modelScene.add(modelFill);
   modelCamera=new THREE.PerspectiveCamera(48,1,.1,220);modelCamera.up.set(0,1,0);
+  const planetMaterial=new THREE.ShaderMaterial({
+   transparent:true,depthWrite:false,uniforms:{uOpacity:{value:1},uLight:{value:new THREE.Vector3(-.45,.55,.7)}},
+   vertexShader:`varying vec3 vPlanetPosition;varying vec3 vPlanetNormal;void main(){vPlanetPosition=normalize(position);vPlanetNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+   fragmentShader:`varying vec3 vPlanetPosition;varying vec3 vPlanetNormal;uniform float uOpacity;uniform vec3 uLight;
+    float terrain(vec3 p){float a=sin(p.x*8.7+sin(p.z*6.1))*cos(p.y*7.4);float b=sin(p.z*17.0+p.y*4.2)*cos(p.x*12.0);float c=cos(p.x*3.1-p.y*5.2)*sin(p.z*4.3);return a*.53+b*.18+c*.29;}
+    void main(){vec3 n=normalize(vPlanetNormal);float h=terrain(normalize(vPlanetPosition));float land=smoothstep(.34,.47,h);vec3 deep=vec3(.012,.105,.19);vec3 shelf=vec3(.035,.31,.39);vec3 sea=mix(deep,shelf,smoothstep(-.35,.62,h));vec3 ground=mix(vec3(.20,.37,.31),vec3(.59,.57,.42),smoothstep(.48,.82,h));vec3 colour=mix(sea,ground,land);float light=.40+.60*max(dot(n,normalize(uLight)),0.0);float fresnel=pow(1.0-max(dot(n,vec3(0.0,0.0,1.0)),0.0),3.0);colour=colour*light+vec3(.035,.16,.22)*fresnel;gl_FragColor=vec4(colour,uOpacity);}`
+  });
+  planetMesh=new THREE.Mesh(new THREE.SphereGeometry(1,112,80),planetMaterial);planetMesh.visible=false;modelScene.add(planetMesh);
   marineModels=new instanced.InstancedMarineSchoolRenderer(THREE,{baseUrl:'./assets/models/osmocean/naturalistic/',capacity:MAX_INSTANCED_MARINE_ENTITIES});
   advanceMarineAnimation=instanced.advanceMarineAnimation;
  }catch(error){modelRenderer=null;marineModels=null;console.warn('Naturalistic instanced model layer unavailable; modelled species will remain hidden.',error);}
@@ -1013,8 +1045,27 @@ function render(){
  ctx.setTransform(dpr,0,0,dpr,0,0);viewWidth=rect.width;viewHeight=rect.height;
  const gradient=ctx.createRadialGradient(viewWidth*.5,viewHeight*.46,5,viewWidth*.5,viewHeight*.5,Math.max(viewWidth,viewHeight)*.78);
  gradient.addColorStop(0,'#17414a');gradient.addColorStop(.5,'#0b2832');gradient.addColorStop(1,'#04121a');ctx.fillStyle=gradient;ctx.fillRect(0,0,viewWidth,viewHeight);
- currentWorldScale=worldScaleController.update(normaliseWorldZoom(zoom,minimumCameraZoom()));
- requestTerrainLod(currentWorldScale.terrainCellSize);
+ currentWorldScale=worldScaleController.update(normaliseWorldZoom(zoom,fitCameraZoom()));
+ const localWorldBlend=currentWorldScale.localWorldBlend;
+ const planetaryFocus=planetaryFrame.localToGeographic(camera.target.x,-camera.target.z);
+ const useWebGLPlanet=!!(modelRenderer&&planetMesh&&!modelLayerLost);
+ drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,opacity:useWebGLPlanet?0:currentWorldScale.planetBlend,time:school.time});
+ if(useWebGLPlanet&&currentWorldScale.planetBlend>.001){
+  const focus={x:Math.cos(planetaryFocus.latitude)*Math.sin(planetaryFocus.longitude),y:Math.sin(planetaryFocus.latitude),z:Math.cos(planetaryFocus.latitude)*Math.cos(planetaryFocus.longitude)};
+  const align=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(focus.x,focus.y,focus.z),new THREE.Vector3(0,0,1));
+  const orbit=new THREE.Quaternion().setFromEuler(new THREE.Euler(planetPitch,planetYaw,0,'YXZ')).invert();
+  planetMesh.quaternion.copy(orbit).multiply(align);planetMesh.visible=true;
+  planetMesh.material.uniforms.uOpacity.value=currentWorldScale.planetBlend;
+  if(modelViewportWidth!==viewWidth||modelViewportHeight!==viewHeight){modelViewportWidth=viewWidth;modelViewportHeight=viewHeight;modelRenderer.setSize(viewWidth,viewHeight,false);modelCamera.aspect=viewWidth/Math.max(1,viewHeight);}
+  modelCamera.fov=48;modelCamera.position.set(0,0,3.25).applyQuaternion(orbit);modelCamera.up.set(0,1,0).applyQuaternion(orbit);modelCamera.lookAt(0,0,0);modelCamera.updateProjectionMatrix();
+  for(const batch of marineBatches.values())batch.group.visible=false;
+  modelCanvas.style.opacity='1';
+  try{modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}
+ }else if(planetMesh){planetMesh.visible=false;for(const batch of marineBatches.values())batch.group.visible=true;}
+ modelCanvas.style.opacity=useWebGLPlanet?'1':String(localWorldBlend);
+ if(localWorldBlend<=.001){if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);return;}
+ ctx.save();ctx.globalAlpha*=localWorldBlend;
+ if(currentWorldScale.streamLocalWorld)requestTerrainLod(currentWorldScale.terrainCellSize);
  drawSeabed();
  const ecologyAlpha=currentWorldScale.ecologyBlend;
  if(currentWorldScale.showLocalEcology){
@@ -1042,7 +1093,8 @@ function render(){
    if(!renderFaults.has(species))renderFaults.set(species,String(error?.message??error).slice(0,100));
   }
  }
- if(modelRenderer&&!modelLayerLost){try{updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}}
+ if(modelRenderer&&!modelLayerLost){for(const batch of marineBatches.values())batch.group.visible=currentWorldScale.showIndividualAnimals;try{updateMarineCamera();modelRenderer.render(modelScene,modelCamera);}catch(error){disableMarineModelLayer(error);}}
+ ctx.restore();
 }
 addEventListener('pagehide',()=>{habitatTerrainStream?.dispose();previousHabitatTerrainStream?.dispose();},{once:true});
 const renderFaults=new Map();
