@@ -194,7 +194,7 @@ canvas.addEventListener("pointermove",event=>{
  if(!activePointers.has(event.pointerId))return;
  const previous=activePointers.get(event.pointerId),dx=event.clientX-previous.x,dy=event.clientY-previous.y;
  activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
- if(activePointers.size===1){if(Math.abs(dx)+Math.abs(dy)>0){if((currentWorldScale?.planetBlend??0)>.5){rotatePlanetaryView(dx*.0045,dy*.0045);}else panHabitat(dx,dy);}}
+ if(activePointers.size===1){if(Math.abs(dx)+Math.abs(dy)>0){if((currentWorldScale?.planetBlend??0)>.5){rotatePlanetaryView(dx*.0045,dy*.0045);}else rotateHabitatCamera(dx*.0045,dy*.0045);}}
  else if(activePointers.size===2){
   const next=pointerDistance(),angle=pointerAngle(),centre=pointerCentre();
   if((currentWorldScale?.planetBlend??0)>.5){
@@ -1086,7 +1086,7 @@ function render(){
  terrainCanvas.style.filter=geographyCamera.terrainBlur>.05?'blur('+geographyCamera.terrainBlur.toFixed(2)+'px)':'none';
  const planetaryFocus=planetaryFrame.localToGeographic(camera.target.x,-camera.target.z);
  const currentPlanetMeshes=habitatTerrainStream?.getVisibleMeshes?.()??[],terrainMeshes=handoff.planetOpacity>.001?(currentPlanetMeshes.length?currentPlanetMeshes:(previousHabitatTerrainStream?.getVisibleMeshes?.()??[])):[];
- drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,scale:planetScale*handoff.planetScaleMultiplier,opacity:handoff.planetOpacity,time:school.time,terrainMeshes,planetaryFrame,surfaceForeshorten:blendedCamera.elevation});
+ drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,scale:planetScale*handoff.planetScaleMultiplier,opacity:handoff.planetOpacity,time:school.time,terrainMeshes:[],planetaryFrame:null});
  modelCanvas.style.opacity=String(handoff.localOpacity);
  if(!handoff.localVisible){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);return;}
  ctx.save();
