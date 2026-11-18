@@ -6,6 +6,7 @@
  * between those coordinates and the spherical surface without changing local
  * simulation coordinates or creature state.
  */
+export const PLANETARY_WORLD_RADIUS = 250;
 const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const finite = (...values) => values.every(Number.isFinite);
