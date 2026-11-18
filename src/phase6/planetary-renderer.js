@@ -2,9 +2,10 @@
  * Procedural planetary overview with the active voxel habitat patch draped
  * onto the same geographic frame used by local terrain streaming.
  *
- * Global geography is sampled as 3D noise on the unit sphere. Unlike a
- * longitude/latitude noise map, this has no seam at +/- PI and no polar
- * coordinate singularity.
+ * Global geography is sampled as 3D noise on the unit sphere. Near the active
+ * geographic anchor, the overview instead samples the exact local seabed field
+ * through the navigation tangent map, then smoothly returns to the global
+ * spherical field. The global field has no longitude seam or polar singularity.
  */
 import { terrainColour } from './habitat-terrain-stream.js';
 import { seabedHeight } from './seabed-height.js';
