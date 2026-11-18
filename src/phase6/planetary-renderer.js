@@ -9,9 +9,9 @@
  */
 import { terrainColour } from './habitat-terrain-stream.js';
 import { seabedHeight } from './seabed-height.js';
+import { PLANETARY_WORLD_RADIUS } from './planetary-navigation.js';
 
 const TAU=Math.PI*2;
-const PLANETARY_RADIUS=250;
 const LOCAL_FIELD_RADIUS=.45;
 const LOCAL_FIELD_BLEND_END=.8;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -59,7 +59,7 @@ export function planetarySurfaceElevation(lon,lat){
   const angularDistance=Math.acos(clamp(z,-1,1));
   if(angularDistance>=LOCAL_FIELD_BLEND_END)return globalElevation;
   const sine=Math.sin(angularDistance);
-  const east=angularDistance<1e-10?0:PLANETARY_RADIUS*angularDistance*x/sine;
+  const east=angularDistance<1e-10?0:PLANETARY_WORLD_RADIUS*angularDistance*x/sine;
   const north=angularDistance<1e-10?0:PLANETARY_RADIUS*angularDistance*y/sine;
   const localHeight=seabedHeight(east,north);
   const localElevation=clamp(.42+(localHeight+8.65)*.012,.36,.48);
