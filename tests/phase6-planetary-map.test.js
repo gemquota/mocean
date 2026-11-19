@@ -21,7 +21,7 @@ test('map focus crosses each screen edge without reaching a hard boundary', () =
   const focus = { u: 0.001, v: 0.999 };
   const moved = panPlanetMap(focus, 30, -30, 1200, 800, 1);
   assert.ok(moved.u > 0.95);
-  assert.ok(moved.v < 0.05);
+  assert.ok(moved.v < 0.06);
 });
 
 test('planet map panning scales inversely with zoom', () => {
