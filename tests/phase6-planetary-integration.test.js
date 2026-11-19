@@ -64,7 +64,7 @@ test('local terrain prefetch begins before the globe-to-surface handoff',()=>{
 });
 test('planetary overview drapes the live streamed habitat mesh onto the globe',()=>{
  assert.match(source,/terrainMeshes,planetaryFrame/);
- assert.match(source,/getVisibleMeshes\(\)/);
+ assert.match(source,/getVisibleMeshes\?\.\(\)/);
  assert.match(source,/streamLocalWorld:localWorldBlend>\.08/);
 });
 test('dragging the planet moves the local camera target and refreshes streamed terrain focus',()=>{
