@@ -7,7 +7,7 @@ test('world zoom normalisation preserves the planetary range below local fit',()
 test('planet, geology and ecology expose three presentation tiers without a mandatory ocean stop',()=>{
  const scales=createWorldScaleController(),planet=scales.update(.1);assert.equal(planet.level,'planet');assert.equal(planet.showPlanet,true);assert.equal(planet.showIndividualAnimals,false);assert.equal(planet.terrainCellSize,3.2);assert.equal(planet.streamLocalWorld,false);
  const geology=scales.update(.5);assert.equal(geology.level,'geology');assert.equal(geology.localWorldBlend,1);assert.equal(geology.terrainCellSize,1.6);assert.equal(geology.streamLocalWorld,true);
- const refinedGeology=scales.update(2.2);assert.equal(refinedGeology.level,'geology');assert.equal(geology.terrainCellSize,1.6);assert.ok(refinedGeology.geologyBlend>.9);assert.ok(refinedGeology.ecologyBlend<.1);
+ const refinedGeology=scales.update(2.2);assert.equal(refinedGeology.level,'geology');assert.equal(refinedGeology.terrainCellSize,1.6);assert.ok(refinedGeology.geologyBlend>.9);assert.ok(refinedGeology.ecologyBlend<.1);
  const ecology=scales.update(4.8);assert.equal(ecology.level,'ecology');assert.equal(ecology.terrainCellSize,.8);assert.equal(ecology.showIndividualAnimals,true);assert.equal(ecology.ecologyBlend,1);
 });
 test('planet zoom policy uses hysteresis while the presentation hand-off never double-renders surfaces',()=>{
