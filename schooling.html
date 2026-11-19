@@ -49,7 +49,9 @@ import { createHabitatVoxelTerrainStream } from './src/phase6/habitat-terrain-st
 import { createPerformanceMonitor } from './src/phase6/performance-monitor.js';
 import { createWorldScaleController, normaliseWorldZoom, screenDragToHabitatPan, planetScaleForZoom, planetaryHandoffForBlend, geographyCameraForBlend, INITIAL_PLANETARY_RELATIVE_ZOOM } from './src/phase6/world-scale.js';
 import { drawPlanetaryGlobe } from './src/phase6/planetary-renderer.js';
-import { createPlanetaryWorldFrame, planetFocusAtScreenCentre, blendCameraToLocalSurface, PLANETARY_WORLD_RADIUS } from './src/phase6/planetary-navigation.js';
+import { drawPlanetaryMap } from './src/phase6/planetary-map-renderer.js';
+import { geographicToMap, mapToGeographic, panPlanetMap } from './src/phase6/planetary-map.js';
+import { createPlanetaryWorldFrame, planetFocusAtScreenCentre, PLANETARY_WORLD_RADIUS } from './src/phase6/planetary-navigation.js';
 const performanceMonitor=createPerformanceMonitor({windowSize:120});
 const worldScaleController=createWorldScaleController();
 let currentWorldScale=null,previousHabitatTerrainStream=null,activeTerrainCellSize=NaN,terrainLodTransitionStart=0,lastTerrainFocusKey='';
@@ -158,7 +160,7 @@ school.worldSize={...worldSize};
 setPopulation(populationSlider.value);
 const worldUp=vec3(0,1,0),camera={p:vec3(0,14.6,54),target:vec3()};
 const baseCameraPosition={...camera.p};let zoom=1,planetYaw=0,planetPitch=0;
-const planetaryFrame=createPlanetaryWorldFrame({anchor:{longitude:0,latitude:0},radius:PLANETARY_WORLD_RADIUS});
+let planetaryFrame=createPlanetaryWorldFrame({anchor:{longitude:0,latitude:0},radius:PLANETARY_WORLD_RADIUS});
 function fitCameraZoom(){const worldExtent=Math.max(1,worldSize.x,worldSize.y,worldSize.z),baseDistance=Math.hypot(baseCameraPosition.x-camera.target.x,baseCameraPosition.y-camera.target.y,baseCameraPosition.z-camera.target.z);return baseDistance/worldExtent;}
 function minimumCameraZoom(){return fitCameraZoom()*.002;}
 function applyZoom(){const minimum=minimumCameraZoom();zoom=Math.max(minimum,Math.min(Math.max(3.5,minimum*3.5),zoom));camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;}
@@ -170,15 +172,23 @@ function pointerPoints(){return [...activePointers.values()];}
 function pointerDistance(){const points=pointerPoints();return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);}
 function pointerAngle(){const points=pointerPoints();return points.length<2?0:Math.atan2(points[1].y-points[0].y,points[1].x-points[0].x);}
 function pointerCentre(){const points=pointerPoints();return points.length<2?{x:0,y:0}:{x:(points[0].x+points[1].x)*.5,y:(points[0].y+points[1].y)*.5};}
+function resetPlanetaryAnchor(nextFocus){
+ planetaryFrame=createPlanetaryWorldFrame({anchor:nextFocus,radius:PLANETARY_WORLD_RADIUS});
+ camera.target.x=0;camera.target.y=0;camera.target.z=0;
+ baseCameraPosition.x=0;baseCameraPosition.y=14.6;baseCameraPosition.z=54;
+ camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;
+ planetYaw=0;planetPitch=0;lastTerrainFocusKey='';
+ updateTerrainStreamsForCamera();
+}
 function rotatePlanetaryView(deltaYaw,deltaPitch){
  const focus=planetaryFrame.localToGeographic(camera.target.x,-camera.target.z);
  const nextFocus=planetFocusAtScreenCentre(focus,planetYaw+deltaYaw,Math.max(-1.25,Math.min(1.25,planetPitch+deltaPitch)));
- const local=planetaryFrame.geographicToLocal(nextFocus);
- const dx=local.east-camera.target.x,dz=-local.north-camera.target.z;
- camera.target.x+=dx;camera.target.z+=dz;camera.p.x+=dx;camera.p.z+=dz;
- baseCameraPosition.x+=dx;baseCameraPosition.z+=dz;
- planetYaw=0;planetPitch=0;
- updateTerrainStreamsForCamera();
+ resetPlanetaryAnchor(nextFocus);
+}
+function panPlanetaryMap(dx,dy){
+ const focus=geographicToMap(planetaryFrame.anchor.longitude,planetaryFrame.anchor.latitude);
+ const next=panPlanetMap(focus,dx,dy,viewWidth,viewHeight,Math.max(1,(currentWorldScale?.relativeZoom??.4)/.4));
+ resetPlanetaryAnchor(mapToGeographic(next.u,next.v));
 }
 function panHabitat(dx,dy){
  const rect=canvas.getBoundingClientRect(),forward=normalize3(sub(camera.target,camera.p));
@@ -196,11 +206,13 @@ canvas.addEventListener("pointermove",event=>{
  if(!activePointers.has(event.pointerId))return;
  const previous=activePointers.get(event.pointerId),dx=event.clientX-previous.x,dy=event.clientY-previous.y;
  activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
- if(activePointers.size===1){if(Math.abs(dx)+Math.abs(dy)>0){if((currentWorldScale?.planetBlend??0)>.5){rotatePlanetaryView(dx*.0045,dy*.0045);}else rotateHabitatCamera(dx*.0045,dy*.0045);}}
+ if(activePointers.size===1){if(Math.abs(dx)+Math.abs(dy)>0){if((currentWorldScale?.planetBlend??0)>.5){rotatePlanetaryView(dx*.0045,dy*.0045);}else if((currentWorldScale?.localWorldBlend??0)>.5&&(currentWorldScale?.ecologyBlend??1)<.95){panPlanetaryMap(dx,dy);}else rotateHabitatCamera(dx*.0045,dy*.0045);}}
  else if(activePointers.size===2){
   const next=pointerDistance(),angle=pointerAngle(),centre=pointerCentre();
   if((currentWorldScale?.planetBlend??0)>.5){
    rotatePlanetaryView((centre.x-pinchCentre.x)*.0045+angle-pinchAngle,(centre.y-pinchCentre.y)*.0045);
+  }else if((currentWorldScale?.localWorldBlend??0)>.5&&(currentWorldScale?.ecologyBlend??1)<.95){
+   panPlanetaryMap(centre.x-pinchCentre.x,centre.y-pinchCentre.y);
   }else{
    panHabitat(centre.x-pinchCentre.x,centre.y-pinchCentre.y);
    rotateHabitatCamera(angle-pinchAngle);
@@ -1093,24 +1105,19 @@ function render(){
  planetaryHandoffProgress+=Math.max(-handoffStep,Math.min(handoffStep,handoffTarget-planetaryHandoffProgress));
  const handoff=planetaryHandoffForBlend(planetaryHandoffProgress);
  const geographyCamera=geographyCameraForBlend(localWorldBlend);
- // Enter geography with a slightly reduced angle, then finish rotating over
- // the first small zoom-in while the viewpoint sinks beneath the waterline.
- const underwaterY=baseCameraPosition.y-20*geographyCamera.underwaterBlend;
- const localCameraPosition={...baseCameraPosition,y:underwaterY};
- const blendedCamera=blendCameraToLocalSurface({target:camera.target,localPosition:localCameraPosition,blend:geographyCamera.rotationBlend});
- camera.p.x=blendedCamera.x;camera.p.y=blendedCamera.y;camera.p.z=blendedCamera.z;
- // The 2D habitat projection and the 3D render camera must share the same pose.
+ // Zoom changes scale and representation only. The camera pose is invariant.
+ camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;
  refreshCameraBasis();
- terrainCanvas.style.opacity=String(handoff.localOpacity);
- terrainCanvas.style.filter=geographyCamera.terrainBlur>.05?'blur('+geographyCamera.terrainBlur.toFixed(2)+'px)':'none';
+ const ecologyAlpha=currentWorldScale.ecologyBlend;
+ terrainCanvas.style.opacity=String(ecologyAlpha);
+ terrainCanvas.style.filter='none';
  const planetaryFocus=planetaryFrame.localToGeographic(camera.target.x,-camera.target.z);
  const terrainMeshes=handoff.planetOpacity>.001?(currentPlanetMeshes.length?currentPlanetMeshes:previousPlanetMeshes):[];
  drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,scale:planetScale*handoff.planetScaleMultiplier,opacity:handoff.planetOpacity,time:school.time,terrainMeshes,planetaryFrame});
- modelCanvas.style.opacity=String(handoff.localOpacity);
- if(!handoff.localVisible){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);return;}
+ modelCanvas.style.opacity=String(ecologyAlpha);
+ if(!handoff.localVisible){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);drawPlanetaryMapOverlay(planetaryFocus,localWorldBlend,ecologyAlpha);return;}
  ctx.save();
  drawSeabed();
- const ecologyAlpha=currentWorldScale.ecologyBlend;
  if(currentWorldScale.showLocalEcology){
   ctx.save();ctx.globalAlpha*=ecologyAlpha;
   drawCoral();
@@ -1138,6 +1145,15 @@ function render(){
  }
  try{updateMarineCamera();if(terrainRenderer&&terrainScene&&modelCamera){try{terrainRenderer.render(terrainScene,modelCamera);}catch(terrainError){terrainRenderer.dispose();terrainRenderer=null;terrainScene=null;habitatTerrainStream?.detachRenderer();previousHabitatTerrainStream?.detachRenderer();console.warn('Voxel terrain renderer failed; using Canvas terrain fallback.',terrainError);}}if(modelRenderer&&!modelLayerLost){for(const batch of marineBatches.values())batch.group.visible=currentWorldScale.showIndividualAnimals;modelRenderer.render(modelScene,modelCamera);}}catch(error){disableMarineModelLayer(error);}
  ctx.restore();
+ drawPlanetaryMapOverlay(planetaryFocus,localWorldBlend,ecologyAlpha);
+}
+function drawPlanetaryMapOverlay(focus,localWorldBlend,ecologyBlend){
+ const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a)));return t*t*(3-2*t);};
+ const opacity=smooth(.08,.34,localWorldBlend)*(1-smooth(.04,.92,ecologyBlend));
+ if(opacity<=.001)return;
+ const mapFocus=geographicToMap(focus.longitude,focus.latitude);
+ const meshes=[...(habitatTerrainStream?.getVisibleMeshes?.()??[]),...(previousHabitatTerrainStream?.getVisibleMeshes?.()??[])];
+ drawPlanetaryMap(ctx,viewWidth,viewHeight,{focus:mapFocus,zoom:Math.max(1,currentWorldScale.relativeZoom/.4),opacity,terrainMeshes:meshes,planetaryFrame});
 }
 addEventListener('pagehide',()=>{habitatTerrainStream?.dispose();previousHabitatTerrainStream?.dispose();},{once:true});
 const renderFaults=new Map();
