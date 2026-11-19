@@ -53,7 +53,7 @@ test('voxel terrain renders as native world-space geometry in the same camera as
 test('planet and local presentation use separate canvas layers so the globe is not overwritten by the local camera render',()=>{
  assert.match(source,/terrainCanvas\.id='school-terrain'/);
  assert.match(source,/modelCanvas\.id='school-models'/);
- assert.match(source,/modelCanvas\.style\.opacity=String\(handoff\.localOpacity\)/);
+ assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
  assert.doesNotMatch(source,/useWebGLPlanet/);
 });
 
@@ -83,7 +83,7 @@ test('planetary zoom unfolds into a wrapped 2D map before local ecology appears'
  assert.match(source,/drawPlanetaryMap\(ctx,viewWidth,viewHeight/);
  assert.match(source,/panPlanetaryMap\(dx,dy\)/);
  assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
- assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,localWorldBlend,ecologyAlpha\)/);
+ assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,localWorldBlend,ecologyAlpha,handoff\.localVisible\)/);
 });
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
  assert.match(source,/radius:4,prefetchRadius:5,maxChunks:128,cellSize,unbounded:true,includeStreamRocks:true/);
