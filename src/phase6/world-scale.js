@@ -31,9 +31,8 @@ export function planetScaleForZoom(relativeZoom){
 }
 const smoothstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
 /**
- * Sequentially hands presentation from the globe to local geography. The
- * spherical globe is fully gone before the tangent-plane terrain appears;
- * the camera orientation blends independently over the whole zoom interval.
+ * Sequentially hands presentation from the globe to the wrapped 2D atlas and
+ * then local ecology. The observer camera does not rotate during the handoff.
  */
 export function planetaryHandoffForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Planet hand-off blend must be finite.');
