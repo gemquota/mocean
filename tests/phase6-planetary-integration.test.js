@@ -57,6 +57,11 @@ test('planet and local presentation use separate canvas layers so the globe is n
  assert.doesNotMatch(source,/useWebGLPlanet/);
 });
 
+test('local terrain prefetch begins before the globe-to-surface handoff',()=>{
+ const prefetch=source.indexOf('if(currentWorldScale.streamLocalWorld)requestTerrainLod(currentWorldScale.terrainCellSize)');
+ const handoff=source.indexOf('if(!handoff.localVisible)');
+ assert.ok(prefetch>=0&&handoff>prefetch,'terrain must be requested while the planetary globe is still visible');
+});
 test('planetary overview drapes the live streamed habitat mesh onto the globe',()=>{
  assert.match(source,/terrainMeshes,planetaryFrame/);
  assert.match(source,/getVisibleMeshes\(\)/);
