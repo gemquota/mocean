@@ -57,8 +57,10 @@ test('planet and local presentation use separate canvas layers so the globe is n
  assert.doesNotMatch(source,/useWebGLPlanet/);
 });
 
-test('the globe is rendered without a flat streamed-terrain sheet clipping through its sphere',()=>{
- assert.match(source,/terrainMeshes:\[\],planetaryFrame:null/);
+test('planetary overview drapes the live streamed habitat mesh onto the globe',()=>{
+ assert.match(source,/terrainMeshes,planetaryFrame/);
+ assert.match(source,/getVisibleMeshes\(\)/);
+ assert.match(source,/streamLocalWorld:localWorldBlend>\.08/);
 });
 test('dragging the planet moves the local camera target and refreshes streamed terrain focus',()=>{
  assert.match(source,/planetaryFrame\.geographicToLocal\(nextFocus\)/);
@@ -73,7 +75,7 @@ test('planetary handoff smoothly rotates the local camera without terrain-sheet 
  const navigation=await readFile(new URL('../src/phase6/planetary-navigation.js',import.meta.url),'utf8');
  assert.match(source,/blendCameraToLocalSurface\(\{target:camera\.target,localPosition:localCameraPosition,blend:geographyCamera\.rotationBlend\}\)/);
  assert.match(source,/terrainCanvas\.style\.filter=geographyCamera\.terrainBlur/);
- assert.match(source,/terrainMeshes:\[\],planetaryFrame:null/);
+ assert.match(source,/terrainMeshes,planetaryFrame/);
  assert.match(navigation,/export function blendCameraToLocalSurface/);
 });
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
