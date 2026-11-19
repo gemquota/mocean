@@ -6,6 +6,7 @@
  * map tiles meet exactly at every edge and only visible cells are rasterised.
  */
 import { terrainColour } from './habitat-terrain-stream.js';
+import { planetaryGlobalSurfaceElevation } from './planetary-renderer.js';
 
 const GRID_X = 64;
 const GRID_Y = 32;
@@ -37,12 +38,15 @@ function periodicNoise(u, v, frequency, seed) {
 
 export function planetaryMapElevation(u, v) {
   if (!Number.isFinite(u) || !Number.isFinite(v)) throw new RangeError('Map coordinates must be finite.');
-  const broad = periodicNoise(u, v, 4, 17);
-  const regional = periodicNoise(u, v, 8, 31);
-  const detail = periodicNoise(u, v, 16, 53);
-  const ridge = 1 - Math.abs(periodicNoise(u, v, 8, 79) * 2 - 1);
-  const mountainMask = smoothstep(.52, .7, broad) * smoothstep(.46, .7, regional);
-  return clamp(broad * .58 + regional * .25 + detail * .11 + ridge * mountainMask * .16, 0, 1);
+  const wrappedU = mod(u, 1), wrappedV = mod(v, 1);
+  const longitude = wrappedU * Math.PI * 2 - Math.PI;
+  const latitude = (.5 - wrappedV) * Math.PI;
+  const spherical = planetaryGlobalSurfaceElevation(longitude, latitude);
+  // Collapse both polar margins to the same longitude-independent value. This
+  // keeps the north/south atlas seam continuous while retaining the globe's
+  // actual geography everywhere outside the small polar caps.
+  const polarWeight = smoothstep(1.42, Math.PI / 2, Math.abs(latitude));
+  return spherical * (1 - polarWeight) + .5 * polarWeight;
 }
 
 function mapMoisture(u, v) {
