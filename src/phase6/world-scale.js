@@ -2,6 +2,8 @@
  * Three-scale world presentation policy. Planet is a navigable overview;
  * geology and ecology are progressively detailed views of the selected place.
  */
+export const INITIAL_PLANETARY_RELATIVE_ZOOM = 0.12;
+
 export const WORLD_SCALE_LEVELS = Object.freeze({
   planet: Object.freeze({ id:'planet', terrainCellSize:3.2 }),
   geology: Object.freeze({ id:'geology', terrainCellSize:1.6 }),
@@ -36,8 +38,8 @@ const smoothstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
 export function planetaryHandoffForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Planet hand-off blend must be finite.');
  const t=clamp(blend,0,1);
- const planetOpacity=1-smoothstep(.34,.52,t);
- const localOpacity=smoothstep(.52,.70,t);
+ const planetOpacity=1-smoothstep(.46,.52,t);
+ const localOpacity=smoothstep(.52,.58,t);
  return Object.freeze({
   planetOpacity,
   localOpacity,
