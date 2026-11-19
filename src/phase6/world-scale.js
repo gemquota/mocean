@@ -11,8 +11,8 @@ export const WORLD_SCALE_LEVELS = Object.freeze({
 });
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 /**
- * Camera pose changes continuously across the complete planetary hand-off.
- * There is no late snap from a radial globe view to a tangent geography view.
+ * Camera orientation is invariant across zoom tiers. The planet unfolds into
+ * a flat wrapped map; zoom never rotates the observer.
  */
 export function geographyCameraForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Geography camera blend must be finite.');
