@@ -1,9 +1,9 @@
 /**
  * Seamless 2D planetary atlas.
  *
- * Unlike the spherical overview, this navigable representation is periodic
- * in both axes. Its terrain field is sampled on a toroidal domain, so repeated
- * map tiles meet exactly at every edge and only visible cells are rasterised.
+ * This equirectangular atlas reuses the globe's spherical elevation field.
+ * The polar margins collapse to a shared, longitude-independent seam so the
+ * navigable map can wrap in both axes. Only visible repeated cells are drawn.
  */
 import { terrainColour } from './habitat-terrain-stream.js';
 import { planetaryGlobalSurfaceElevation } from './planetary-renderer.js';
