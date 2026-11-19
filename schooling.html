@@ -1155,7 +1155,8 @@ function drawPlanetaryMapOverlay(focus,localWorldBlend,ecologyBlend,localVisible
  const opacity=smooth(.08,.34,localWorldBlend)*(1-(localVisible?smooth(.04,.92,ecologyBlend):0));
  if(opacity<=.001)return;
  const mapFocus=geographicToMap(focus.longitude,focus.latitude);
- const meshes=[...(habitatTerrainStream?.getVisibleMeshes?.()??[]),...(previousHabitatTerrainStream?.getVisibleMeshes?.()??[])];
+ const currentMeshes=habitatTerrainStream?.getVisibleMeshes?.()??[];
+ const meshes=currentMeshes.length?currentMeshes:(previousHabitatTerrainStream?.getVisibleMeshes?.()??[]);
  drawPlanetaryMap(ctx,viewWidth,viewHeight,{focus:mapFocus,zoom:Math.max(1,currentWorldScale.relativeZoom/.4),opacity,terrainMeshes:meshes,planetaryFrame});
 }
 addEventListener('pagehide',()=>{habitatTerrainStream?.dispose();previousHabitatTerrainStream?.dispose();},{once:true});
