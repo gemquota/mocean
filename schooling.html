@@ -173,10 +173,12 @@ function pointerDistance(){const points=pointerPoints();return points.length<2?0
 function pointerAngle(){const points=pointerPoints();return points.length<2?0:Math.atan2(points[1].y-points[0].y,points[1].x-points[0].x);}
 function pointerCentre(){const points=pointerPoints();return points.length<2?{x:0,y:0}:{x:(points[0].x+points[1].x)*.5,y:(points[0].y+points[1].y)*.5};}
 function resetPlanetaryAnchor(nextFocus){
+ const cameraOffset={x:camera.p.x-camera.target.x,y:camera.p.y-camera.target.y,z:camera.p.z-camera.target.z};
+ const baseOffset={x:baseCameraPosition.x-camera.target.x,y:baseCameraPosition.y-camera.target.y,z:baseCameraPosition.z-camera.target.z};
  planetaryFrame=createPlanetaryWorldFrame({anchor:nextFocus,radius:PLANETARY_WORLD_RADIUS});
  camera.target.x=0;camera.target.y=0;camera.target.z=0;
- baseCameraPosition.x=0;baseCameraPosition.y=14.6;baseCameraPosition.z=54;
- camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;
+ camera.p.x=cameraOffset.x;camera.p.y=cameraOffset.y;camera.p.z=cameraOffset.z;
+ baseCameraPosition.x=baseOffset.x;baseCameraPosition.y=baseOffset.y;baseCameraPosition.z=baseOffset.z;
  planetYaw=0;planetPitch=0;lastTerrainFocusKey='';
  updateTerrainStreamsForCamera();
 }
@@ -186,7 +188,8 @@ function rotatePlanetaryView(deltaYaw,deltaPitch){
  resetPlanetaryAnchor(nextFocus);
 }
 function panPlanetaryMap(dx,dy){
- const focus=geographicToMap(planetaryFrame.anchor.longitude,planetaryFrame.anchor.latitude);
+ const geographicFocus=planetaryFrame.localToGeographic(camera.target.x,-camera.target.z);
+ const focus=geographicToMap(geographicFocus.longitude,geographicFocus.latitude);
  const next=panPlanetMap(focus,dx,dy,viewWidth,viewHeight,Math.max(1,(currentWorldScale?.relativeZoom??.4)/.4));
  resetPlanetaryAnchor(mapToGeographic(next.u,next.v));
 }
@@ -1115,7 +1118,7 @@ function render(){
  const terrainMeshes=handoff.planetOpacity>.001?(currentPlanetMeshes.length?currentPlanetMeshes:previousPlanetMeshes):[];
  drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,scale:planetScale*handoff.planetScaleMultiplier,opacity:handoff.planetOpacity,time:school.time,terrainMeshes,planetaryFrame});
  modelCanvas.style.opacity=String(ecologyAlpha);
- if(!handoff.localVisible){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);drawPlanetaryMapOverlay(planetaryFocus,localWorldBlend,ecologyAlpha);return;}
+ if(!handoff.localVisible){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);drawPlanetaryMapOverlay(planetaryFocus,localWorldBlend,ecologyAlpha,handoff.localVisible);return;}
  ctx.save();
  drawSeabed();
  if(currentWorldScale.showLocalEcology){
@@ -1145,11 +1148,11 @@ function render(){
  }
  try{updateMarineCamera();if(terrainRenderer&&terrainScene&&modelCamera){try{terrainRenderer.render(terrainScene,modelCamera);}catch(terrainError){terrainRenderer.dispose();terrainRenderer=null;terrainScene=null;habitatTerrainStream?.detachRenderer();previousHabitatTerrainStream?.detachRenderer();console.warn('Voxel terrain renderer failed; using Canvas terrain fallback.',terrainError);}}if(modelRenderer&&!modelLayerLost){for(const batch of marineBatches.values())batch.group.visible=currentWorldScale.showIndividualAnimals;modelRenderer.render(modelScene,modelCamera);}}catch(error){disableMarineModelLayer(error);}
  ctx.restore();
- drawPlanetaryMapOverlay(planetaryFocus,localWorldBlend,ecologyAlpha);
+ drawPlanetaryMapOverlay(planetaryFocus,localWorldBlend,ecologyAlpha,handoff.localVisible);
 }
-function drawPlanetaryMapOverlay(focus,localWorldBlend,ecologyBlend){
+function drawPlanetaryMapOverlay(focus,localWorldBlend,ecologyBlend,localVisible){
  const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a)));return t*t*(3-2*t);};
- const opacity=smooth(.08,.34,localWorldBlend)*(1-smooth(.04,.92,ecologyBlend));
+ const opacity=smooth(.08,.34,localWorldBlend)*(1-(localVisible?smooth(.04,.92,ecologyBlend):0));
  if(opacity<=.001)return;
  const mapFocus=geographicToMap(focus.longitude,focus.latitude);
  const meshes=[...(habitatTerrainStream?.getVisibleMeshes?.()??[]),...(previousHabitatTerrainStream?.getVisibleMeshes?.()??[])];
