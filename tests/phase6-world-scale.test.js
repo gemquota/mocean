@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWorldScaleController,normaliseWorldZoom,screenDragToHabitatPan,planetScaleForZoom,planetaryHandoffForBlend,geographyCameraForBlend} from '../src/phase6/world-scale.js';
+import {createWorldScaleController,normaliseWorldZoom,screenDragToHabitatPan,planetScaleForZoom,planetaryHandoffForBlend,geographyCameraForBlend,INITIAL_PLANETARY_RELATIVE_ZOOM} from '../src/phase6/world-scale.js';
 test('world zoom normalisation preserves the planetary range below local fit',()=>{
  assert.equal(normaliseWorldZoom(2,1),2);assert.equal(normaliseWorldZoom(4,2),2);assert.equal(normaliseWorldZoom(.5,1),.5);assert.throws(()=>normaliseWorldZoom(1,0),RangeError);
 });
@@ -12,12 +12,12 @@ test('planet, geology and ecology expose three presentation tiers without a mand
 });
 test('planet zoom policy uses hysteresis while the presentation hand-off never double-renders surfaces',()=>{
  const scales=createWorldScaleController();assert.equal(scales.update(.12).level,'planet');assert.equal(scales.update(.19).level,'planet');const blend=scales.update(.19);assert.ok(blend.planetBlend>0&&blend.localWorldBlend>0);assert.equal(blend.streamLocalWorld,false);
- const before=planetaryHandoffForBlend(.34),middle=planetaryHandoffForBlend(.52),after=planetaryHandoffForBlend(.70);
+ const before=planetaryHandoffForBlend(.46),middle=planetaryHandoffForBlend(.52),after=planetaryHandoffForBlend(.58);
  assert.equal(before.planetOpacity,1);assert.equal(before.localOpacity,0);
  assert.equal(middle.planetOpacity,0);assert.equal(middle.localOpacity,0);
  assert.equal(after.planetOpacity,0);assert.equal(after.localOpacity,1);
- assert.ok(planetaryHandoffForBlend(.43).planetOpacity<1);
- assert.ok(planetaryHandoffForBlend(.61).localOpacity>0);
+ assert.ok(planetaryHandoffForBlend(.49).planetOpacity<1);
+ assert.ok(planetaryHandoffForBlend(.55).localOpacity>0);
  assert.ok(after.planetScaleMultiplier>before.planetScaleMultiplier);
  assert.throws(()=>planetaryHandoffForBlend(NaN),RangeError);assert.equal(scales.update(.41).level,'geology');
  assert.equal(scales.update(2.06).level,'geology');assert.equal(scales.update(1.9).level,'geology');assert.equal(scales.update(1.77).level,'geology');assert.equal(scales.update(4.26).level,'ecology');assert.equal(scales.update(3.9).level,'ecology');assert.equal(scales.update(3.71).level,'geology');
@@ -43,4 +43,9 @@ test('planet apparent size tracks zoom and remains bounded for deep-space overvi
  assert.equal(planetScaleForZoom(.5),1);
  assert.equal(planetScaleForZoom(.0001),.035);
  assert.throws(()=>planetScaleForZoom(0),RangeError);
+});
+
+test('planetary handoff begins at a useful whole-globe startup zoom',()=>{
+ assert.ok(INITIAL_PLANETARY_RELATIVE_ZOOM<.14);
+ assert.equal(createWorldScaleController().update(INITIAL_PLANETARY_RELATIVE_ZOOM).level,'planet');
 });
