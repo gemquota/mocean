@@ -31,12 +31,10 @@ function valueNoise3(x,y,z){
   return mix(mix(mix(a,b,fx),mix(c,d,fx),fy),mix(mix(e,f,fx),mix(g,h,fx),fy),fz);
 }
 
-/** Stable [0,1] spherical elevation field; periodic across every longitude. */
-export function planetarySurfaceElevation(lon,lat){
+/** Stable global spherical elevation field, independent of the active habitat patch. */
+export function planetaryGlobalSurfaceElevation(lon,lat){
   if(!Number.isFinite(lon)||!Number.isFinite(lat))throw new RangeError('Planet coordinates must be finite.');
   const c=Math.cos(lat),x=c*Math.sin(lon),y=Math.sin(lat),z=c*Math.cos(lon);
-  // Warp the spherical domain before sampling so coastlines do not read as
-  // concentric blobs. Sampling XYZ on the unit sphere keeps the field closed.
   const warpX=(valueNoise3(x*1.35+31,y*1.35-12,z*1.35+7)-.5)*.82;
   const warpY=(valueNoise3(x*1.35-19,y*1.35+23,z*1.35-5)-.5)*.82;
   const warpZ=(valueNoise3(x*1.35+4,y*1.35+8,z*1.35+29)-.5)*.82;
@@ -44,18 +42,17 @@ export function planetarySurfaceElevation(lon,lat){
   const broad=valueNoise3(px*2.15+11,py*2.15-7,pz*2.15+3);
   const regional=valueNoise3(px*5.1-4,py*5.1+9,pz*5.1+13);
   const coastal=valueNoise3(px*12.4+17,py*12.4+2,pz*12.4-8);
-  // Ridged multifractal detail forms elongated mountain systems rather than
-  // isolated high-frequency speckle. It only lifts established continental
-  // interiors and regional uplands.
   const ridgeNoise=valueNoise3(px*8.6-13,py*8.6+17,pz*8.6+6);
   const ridges=1-Math.abs(2*ridgeNoise-1);
   const mountainMask=smoothstep(.53,.69,broad)*(.35+.65*smoothstep(.47,.72,regional));
-  const globalElevation=clamp(broad*.76+regional*.19+coastal*.05+ridges*.14*mountainMask,0,1);
+  return clamp(broad*.76+regional*.19+coastal*.05+ridges*.14*mountainMask,0,1);
+}
 
-  // The overview and the streamed habitat share one bathymetric field around
-  // the geographic anchor. Convert the spherical point through the same
-  // logarithmic tangent mapping used by planetary navigation, then sample the
-  // exact seabed function used by voxel workers and creature contact.
+/** Stable [0,1] spherical elevation with the exact active seabed field near the anchor. */
+export function planetarySurfaceElevation(lon,lat){
+  if(!Number.isFinite(lon)||!Number.isFinite(lat))throw new RangeError('Planet coordinates must be finite.');
+  const globalElevation=planetaryGlobalSurfaceElevation(lon,lat);
+  const c=Math.cos(lat),x=c*Math.sin(lon),y=Math.sin(lat),z=c*Math.cos(lon);
   const angularDistance=Math.acos(clamp(z,-1,1));
   if(angularDistance>=LOCAL_FIELD_BLEND_END)return globalElevation;
   const sine=Math.sin(angularDistance);
