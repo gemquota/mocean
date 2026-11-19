@@ -2,13 +2,18 @@
  * Procedural planetary overview with the active voxel habitat patch draped
  * onto the same geographic frame used by local terrain streaming.
  *
- * Global geography is sampled as 3D noise on the unit sphere. Unlike a
- * longitude/latitude noise map, this has no seam at +/- PI and no polar
- * coordinate singularity.
+ * Global geography is sampled as 3D noise on the unit sphere. Near the active
+ * geographic anchor, the overview instead samples the exact local seabed field
+ * through the navigation tangent map, then smoothly returns to the global
+ * spherical field. The global field has no longitude seam or polar singularity.
  */
 import { terrainColour } from './habitat-terrain-stream.js';
+import { seabedHeight } from './seabed-height.js';
+import { PLANETARY_WORLD_RADIUS } from './planetary-navigation.js';
 
 const TAU=Math.PI*2;
+const LOCAL_FIELD_RADIUS=.45;
+const LOCAL_FIELD_BLEND_END=.8;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smoothstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
 const fade=t=>t*t*t*(t*(t*6-15)+10);
@@ -45,7 +50,21 @@ export function planetarySurfaceElevation(lon,lat){
   const ridgeNoise=valueNoise3(px*8.6-13,py*8.6+17,pz*8.6+6);
   const ridges=1-Math.abs(2*ridgeNoise-1);
   const mountainMask=smoothstep(.53,.69,broad)*(.35+.65*smoothstep(.47,.72,regional));
-  return clamp(broad*.76+regional*.19+coastal*.05+ridges*.14*mountainMask,0,1);
+  const globalElevation=clamp(broad*.76+regional*.19+coastal*.05+ridges*.14*mountainMask,0,1);
+
+  // The overview and the streamed habitat share one bathymetric field around
+  // the geographic anchor. Convert the spherical point through the same
+  // logarithmic tangent mapping used by planetary navigation, then sample the
+  // exact seabed function used by voxel workers and creature contact.
+  const angularDistance=Math.acos(clamp(z,-1,1));
+  if(angularDistance>=LOCAL_FIELD_BLEND_END)return globalElevation;
+  const sine=Math.sin(angularDistance);
+  const east=angularDistance<1e-10?0:PLANETARY_WORLD_RADIUS*angularDistance*x/sine;
+  const north=angularDistance<1e-10?0:PLANETARY_WORLD_RADIUS*angularDistance*y/sine;
+  const localHeight=seabedHeight(east,north);
+  const localElevation=clamp(.42+(localHeight+8.65)*.012,.36,.48);
+  const localWeight=1-smoothstep(LOCAL_FIELD_RADIUS,LOCAL_FIELD_BLEND_END,angularDistance);
+  return globalElevation+(localElevation-globalElevation)*localWeight;
 }
 
 const SURFACE_CELLS=(()=>{

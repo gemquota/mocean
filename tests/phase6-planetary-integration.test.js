@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { planetarySurfaceElevation } from '../src/phase6/planetary-renderer.js';
+import { seabedHeight } from '../src/phase6/seabed-height.js';
+import { PLANETARY_WORLD_RADIUS } from '../src/phase6/planetary-navigation.js';
 
 const source = await readFile(new URL('../schooling.html', import.meta.url), 'utf8');
 
@@ -55,8 +57,16 @@ test('planet and local presentation use separate canvas layers so the globe is n
  assert.doesNotMatch(source,/useWebGLPlanet/);
 });
 
-test('the globe is rendered without a flat streamed-terrain sheet clipping through its sphere',()=>{
- assert.match(source,/terrainMeshes:\[\],planetaryFrame:null/);
+test('local terrain prefetch begins before the globe-to-surface handoff',()=>{
+ const prefetch=source.indexOf('if(currentWorldScale.streamLocalWorld)requestTerrainLod(currentWorldScale.terrainCellSize)');
+ const handoff=source.indexOf('if(!handoff.localVisible)');
+ assert.ok(prefetch>=0&&handoff>prefetch,'terrain must be requested while the planetary globe is still visible');
+});
+test('planetary overview drapes the live streamed habitat mesh onto the globe',async()=>{
+ const scale=await readFile(new URL('../src/phase6/world-scale.js',import.meta.url),'utf8');
+ assert.match(source,/terrainMeshes,planetaryFrame/);
+ assert.match(source,/getVisibleMeshes\?\.\(\)/);
+ assert.match(scale,/streamLocalWorld:localWorldBlend>\.08/);
 });
 test('dragging the planet moves the local camera target and refreshes streamed terrain focus',()=>{
  assert.match(source,/planetaryFrame\.geographicToLocal\(nextFocus\)/);
@@ -71,7 +81,7 @@ test('planetary handoff smoothly rotates the local camera without terrain-sheet 
  const navigation=await readFile(new URL('../src/phase6/planetary-navigation.js',import.meta.url),'utf8');
  assert.match(source,/blendCameraToLocalSurface\(\{target:camera\.target,localPosition:localCameraPosition,blend:geographyCamera\.rotationBlend\}\)/);
  assert.match(source,/terrainCanvas\.style\.filter=geographyCamera\.terrainBlur/);
- assert.match(source,/terrainMeshes:\[\],planetaryFrame:null/);
+ assert.match(source,/terrainMeshes,planetaryFrame/);
  assert.match(navigation,/export function blendCameraToLocalSurface/);
 });
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
@@ -102,6 +112,23 @@ test('planetary elevation contains warped continental masses and elevated mounta
  assert.ok(max-min>.2,'global relief should not collapse to a nearly uniform field');
  assert.ok(land>samples*.08&&land<samples*.8,'the field should contain substantial but non-total continental coverage');
  assert.ok(max>.72,'continental interiors should support elevated mountain regions');
+});
+
+
+test('planetary overview samples the exact local seabed field at its geographic anchor',()=>{
+ const expected=.42+(seabedHeight(0,0)+8.65)*.012;
+ assert.ok(Math.abs(planetarySurfaceElevation(0,0)-expected)<1e-12);
+});
+test('planetary and local bathymetry agree throughout the active tangent patch',()=>{
+ const radius=PLANETARY_WORLD_RADIUS;
+ for(const [east,north] of [[0,0],[12,-8],[-24,19],[42,31],[-55,-35]]){
+  const distance=Math.hypot(east,north),angle=distance/radius;
+  const longitude=distance<1e-12?0:Math.atan2(east/distance*Math.sin(angle),Math.cos(angle));
+  const latitude=distance<1e-12?0:Math.asin(Math.sin(angle)*north/distance);
+  const actual=planetarySurfaceElevation(longitude,latitude);
+  const expected=.42+(seabedHeight(east,north)+8.65)*.012;
+  assert.ok(Math.abs(actual-expected)<1e-10,'shared bathymetry mismatch at '+east+', '+north);
+ }
 });
 
 test('planetary surface elevation is deterministic and longitude-seam continuous',()=>{

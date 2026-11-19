@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHabitatVoxelTerrainStream, terrainColour } from '../src/phase6/habitat-terrain-stream.js';
+import { createHabitatVoxelTerrainStream, terrainColour, terrainDetailForCellSize } from '../src/phase6/habitat-terrain-stream.js';
 
 class FakeWorker {
   static instances=[];
@@ -175,6 +175,22 @@ test('planetary streaming can move beyond local habitat bounds while retaining a
     assert.ok(stream.stats.pending<=11,'two in-flight obsolete worker jobs plus the nine-chunk replacement window are bounded');
     stream.dispose();
   });
+});
+
+
+test('geology and ecology LODs progressively reveal material detail on the same terrain field',()=>{
+ const coarse=terrainDetailForCellSize(3.2),geology=terrainDetailForCellSize(1.6),ecology=terrainDetailForCellSize(.8);
+ assert.equal(coarse,0);
+ assert.equal(geology,.5);
+ assert.equal(ecology,1);
+ const normal=[0,1,0],position=[12,-8,7];
+ const coarseColour=terrainColour(normal,position,coarse);
+ const geologyColour=terrainColour(normal,position,geology);
+ const ecologyColour=terrainColour(normal,position,ecology);
+ assert.notEqual(coarseColour,geologyColour);
+ assert.notEqual(geologyColour,ecologyColour);
+ assert.notEqual(coarseColour,ecologyColour);
+ assert.throws(()=>terrainDetailForCellSize(2),RangeError);
 });
 
 test('voxel terrain colour distinguishes sediment, exposed strata and steep rock faces',()=>{

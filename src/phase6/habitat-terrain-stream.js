@@ -16,14 +16,20 @@ const biomeCache = new Map();
 
 function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
 
-export function terrainColour(normal,position){
+export function terrainDetailForCellSize(cellSize){
+  if(![0.8,1.6,3.2].includes(cellSize))throw new RangeError('Unsupported habitat terrain cell size.');
+  return clamp(Math.log2(3.2/cellSize)/2,0,1);
+}
+
+export function terrainColour(normal,position,detail=1){
+  const detailLevel=clamp(detail,0,1);
   const up=clamp(normal[1],0,1);
   const slope=clamp(1-up,0,1);
   const light=Math.max(0,normal[0]*-.28+normal[1]*.82+normal[2]*.49);
   const sediment=clamp((up-.68)*2.6,0,1);
   const height=clamp((position[1]+11.5)/5,0,1);
   const grain=.5+.5*Math.sin(position[0]*.37+position[2]*.19)*Math.cos(position[2]*.31-position[0]*.23);
-  const strata=Math.pow(Math.max(0,Math.sin(position[1]*2.15+position[0]*.075+position[2]*.045)),10);
+  const strata=Math.pow(Math.max(0,Math.sin(position[1]*2.15+position[0]*.075+position[2]*.045)),10+detailLevel*6);
   const biomeKey=[Math.round(position[0]*.5),Math.round(position[2]*.5),Math.round(position[1]*2),Math.round(up*4)].join(':');
   let biome=biomeCache.get(biomeKey);
   if(!biome){
@@ -55,13 +61,15 @@ export function terrainColour(normal,position){
   const bandPhase=position[1]*1.65+Math.sin(position[0]*.045+position[2]*.052)*.72;
   const band=Math.pow(Math.max(0,Math.sin(bandPhase)),14);
   const cliff=clamp((slope-.16)/.62,0,1);
-  const weathering=.82+grain*.12+mineral*.13+strata*.075;
+  const micrograin=.5+.5*Math.sin(position[0]*.91+position[2]*.77)*Math.cos(position[2]*.83-position[0]*.69);
+  const weathering=.82+grain*(.12+detailLevel*.045)+mineral*(.13+detailLevel*.075)+strata*(.075+detailLevel*.09);
   const illumination=(.58+light*.48)*(1-cliff*.22)*(.94+height*.06);
   return 'rgb('+base.map((value,index)=>{
     const mineralTint=[7,10,9][index]*mineral;
-    const bandTint=[10,13,11][index]*band;
+    const bandTint=[10,13,11][index]*band*(.65+detailLevel*.8);
+    const microTint=(micrograin-.5)*detailLevel*7;
     const cliffShadow=palette.deep[index]*cliff*.14;
-    return Math.round(clamp((value*weathering+mineralTint+bandTint-cliffShadow)*illumination,5,225));
+    return Math.round(clamp((value*weathering+mineralTint+bandTint+microTint-cliffShadow)*illumination,5,225));
   }).join(',')+')';
 }
 
@@ -120,7 +128,8 @@ export function createHabitatVoxelTerrainStream({
     for(let i=0;i<positions.length;i+=3){
       colour.setStyle(terrainColour(
         [normals[i],normals[i+1],normals[i+2]],
-        [positions[i],positions[i+1],positions[i+2]]
+        [positions[i],positions[i+1],positions[i+2]],
+        terrainDetailForCellSize(cellSize)
       ));
       colours[i]=colour.r;colours[i+1]=colour.g;colours[i+2]=colour.b;
     }
@@ -234,7 +243,7 @@ export function createHabitatVoxelTerrainStream({
         (positions[pa+2]+positions[pb+2]+positions[pc+2])/3
       ];
       const depth=(a.depth+b.depth+c.depth)/3;
-      triangles.push({a,b,c,depth,fill:terrainColour(normal,centre)});depthTotal+=depth;
+      triangles.push({a,b,c,depth,fill:terrainColour(normal,centre,terrainDetailForCellSize(cellSize))});depthTotal+=depth;
       minX=Math.min(minX,a.x,b.x,c.x);maxX=Math.max(maxX,a.x,b.x,c.x);
       minY=Math.min(minY,a.y,b.y,c.y);maxY=Math.max(maxY,a.y,b.y,c.y);
     }

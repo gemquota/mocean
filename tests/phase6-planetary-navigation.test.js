@@ -44,9 +44,9 @@ test('orbit camera pose clamps pitch and distance without changing its target', 
   assert.deepEqual(pose.target,{x:1,y:2,z:3});
 });
 
-test('planetary zoom classification adds a true outer scale above ocean view', () => {
+test('planetary zoom transitions directly from planet to geology to ecology', () => {
   assert.equal(classifyPlanetaryZoom(.08),'planet');
-  assert.equal(classifyPlanetaryZoom(.5),'ocean');
+  assert.equal(classifyPlanetaryZoom(.5),'geology');
   assert.equal(classifyPlanetaryZoom(2.4),'geology');
   assert.equal(classifyPlanetaryZoom(5),'ecology');
   assert.throws(()=>classifyPlanetaryZoom(0),RangeError);

@@ -6,15 +6,15 @@
  * between those coordinates and the spherical surface without changing local
  * simulation coordinates or creature state.
  */
+export const PLANETARY_WORLD_RADIUS = 250;
 const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const finite = (...values) => values.every(Number.isFinite);
 
 export const PLANET_NAVIGATION_LEVELS = Object.freeze({
-  planet: Object.freeze({ id: 'planet', minRelativeZoom: 0, maxRelativeZoom: 0.18 }),
-  ocean: Object.freeze({ id: 'ocean', minRelativeZoom: 0.18, maxRelativeZoom: 1.8 }),
-  geology: Object.freeze({ id: 'geology', minRelativeZoom: 1.8, maxRelativeZoom: 4 }),
-  ecology: Object.freeze({ id: 'ecology', minRelativeZoom: 4, maxRelativeZoom: Infinity })
+  planet: Object.freeze({ id: 'planet', minRelativeZoom: 0, maxRelativeZoom: 0.4 }),
+  geology: Object.freeze({ id: 'geology', minRelativeZoom: 0.4, maxRelativeZoom: 4.25 }),
+  ecology: Object.freeze({ id: 'ecology', minRelativeZoom: 4.25, maxRelativeZoom: Infinity })
 });
 
 export function wrapLongitude(longitude) {
@@ -143,9 +143,8 @@ export function classifyPlanetaryZoom(relativeZoom) {
   if (!Number.isFinite(relativeZoom) || relativeZoom <= 0) {
     throw new RangeError('relativeZoom must be finite and positive.');
   }
-  if (relativeZoom < 0.18) return 'planet';
-  if (relativeZoom < 1.8) return 'ocean';
-  if (relativeZoom < 4) return 'geology';
+  if (relativeZoom < 0.4) return 'planet';
+  if (relativeZoom < 4.25) return 'geology';
   return 'ecology';
 }
 
