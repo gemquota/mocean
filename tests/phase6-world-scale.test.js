@@ -22,14 +22,13 @@ test('planet zoom policy uses hysteresis while the presentation hand-off never d
  assert.throws(()=>planetaryHandoffForBlend(NaN),RangeError);assert.equal(scales.update(.41).level,'geology');
  assert.equal(scales.update(2.06).level,'geology');assert.equal(scales.update(1.9).level,'geology');assert.equal(scales.update(1.77).level,'geology');assert.equal(scales.update(4.26).level,'ecology');assert.equal(scales.update(3.9).level,'ecology');assert.equal(scales.update(3.71).level,'geology');
 });
-test('camera orientation changes continuously across the full zoom handoff',()=>{
- const start=geographyCameraForBlend(0),early=geographyCameraForBlend(.25),middle=geographyCameraForBlend(.5),late=geographyCameraForBlend(.75),end=geographyCameraForBlend(1);
- assert.equal(start.rotationBlend,0);
- assert.ok(start.rotationBlend<early.rotationBlend&&early.rotationBlend<middle.rotationBlend);
- assert.ok(middle.rotationBlend<late.rotationBlend&&late.rotationBlend<end.rotationBlend);
- assert.equal(end.rotationBlend,1);
- assert.equal(start.terrainBlur,0);assert.equal(end.terrainBlur,0);
- assert.equal(start.underwaterBlend,0);assert.equal(end.underwaterBlend,1);
+test('camera orientation and elevation remain invariant across the planetary zoom handoff',()=>{
+ for(const blend of [0,.1,.25,.5,.75,1]){
+  const pose=geographyCameraForBlend(blend);
+  assert.equal(pose.rotationBlend,0);
+  assert.equal(pose.underwaterBlend,0);
+  assert.equal(pose.terrainBlur,0);
+ }
  assert.throws(()=>geographyCameraForBlend(NaN),RangeError);
 });
 test('screen drag pans in habitat plane and compensates for shallow view elevation',()=>{
