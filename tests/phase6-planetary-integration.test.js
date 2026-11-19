@@ -158,6 +158,7 @@ test('the planetary map wraps horizontally and vertically and reuses the live ha
  assert.match(map,/export function wrapUnit/);
  assert.match(map,/export function panPlanetMap/);
  assert.match(renderer,/export function planetaryMapElevation/);
- assert.match(renderer,/for\(let tileY=-2;tileY<=2;tileY\+\+\)/);
- assert.match(renderer,/terrainMeshes,planetaryFrame/);
+ assert.match(renderer,/for\s*\(let tileY\s*=\s*-2;\s*tileY\s*<=\s*2;\s*tileY\+\+\)/);
+ assert.match(renderer,/terrainMeshes\s*=\s*\[\]/);
+ assert.match(renderer,/planetaryFrame\s*=\s*null/);
 });
