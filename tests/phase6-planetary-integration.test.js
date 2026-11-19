@@ -62,10 +62,11 @@ test('local terrain prefetch begins before the globe-to-surface handoff',()=>{
  const handoff=source.indexOf('if(!handoff.localVisible)');
  assert.ok(prefetch>=0&&handoff>prefetch,'terrain must be requested while the planetary globe is still visible');
 });
-test('planetary overview drapes the live streamed habitat mesh onto the globe',()=>{
+test('planetary overview drapes the live streamed habitat mesh onto the globe',async()=>{
+ const scale=await readFile(new URL('../src/phase6/world-scale.js',import.meta.url),'utf8');
  assert.match(source,/terrainMeshes,planetaryFrame/);
  assert.match(source,/getVisibleMeshes\?\.\(\)/);
- assert.match(source,/streamLocalWorld:localWorldBlend>\.08/);
+ assert.match(scale,/streamLocalWorld:localWorldBlend>\.08/);
 });
 test('dragging the planet moves the local camera target and refreshes streamed terrain focus',()=>{
  assert.match(source,/planetaryFrame\.geographicToLocal\(nextFocus\)/);
