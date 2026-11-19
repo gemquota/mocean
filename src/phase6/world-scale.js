@@ -18,8 +18,8 @@ export function geographyCameraForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Geography camera blend must be finite.');
  const t=clamp(blend,0,1);
  return Object.freeze({
-  rotationBlend:smoothstep(0,1,t),
-  underwaterBlend:smoothstep(.58,.96,t),
+  rotationBlend:0,
+  underwaterBlend:0,
   terrainBlur:0
  });
 }
