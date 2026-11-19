@@ -1081,6 +1081,7 @@ function render(){
  currentWorldScale=worldScaleController.update(normaliseWorldZoom(zoom,fitCameraZoom()));
  const localWorldBlend=currentWorldScale.localWorldBlend,planetScale=planetScaleForZoom(currentWorldScale.relativeZoom);
  const handoff=planetaryHandoffForBlend(localWorldBlend);
+  if(currentWorldScale.streamLocalWorld)requestTerrainLod(currentWorldScale.terrainCellSize);
  const geographyCamera=geographyCameraForBlend(localWorldBlend);
  // Enter geography with a slightly reduced angle, then finish rotating over
  // the first small zoom-in while the viewpoint sinks beneath the waterline.
@@ -1098,7 +1099,6 @@ function render(){
  modelCanvas.style.opacity=String(handoff.localOpacity);
  if(!handoff.localVisible){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);return;}
  ctx.save();
- if(currentWorldScale.streamLocalWorld)requestTerrainLod(currentWorldScale.terrainCellSize);
  drawSeabed();
  const ecologyAlpha=currentWorldScale.ecologyBlend;
  if(currentWorldScale.showLocalEcology){
