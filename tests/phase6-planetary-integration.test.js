@@ -68,21 +68,22 @@ test('planetary overview drapes the live streamed habitat mesh onto the globe',a
  assert.match(source,/getVisibleMeshes\?\.\(\)/);
  assert.match(scale,/streamLocalWorld:localWorldBlend>\.08/);
 });
-test('dragging the planet moves the local camera target and refreshes streamed terrain focus',()=>{
- assert.match(source,/planetaryFrame\.geographicToLocal\(nextFocus\)/);
- assert.match(source,/camera\.target\.x\+=dx;camera\.target\.z\+=dz/);
+test('planet and map navigation re-anchor the local habitat without rotating the camera',()=>{
+ assert.match(source,/function resetPlanetaryAnchor\(nextFocus\)/);
+ assert.match(source,/planetaryFrame=createPlanetaryWorldFrame\(\{anchor:nextFocus,radius:PLANETARY_WORLD_RADIUS\}\)/);
+ assert.match(source,/camera\.target\.x=0;camera\.target\.y=0;camera\.target\.z=0/);
  assert.match(source,/updateTerrainStreamsForCamera\(\)/);
 });
 
-test('planetary camera handoff refreshes the shared projection basis before rendering local geography',()=>{
- assert.match(source,/camera\.p\.x=blendedCamera\.x;camera\.p\.y=blendedCamera\.y;camera\.p\.z=blendedCamera\.z;\s*\/\/ The 2D habitat projection and the 3D render camera must share the same pose\.\s*refreshCameraBasis\(\);/);
+test('zoom handoff keeps the camera at its authored pose',()=>{
+ assert.match(source,/camera\.p\.x=baseCameraPosition\.x;camera\.p\.y=baseCameraPosition\.y;camera\.p\.z=baseCameraPosition\.z/);
+ assert.doesNotMatch(source,/blendCameraToLocalSurface\(/);
 });
-test('planetary handoff smoothly rotates the local camera without terrain-sheet foreshortening',async()=>{
- const navigation=await readFile(new URL('../src/phase6/planetary-navigation.js',import.meta.url),'utf8');
- assert.match(source,/blendCameraToLocalSurface\(\{target:camera\.target,localPosition:localCameraPosition,blend:geographyCamera\.rotationBlend\}\)/);
- assert.match(source,/terrainCanvas\.style\.filter=geographyCamera\.terrainBlur/);
- assert.match(source,/terrainMeshes,planetaryFrame/);
- assert.match(navigation,/export function blendCameraToLocalSurface/);
+test('planetary zoom unfolds into a wrapped 2D map before local ecology appears',()=>{
+ assert.match(source,/drawPlanetaryMap\(ctx,viewWidth,viewHeight/);
+ assert.match(source,/panPlanetaryMap\(dx,dy\)/);
+ assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
+ assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,localWorldBlend,ecologyAlpha\)/);
 });
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
  assert.match(source,/radius:4,prefetchRadius:5,maxChunks:128,cellSize,unbounded:true,includeStreamRocks:true/);
@@ -149,4 +150,14 @@ test('planet-to-geology handoff waits for visible terrain before beginning its s
  assert.match(source,/const terrainReady=currentPlanetMeshes\.length>0\|\|previousPlanetMeshes\.length>0/);
  assert.match(source,/handoffTarget=terrainReady&&localWorldBlend>=\.34\?1:0/);
  assert.match(source,/planetaryHandoffProgress\+=Math\.max\(-handoffStep/);
+});
+
+test('the planetary map wraps horizontally and vertically and reuses the live habitat patch',async()=>{
+ const map=await readFile(new URL('../src/phase6/planetary-map.js',import.meta.url),'utf8');
+ const renderer=await readFile(new URL('../src/phase6/planetary-map-renderer.js',import.meta.url),'utf8');
+ assert.match(map,/export function wrapUnit/);
+ assert.match(map,/export function panPlanetMap/);
+ assert.match(renderer,/export function planetaryMapElevation/);
+ assert.match(renderer,/for\(let tileY=-2;tileY<=2;tileY\+\+\)/);
+ assert.match(renderer,/terrainMeshes,planetaryFrame/);
 });
