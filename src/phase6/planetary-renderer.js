@@ -1,6 +1,6 @@
 /**
- * Procedural planetary overview with the active voxel habitat patch draped
- * onto the same geographic frame used by local terrain streaming.
+ * Procedural planetary overview. Local voxel terrain is revealed only during
+ * the globe-to-geography handoff, never overlaid on the globe surface.
  *
  * Global geography is sampled as 3D noise on the unit sphere. Near the active
  * geographic anchor, the overview instead samples the exact local seabed field
@@ -31,12 +31,10 @@ function valueNoise3(x,y,z){
   return mix(mix(mix(a,b,fx),mix(c,d,fx),fy),mix(mix(e,f,fx),mix(g,h,fx),fy),fz);
 }
 
-/** Stable [0,1] spherical elevation field; periodic across every longitude. */
-export function planetarySurfaceElevation(lon,lat){
+/** Stable global spherical elevation field, independent of the active habitat patch. */
+export function planetaryGlobalSurfaceElevation(lon,lat){
   if(!Number.isFinite(lon)||!Number.isFinite(lat))throw new RangeError('Planet coordinates must be finite.');
   const c=Math.cos(lat),x=c*Math.sin(lon),y=Math.sin(lat),z=c*Math.cos(lon);
-  // Warp the spherical domain before sampling so coastlines do not read as
-  // concentric blobs. Sampling XYZ on the unit sphere keeps the field closed.
   const warpX=(valueNoise3(x*1.35+31,y*1.35-12,z*1.35+7)-.5)*.82;
   const warpY=(valueNoise3(x*1.35-19,y*1.35+23,z*1.35-5)-.5)*.82;
   const warpZ=(valueNoise3(x*1.35+4,y*1.35+8,z*1.35+29)-.5)*.82;
@@ -44,18 +42,17 @@ export function planetarySurfaceElevation(lon,lat){
   const broad=valueNoise3(px*2.15+11,py*2.15-7,pz*2.15+3);
   const regional=valueNoise3(px*5.1-4,py*5.1+9,pz*5.1+13);
   const coastal=valueNoise3(px*12.4+17,py*12.4+2,pz*12.4-8);
-  // Ridged multifractal detail forms elongated mountain systems rather than
-  // isolated high-frequency speckle. It only lifts established continental
-  // interiors and regional uplands.
   const ridgeNoise=valueNoise3(px*8.6-13,py*8.6+17,pz*8.6+6);
   const ridges=1-Math.abs(2*ridgeNoise-1);
   const mountainMask=smoothstep(.53,.69,broad)*(.35+.65*smoothstep(.47,.72,regional));
-  const globalElevation=clamp(broad*.76+regional*.19+coastal*.05+ridges*.14*mountainMask,0,1);
+  return clamp(broad*.76+regional*.19+coastal*.05+ridges*.14*mountainMask,0,1);
+}
 
-  // The overview and the streamed habitat share one bathymetric field around
-  // the geographic anchor. Convert the spherical point through the same
-  // logarithmic tangent mapping used by planetary navigation, then sample the
-  // exact seabed function used by voxel workers and creature contact.
+/** Stable [0,1] spherical elevation with the exact active seabed field near the anchor. */
+export function planetarySurfaceElevation(lon,lat){
+  if(!Number.isFinite(lon)||!Number.isFinite(lat))throw new RangeError('Planet coordinates must be finite.');
+  const globalElevation=planetaryGlobalSurfaceElevation(lon,lat);
+  const c=Math.cos(lat),x=c*Math.sin(lon),y=Math.sin(lat),z=c*Math.cos(lon);
   const angularDistance=Math.acos(clamp(z,-1,1));
   if(angularDistance>=LOCAL_FIELD_BLEND_END)return globalElevation;
   const sine=Math.sin(angularDistance);
@@ -118,10 +115,7 @@ function polygon(ctx,corners,project,cx,cy,r){
 }
 
 /** Render a lit rotating ocean globe and the live local voxel terrain patch. */
-export function drawPlanetaryGlobe(ctx,width,height,{
-  yaw=0,pitch=0,focusLongitude=0,focusLatitude=0,scale=1,opacity=1,time=0,
-  terrainMeshes=[],planetaryFrame=null,surfaceForeshorten=1
-}={}){
+export function drawPlanetaryGlobe(ctx,width,height,{yaw=0,pitch=0,focusLongitude=0,focusLatitude=0,scale=1,opacity=1,time=0}={}){
   if(!ctx||!Number.isFinite(width)||!Number.isFinite(height)||opacity<=.001)return;
   const cx=width*.5,cy=height*.49,r=Math.min(width,height)*.335*clamp(scale,.035,3.6);
   ctx.save();
@@ -197,42 +191,6 @@ export function drawPlanetaryGlobe(ctx,width,height,{
     const front=points.reduce((sum,p)=>sum+Math.max(0,p.front),0)/4;
     ctx.globalAlpha=opacity*density*front*.22;
     ctx.fillStyle='#e5f1ed';ctx.fill();
-  }
-
-  // The same streamed mesh is bent around the sphere before the hand-off.
-  if(planetaryFrame&&terrainMeshes.length){
-    const triangles=[];let totalTriangles=0,maxAngle=0;
-    for(const mesh of terrainMeshes)totalTriangles+=Math.floor((mesh.indices?.length??0)/3);
-    const stride=Math.max(1,Math.ceil(totalTriangles/3500));
-    for(const mesh of terrainMeshes){
-      const {positions,normals,indices}=mesh;
-      if(!positions||!normals||!indices)continue;
-      for(let index=0;index<indices.length;index+=3*stride){
-        const points=[],normal=[0,0,0],position=[0,0,0];let front=0,angle=0,valid=true;
-        for(let vertex=0;vertex<3;vertex++){
-          const offset=indices[index+vertex]*3,x=positions[offset],y=positions[offset+1],z=positions[offset+2];
-          const geographic=planetaryFrame.localToGeographic(x,-z);
-          const projected=project({x:Math.cos(geographic.latitude)*Math.sin(geographic.longitude),y:Math.sin(geographic.latitude),z:Math.cos(geographic.latitude)*Math.cos(geographic.longitude)});
-          if(projected.front<=.015){valid=false;break;}
-          const unit={x:Math.cos(geographic.latitude)*Math.sin(geographic.longitude),y:Math.sin(geographic.latitude),z:Math.cos(geographic.latitude)*Math.cos(geographic.longitude)};
-          const angularDistance=Math.acos(clamp(unit.x*Math.cos(focusLatitude)*Math.sin(focusLongitude)+unit.y*Math.sin(focusLatitude)+unit.z*Math.cos(focusLatitude)*Math.cos(focusLongitude),-1,1));
-          angle+=angularDistance/3;maxAngle=Math.max(maxAngle,angularDistance);
-          const radial=1+(y+8.65)/Math.max(1,planetaryFrame.radius);
-          points.push({x:cx+projected.x*r*radial,y:cy-projected.y*r*clamp(surfaceForeshorten,.01,1)});
-          front+=projected.front/3;
-          for(let axis=0;axis<3;axis++){normal[axis]+=normals[offset+axis]/3;position[axis]+=[x,y,z][axis]/3;}
-        }
-        if(valid)triangles.push({points,front,angle,normal,position});
-      }
-    }
-    triangles.sort((a,b)=>a.front-b.front);
-    for(const triangle of triangles){
-      const edgeFade=1-smoothstep(maxAngle*.66,maxAngle*.99,triangle.angle);
-      if(edgeFade<=.005)continue;
-      ctx.globalAlpha=opacity*edgeFade*(.76+triangle.front*.2);
-      ctx.beginPath();triangle.points.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));
-      ctx.closePath();ctx.fillStyle=terrainColour(triangle.normal,triangle.position);ctx.fill();
-    }
   }
 
   // Fine reflected light on the ocean is tied to the projected sun direction.

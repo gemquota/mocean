@@ -53,7 +53,7 @@ test('voxel terrain renders as native world-space geometry in the same camera as
 test('planet and local presentation use separate canvas layers so the globe is not overwritten by the local camera render',()=>{
  assert.match(source,/terrainCanvas\.id='school-terrain'/);
  assert.match(source,/modelCanvas\.id='school-models'/);
- assert.match(source,/modelCanvas\.style\.opacity=String\(handoff\.localOpacity\)/);
+ assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
  assert.doesNotMatch(source,/useWebGLPlanet/);
 });
 
@@ -62,28 +62,29 @@ test('local terrain prefetch begins before the globe-to-surface handoff',()=>{
  const handoff=source.indexOf('if(!handoff.localVisible)');
  assert.ok(prefetch>=0&&handoff>prefetch,'terrain must be requested while the planetary globe is still visible');
 });
-test('planetary overview drapes the live streamed habitat mesh onto the globe',async()=>{
- const scale=await readFile(new URL('../src/phase6/world-scale.js',import.meta.url),'utf8');
- assert.match(source,/terrainMeshes,planetaryFrame/);
- assert.match(source,/getVisibleMeshes\?\.\(\)/);
- assert.match(scale,/streamLocalWorld:localWorldBlend>\.08/);
+test('geology terrain is revealed with the globe handoff rather than waiting for ecology zoom',()=>{
+ assert.match(source,/terrainCanvas\.style\.opacity=String\(handoff\.localOpacity\)/);
+ assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
 });
-test('dragging the planet moves the local camera target and refreshes streamed terrain focus',()=>{
- assert.match(source,/planetaryFrame\.geographicToLocal\(nextFocus\)/);
- assert.match(source,/camera\.target\.x\+=dx;camera\.target\.z\+=dz/);
+
+test('planetary globe never overlays streamed voxel triangles that can protrude through its surface',async()=>{
+ const renderer=await readFile(new URL('../src/phase6/planetary-renderer.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/terrainMeshes,planetaryFrame/);
+ assert.doesNotMatch(renderer,/terrainMeshes|planetaryFrame|surfaceForeshorten/);
+ assert.match(source,/if\(!handoff\.localVisible\|\|!terrainReady\)/);
+});
+test('planet and map navigation re-anchor the local habitat without rotating the camera',()=>{
+ assert.match(source,/function resetPlanetaryAnchor\(nextFocus\)/);
+ assert.match(source,/planetaryFrame=createPlanetaryWorldFrame\(\{anchor:nextFocus,radius:PLANETARY_WORLD_RADIUS\}\)/);
+ assert.match(source,/camera\.target\.x=0;camera\.target\.y=0;camera\.target\.z=0/);
  assert.match(source,/updateTerrainStreamsForCamera\(\)/);
 });
 
-test('planetary camera handoff refreshes the shared projection basis before rendering local geography',()=>{
- assert.match(source,/camera\.p\.x=blendedCamera\.x;camera\.p\.y=blendedCamera\.y;camera\.p\.z=blendedCamera\.z;\s*\/\/ The 2D habitat projection and the 3D render camera must share the same pose\.\s*refreshCameraBasis\(\);/);
+test('zoom handoff keeps the camera at its authored pose',()=>{
+ assert.match(source,/camera\.p\.x=baseCameraPosition\.x;camera\.p\.y=baseCameraPosition\.y;camera\.p\.z=baseCameraPosition\.z/);
+ assert.doesNotMatch(source,/blendCameraToLocalSurface\(/);
 });
-test('planetary handoff smoothly rotates the local camera without terrain-sheet foreshortening',async()=>{
- const navigation=await readFile(new URL('../src/phase6/planetary-navigation.js',import.meta.url),'utf8');
- assert.match(source,/blendCameraToLocalSurface\(\{target:camera\.target,localPosition:localCameraPosition,blend:geographyCamera\.rotationBlend\}\)/);
- assert.match(source,/terrainCanvas\.style\.filter=geographyCamera\.terrainBlur/);
- assert.match(source,/terrainMeshes,planetaryFrame/);
- assert.match(navigation,/export function blendCameraToLocalSurface/);
-});
+
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
  assert.match(source,/radius:4,prefetchRadius:5,maxChunks:128,cellSize,unbounded:true,includeStreamRocks:true/);
 });
@@ -145,8 +146,10 @@ test('planetary surface elevation is deterministic and longitude-seam continuous
 test('the initial camera opens at the planetary overview instead of skipping to geology',()=>{
  assert.match(source,/zoom=fitCameraZoom\(\)\*INITIAL_PLANETARY_RELATIVE_ZOOM/);
 });
-test('planet-to-geology handoff waits for visible terrain before beginning its short sequential fade',()=>{
- assert.match(source,/const terrainReady=currentPlanetMeshes\.length>0\|\|previousPlanetMeshes\.length>0/);
- assert.match(source,/handoffTarget=terrainReady&&localWorldBlend>=\.34\?1:0/);
+test('globe-to-geography handoff waits for streamed terrain',()=>{
+ assert.match(source,/handoffTarget=localWorldBlend>=\.34\?1:0/);
+ assert.match(source,/if\(!handoff\.localVisible\|\|!terrainReady\)/);
  assert.match(source,/planetaryHandoffProgress\+=Math\.max\(-handoffStep/);
 });
+
+
