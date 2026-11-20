@@ -79,11 +79,13 @@ test('zoom handoff keeps the camera at its authored pose',()=>{
  assert.match(source,/camera\.p\.x=baseCameraPosition\.x;camera\.p\.y=baseCameraPosition\.y;camera\.p\.z=baseCameraPosition\.z/);
  assert.doesNotMatch(source,/blendCameraToLocalSurface\(/);
 });
-test('planetary zoom unfolds into a wrapped 2D map before local ecology appears',()=>{
+test('planetary zoom crossfades from the globe to a flat map and then ecology',()=>{
  assert.match(source,/drawPlanetaryMap\(ctx,viewWidth,viewHeight/);
+ assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,handoff\.localOpacity,ecologyAlpha\)/);
+ assert.match(source,/const opacity=handoffOpacity\*\(1-Math\.max\(0,Math\.min\(1,ecologyBlend\)\)\)/);
  assert.match(source,/panPlanetaryMap\(dx,dy\)/);
  assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
- assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,localWorldBlend,ecologyAlpha,handoff\.localVisible\)/);
+ assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,handoff\.localOpacity,ecologyAlpha\)/);
 });
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
  assert.match(source,/radius:4,prefetchRadius:5,maxChunks:128,cellSize,unbounded:true,includeStreamRocks:true/);
@@ -152,13 +154,15 @@ test('planet-to-geology handoff waits for visible terrain before beginning its s
  assert.match(source,/planetaryHandoffProgress\+=Math\.max\(-handoffStep/);
 });
 
-test('the planetary map wraps horizontally and vertically and reuses the live habitat patch',async()=>{
+test('the planetary map is a cached flat atlas repeated across the viewport',async()=>{
  const map=await readFile(new URL('../src/phase6/planetary-map.js',import.meta.url),'utf8');
  const renderer=await readFile(new URL('../src/phase6/planetary-map-renderer.js',import.meta.url),'utf8');
  assert.match(map,/export function wrapUnit/);
  assert.match(map,/export function panPlanetMap/);
  assert.match(renderer,/export function planetaryMapElevation/);
- assert.match(renderer,/for\s*\(let tileY\s*=\s*-2;\s*tileY\s*<=\s*2;\s*tileY\+\+\)/);
- assert.match(renderer,/terrainMeshes\s*=\s*\[\]/);
- assert.match(renderer,/planetaryFrame\s*=\s*null/);
+ assert.match(renderer,/const MAP_WIDTH = 512/);
+ assert.match(renderer,/const MAP_HEIGHT = 256/);
+ assert.match(renderer,/getMapTexture/);
+ assert.match(renderer,/ctx\.drawImage\(texture,left,top,mapWidth,mapHeight\)/);
+ assert.doesNotMatch(renderer,/terrainMeshes|planetaryFrame/);
 });
