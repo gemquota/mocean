@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { planetaryMapElevation } from '../src/phase6/planetary-map-renderer.js';
 import { planetarySurfaceElevation } from '../src/phase6/planetary-renderer.js';
 
-test('planetary map elevation is continuous across both wrapped edges', () => {
+test('planetary map wraps longitude without wrapping the poles', () => {
   for (let value = 0; value <= 1; value += .071) {
     assert.ok(Math.abs(planetaryMapElevation(0, value) - planetaryMapElevation(1, value)) < 1e-12);
-    assert.ok(Math.abs(planetaryMapElevation(value, 0) - planetaryMapElevation(value, 1)) < 1e-12);
   }
+  assert.equal(planetaryMapElevation(.37, -1), planetaryMapElevation(.37, 0));
+  assert.equal(planetaryMapElevation(.37, 2), planetaryMapElevation(.37, 1));
 });
 
 test('planetary map contains varied ocean, shelf and land elevations', () => {
@@ -24,15 +25,12 @@ test('planetary map contains varied ocean, shelf and land elevations', () => {
   assert.ok(land > 100 && land < 1800);
 });
 
-test('the flat atlas preserves spherical geography outside its seamless polar margins', () => {
-  for (const latitude of [-1.2, -.8, -.3, 0, .4, .9, 1.2]) {
+test('flat map samples the same spherical geography, including the true polar edges', () => {
+  for (const latitude of [-Math.PI / 2, -1.2, -.8, -.3, 0, .4, .9, 1.2, Math.PI / 2]) {
     for (const longitude of [-2.4, -1.1, 0, 1.3, 2.7]) {
       const u = longitude / (Math.PI * 2) + .5;
       const v = .5 - latitude / Math.PI;
       assert.ok(Math.abs(planetaryMapElevation(u, v) - planetarySurfaceElevation(longitude, latitude)) < 1e-12);
     }
-  }
-  for (let u = 0; u <= 1; u += .13) {
-    assert.ok(Math.abs(planetaryMapElevation(u, 0) - planetaryMapElevation(u, 1)) < 1e-12);
   }
 });
