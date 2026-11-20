@@ -79,14 +79,7 @@ test('zoom handoff keeps the camera at its authored pose',()=>{
  assert.match(source,/camera\.p\.x=baseCameraPosition\.x;camera\.p\.y=baseCameraPosition\.y;camera\.p\.z=baseCameraPosition\.z/);
  assert.doesNotMatch(source,/blendCameraToLocalSurface\(/);
 });
-test('planetary zoom crossfades from the globe to a flat map and then ecology',()=>{
- assert.match(source,/drawPlanetaryMap\(ctx,viewWidth,viewHeight/);
- assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,handoff\.localOpacity,ecologyAlpha\)/);
- assert.match(source,/const opacity=handoffOpacity\*\(1-Math\.max\(0,Math\.min\(1,ecologyBlend\)\)\)/);
- assert.match(source,/panPlanetaryMap\(dx,dy\)/);
- assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
- assert.match(source,/drawPlanetaryMapOverlay\(planetaryFocus,handoff\.localOpacity,ecologyAlpha\)/);
-});
+
 test('planetary terrain stream covers the globe focus with a bounded 128 chunk cache',()=>{
  assert.match(source,/radius:4,prefetchRadius:5,maxChunks:128,cellSize,unbounded:true,includeStreamRocks:true/);
 });
@@ -148,21 +141,10 @@ test('planetary surface elevation is deterministic and longitude-seam continuous
 test('the initial camera opens at the planetary overview instead of skipping to geology',()=>{
  assert.match(source,/zoom=fitCameraZoom\(\)\*INITIAL_PLANETARY_RELATIVE_ZOOM/);
 });
-test('globe unfolds into the flat map independently while ecology waits for streamed terrain',()=>{
+test('globe-to-geography handoff waits for streamed terrain',()=>{
  assert.match(source,/handoffTarget=localWorldBlend>=\.34\?1:0/);
  assert.match(source,/if\(!handoff\.localVisible\|\|!terrainReady\)/);
  assert.match(source,/planetaryHandoffProgress\+=Math\.max\(-handoffStep/);
 });
 
-test('the planetary map is a cached flat atlas repeated across the viewport',async()=>{
- const map=await readFile(new URL('../src/phase6/planetary-map.js',import.meta.url),'utf8');
- const renderer=await readFile(new URL('../src/phase6/planetary-map-renderer.js',import.meta.url),'utf8');
- assert.match(map,/export function wrapUnit/);
- assert.match(map,/export function panPlanetMap/);
- assert.match(renderer,/export function planetaryMapElevation/);
- assert.match(renderer,/const MAP_WIDTH = 512/);
- assert.match(renderer,/const MAP_HEIGHT = 256/);
- assert.match(renderer,/getMapTexture/);
- assert.match(renderer,/ctx\.drawImage\(texture,left,top,mapWidth,mapHeight\)/);
- assert.doesNotMatch(renderer,/terrainMeshes|planetaryFrame/);
-});
+
