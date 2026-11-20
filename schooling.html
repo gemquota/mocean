@@ -1102,7 +1102,7 @@ function render(){
  camera.p.x=baseCameraPosition.x;camera.p.y=baseCameraPosition.y;camera.p.z=baseCameraPosition.z;
  refreshCameraBasis();
  const ecologyAlpha=currentWorldScale.ecologyBlend;
- terrainCanvas.style.opacity=String(ecologyAlpha);
+ terrainCanvas.style.opacity=String(handoff.localOpacity);
  terrainCanvas.style.filter='none';
  const planetaryFocus=planetaryFrame.localToGeographic(camera.target.x,-camera.target.z);
  const terrainMeshes=handoff.planetOpacity>.001?(currentPlanetMeshes.length?currentPlanetMeshes:previousPlanetMeshes):[];
