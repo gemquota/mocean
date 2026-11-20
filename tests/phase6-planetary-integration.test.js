@@ -62,6 +62,11 @@ test('local terrain prefetch begins before the globe-to-surface handoff',()=>{
  const handoff=source.indexOf('if(!handoff.localVisible)');
  assert.ok(prefetch>=0&&handoff>prefetch,'terrain must be requested while the planetary globe is still visible');
 });
+test('geology terrain is revealed with the globe handoff rather than waiting for ecology zoom',()=>{
+ assert.match(source,/terrainCanvas\.style\.opacity=String\(handoff\.localOpacity\)/);
+ assert.match(source,/modelCanvas\.style\.opacity=String\(ecologyAlpha\)/);
+});
+
 test('planetary globe never overlays streamed voxel triangles that can protrude through its surface',async()=>{
  const renderer=await readFile(new URL('../src/phase6/planetary-renderer.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/terrainMeshes,planetaryFrame/);
