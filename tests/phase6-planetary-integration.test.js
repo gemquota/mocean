@@ -148,9 +148,9 @@ test('planetary surface elevation is deterministic and longitude-seam continuous
 test('the initial camera opens at the planetary overview instead of skipping to geology',()=>{
  assert.match(source,/zoom=fitCameraZoom\(\)\*INITIAL_PLANETARY_RELATIVE_ZOOM/);
 });
-test('planet-to-geology handoff waits for visible terrain before beginning its short sequential fade',()=>{
- assert.match(source,/const terrainReady=currentPlanetMeshes\.length>0\|\|previousPlanetMeshes\.length>0/);
- assert.match(source,/handoffTarget=terrainReady&&localWorldBlend>=\.34\?1:0/);
+test('globe unfolds into the flat map independently while ecology waits for streamed terrain',()=>{
+ assert.match(source,/handoffTarget=localWorldBlend>=\.34\?1:0/);
+ assert.match(source,/if\(!handoff\.localVisible\|\|!terrainReady\)/);
  assert.match(source,/planetaryHandoffProgress\+=Math\.max\(-handoffStep/);
 });
 
