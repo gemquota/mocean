@@ -1106,7 +1106,7 @@ function render(){
  terrainCanvas.style.filter='none';
  const planetaryFocus=planetaryFrame.localToGeographic(camera.target.x,-camera.target.z);
  const terrainMeshes=handoff.planetOpacity>.001?(currentPlanetMeshes.length?currentPlanetMeshes:previousPlanetMeshes):[];
- drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,scale:planetScale*handoff.planetScaleMultiplier,opacity:handoff.planetOpacity,time:school.time,terrainMeshes,planetaryFrame});
+ drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,scale:planetScale*handoff.planetScaleMultiplier,opacity:handoff.planetOpacity,time:school.time});
  modelCanvas.style.opacity=String(ecologyAlpha);
  if(!handoff.localVisible||!terrainReady){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);return;}
  ctx.save();
