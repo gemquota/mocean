@@ -62,11 +62,11 @@ test('local terrain prefetch begins before the globe-to-surface handoff',()=>{
  const handoff=source.indexOf('if(!handoff.localVisible)');
  assert.ok(prefetch>=0&&handoff>prefetch,'terrain must be requested while the planetary globe is still visible');
 });
-test('planetary overview drapes the live streamed habitat mesh onto the globe',async()=>{
- const scale=await readFile(new URL('../src/phase6/world-scale.js',import.meta.url),'utf8');
- assert.match(source,/terrainMeshes,planetaryFrame/);
- assert.match(source,/getVisibleMeshes\?\.\(\)/);
- assert.match(scale,/streamLocalWorld:localWorldBlend>\.08/);
+test('planetary globe never overlays streamed voxel triangles that can protrude through its surface',async()=>{
+ const renderer=await readFile(new URL('../src/phase6/planetary-renderer.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/terrainMeshes,planetaryFrame/);
+ assert.doesNotMatch(renderer,/terrainMeshes|planetaryFrame|surfaceForeshorten/);
+ assert.match(source,/if\(!handoff\.localVisible\|\|!terrainReady\)/);
 });
 test('planet and map navigation re-anchor the local habitat without rotating the camera',()=>{
  assert.match(source,/function resetPlanetaryAnchor\(nextFocus\)/);
