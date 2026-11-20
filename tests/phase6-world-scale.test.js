@@ -12,11 +12,11 @@ test('planet, geology and ecology expose three presentation tiers without a mand
 });
 test('planet zoom policy uses hysteresis while the presentation hand-off never double-renders surfaces',()=>{
  const scales=createWorldScaleController();assert.equal(scales.update(.12).level,'planet');assert.equal(scales.update(.19).level,'planet');const blend=scales.update(.19);assert.ok(blend.planetBlend>0&&blend.localWorldBlend>0);assert.equal(blend.streamLocalWorld,false);
- const before=planetaryHandoffForBlend(.46),middle=planetaryHandoffForBlend(.52),after=planetaryHandoffForBlend(.58);
+ const before=planetaryHandoffForBlend(.4),middle=planetaryHandoffForBlend(.5),after=planetaryHandoffForBlend(.6);
  assert.equal(before.planetOpacity,1);assert.equal(before.localOpacity,0);
- assert.equal(middle.planetOpacity,0);assert.equal(middle.localOpacity,0);
+ assert.equal(middle.planetOpacity,.5);assert.equal(middle.localOpacity,.5);
  assert.equal(after.planetOpacity,0);assert.equal(after.localOpacity,1);
- assert.ok(planetaryHandoffForBlend(.49).planetOpacity<1);
+ assert.ok(planetaryHandoffForBlend(.45).planetOpacity<1);
  assert.ok(planetaryHandoffForBlend(.55).localOpacity>0);
  assert.ok(after.planetScaleMultiplier>before.planetScaleMultiplier);
  assert.throws(()=>planetaryHandoffForBlend(NaN),RangeError);assert.equal(scales.update(.41).level,'geology');
