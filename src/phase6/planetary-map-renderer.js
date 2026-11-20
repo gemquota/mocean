@@ -1,22 +1,18 @@
 /**
- * Seamless 2D planetary atlas.
+ * Flat equirectangular planetary atlas.
  *
- * This equirectangular atlas reuses the globe's spherical elevation field.
- * The polar margins collapse to a shared, longitude-independent seam so the
- * navigable map can wrap in both axes. Only visible repeated cells are drawn.
+ * This is the same spherical elevation field used by the globe, sampled into
+ * a 2D map. Longitude and the polar margins join at the map seams, allowing
+ * the atlas to repeat as a navigable plane. The ecology renderer takes over
+ * as the user continues to zoom in.
  */
-import { terrainColour } from './habitat-terrain-stream.js';
-import { planetaryGlobalSurfaceElevation } from './planetary-renderer.js';
+import { planetarySurfaceElevation } from './planetary-renderer.js';
 
-const GRID_X = 64;
-const GRID_Y = 32;
+const MAP_WIDTH = 512;
+const MAP_HEIGHT = 256;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const fade = value => value * value * value * (value * (value * 6 - 15) + 10);
-const smoothstep = (a, b, value) => {
-  const t = clamp((value - a) / (b - a), 0, 1);
-  return t * t * (3 - 2 * t);
-};
 const mod = (value, divisor) => ((value % divisor) + divisor) % divisor;
+const fade = value => value * value * value * (value * (value * 6 - 15) + 10);
 
 function hash2(x, y, seed) {
   let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 2147483647)) | 0;
@@ -41,119 +37,86 @@ export function planetaryMapElevation(u, v) {
   const wrappedU = mod(u, 1), wrappedV = mod(v, 1);
   const longitude = wrappedU * Math.PI * 2 - Math.PI;
   const latitude = (.5 - wrappedV) * Math.PI;
-  const spherical = planetaryGlobalSurfaceElevation(longitude, latitude);
-  // Collapse both polar margins to the same longitude-independent value. This
-  // keeps the north/south atlas seam continuous while retaining the globe's
-  // actual geography everywhere outside the small polar caps.
-  const polarWeight = smoothstep(1.42, Math.PI / 2, Math.abs(latitude));
-  return spherical * (1 - polarWeight) + .5 * polarWeight;
+  const elevation = planetarySurfaceElevation(longitude, latitude);
+  const polarDistance = Math.abs(latitude);
+  const polarBlend = clamp((polarDistance - 1.42) / (Math.PI / 2 - 1.42), 0, 1);
+  const polarWeight = polarBlend * polarBlend * (3 - 2 * polarBlend);
+  return elevation * (1 - polarWeight) + .5 * polarWeight;
 }
 
-function mapMoisture(u, v) {
-  return periodicNoise(u, v, 8, 101) * .62 + periodicNoise(u, v, 16, 131) * .38;
+function colourFor(elevation, moisture) {
+  if (elevation < .43) return elevation < .29 ? [8, 45, 70] : [13, 73, 96];
+  if (elevation < .51) return [35, 107, 120];
+  if (elevation < .555) return [155, 154, 120];
+  if (elevation > .78) return [197, 203, 189];
+  if (moisture < .38) return [167, 151, 112];
+  if (moisture > .66) return [71, 122, 101];
+  return [113, 141, 112];
 }
 
-const MAP_CELLS = (() => {
-  const cells = [];
-  for (let y = 0; y < GRID_Y; y++) {
-    for (let x = 0; x < GRID_X; x++) {
-      const u = (x + .5) / GRID_X, v = (y + .5) / GRID_Y;
+let mapTexture = null;
+
+function getMapTexture() {
+  if (mapTexture || typeof document === 'undefined') return mapTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = MAP_WIDTH;
+  canvas.height = MAP_HEIGHT;
+  const context = canvas.getContext('2d', { alpha: false });
+  if (!context) return null;
+  const image = context.createImageData(MAP_WIDTH, MAP_HEIGHT);
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    const v = y / MAP_HEIGHT;
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      const u = x / MAP_WIDTH;
       const elevation = planetaryMapElevation(u, v);
-      cells.push({ x, y, elevation, moisture: mapMoisture(u, v) });
+      const moisture = periodicNoise(u, v, 8, 101) * .62 + periodicNoise(u, v, 16, 131) * .38;
+      const colour = colourFor(elevation, moisture);
+      const offset = (y * MAP_WIDTH + x) * 4;
+      image.data[offset] = colour[0];
+      image.data[offset + 1] = colour[1];
+      image.data[offset + 2] = colour[2];
+      image.data[offset + 3] = 255;
     }
   }
-  return cells;
-})();
-
-function mapColour(cell) {
-  const elevation = cell.elevation;
-  if (elevation < .43) return elevation < .29 ? '#082d46' : '#0d4960';
-  if (elevation < .51) return '#236b78';
-  if (elevation < .555) return '#9b9a78';
-  if (elevation > .78) return '#c5cbbd';
-  if (cell.moisture < .38) return '#a79770';
-  if (cell.moisture > .66) return '#477a65';
-  return '#718d70';
+  context.putImageData(image, 0, 0);
+  mapTexture = canvas;
+  return mapTexture;
 }
 
-/** Render a wrapped 2:1 planetary map centred on a periodic map focus. */
+/** Draw the same planet as a 2D plane, centred on the selected location. */
 export function drawPlanetaryMap(ctx, width, height, {
   focus = { u: .5, v: .5 },
   zoom = 1,
-  opacity = 1,
-  terrainMeshes = [],
-  planetaryFrame = null
+  opacity = 1
 } = {}) {
   if (!ctx || !Number.isFinite(width) || !Number.isFinite(height) ||
       !focus || !Number.isFinite(focus.u) || !Number.isFinite(focus.v) ||
       !Number.isFinite(zoom) || zoom <= 0 || opacity <= .001) return;
 
+  const texture = getMapTexture();
+  if (!texture) return;
   const mapWidth = Math.min(width, height * 2) * .92 * zoom;
   const mapHeight = mapWidth / 2;
-  const cellWidth = mapWidth / GRID_X, cellHeight = mapHeight / GRID_Y;
-  const cx = width * .5, cy = height * .5;
+  const centreX = width * .5, centreY = height * .5;
+  const focusU = mod(focus.u, 1), focusV = mod(focus.v, 1);
+
   ctx.save();
   ctx.globalAlpha *= clamp(opacity, 0, 1);
   ctx.fillStyle = '#061b2b';
   ctx.fillRect(0, 0, width, height);
+  ctx.imageSmoothingEnabled = true;
 
-  // Repeated copies are culled against the viewport. There is no world edge.
-  for (let tileY = -2; tileY <= 2; tileY++) {
-    for (let tileX = -2; tileX <= 2; tileX++) {
-      const tileLeft = cx + (tileX - focus.u) * mapWidth;
-      const tileTop = cy + (tileY - focus.v) * mapHeight;
-      if (tileLeft > width || tileLeft + mapWidth < 0 ||
-          tileTop > height || tileTop + mapHeight < 0) continue;
-      for (const cell of MAP_CELLS) {
-        const x = tileLeft + cell.x * cellWidth;
-        const y = tileTop + cell.y * cellHeight;
-        if (x > width || x + cellWidth < 0 || y > height || y + cellHeight < 0) continue;
-        ctx.fillStyle = mapColour(cell);
-        ctx.fillRect(x, y, cellWidth + .35, cellHeight + .35);
-      }
+  // Draw only repeated map copies that intersect the viewport.
+  const minTileX = Math.floor(-centreX / mapWidth + focusU);
+  const maxTileX = Math.ceil((width - centreX) / mapWidth + focusU);
+  const minTileY = Math.floor(-centreY / mapHeight + focusV);
+  const maxTileY = Math.ceil((height - centreY) / mapHeight + focusV);
+  for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
+    for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
+      const left = centreX + (tileX - focusU) * mapWidth;
+      const top = centreY + (tileY - focusV) * mapHeight;
+      ctx.drawImage(texture, left, top, mapWidth, mapHeight);
     }
   }
-
-  // Preserve the exact active habitat patch over the procedural global atlas.
-  if (planetaryFrame && terrainMeshes.length) {
-    let triangleBudget = 2600, total = 0;
-    for (const mesh of terrainMeshes) total += Math.floor((mesh.indices?.length ?? 0) / 3);
-    const stride = Math.max(1, Math.ceil(total / triangleBudget));
-    for (const mesh of terrainMeshes) {
-      const { positions, normals, indices } = mesh;
-      if (!positions || !normals || !indices) continue;
-      for (let index = 0; index < indices.length; index += 3 * stride) {
-        const points = [], normal = [0, 0, 0], position = [0, 0, 0];
-        let valid = true;
-        for (let vertex = 0; vertex < 3; vertex++) {
-          const offset = indices[index + vertex] * 3;
-          const x = positions[offset], y = positions[offset + 1], z = positions[offset + 2];
-          const geo = planetaryFrame.localToGeographic(x, -z);
-          let u = geo.longitude / (Math.PI * 2) + .5;
-          let v = .5 - geo.latitude / Math.PI;
-          u -= Math.round(u - focus.u);
-          v -= Math.round(v - focus.v);
-          const px = cx + (u - focus.u) * mapWidth;
-          const py = cy + (v - focus.v) * mapHeight;
-          points.push({ x: px, y: py });
-          if (px < -mapWidth || px > width + mapWidth || py < -mapHeight || py > height + mapHeight) valid = false;
-          for (let axis = 0; axis < 3; axis++) {
-            normal[axis] += normals[offset + axis] / 3;
-            position[axis] += [x, y, z][axis] / 3;
-          }
-        }
-        if (!valid) continue;
-        ctx.beginPath();
-        points.forEach((point, pointIndex) => pointIndex ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
-        ctx.closePath();
-        ctx.fillStyle = terrainColour(normal, position);
-        ctx.globalAlpha = clamp(opacity, 0, 1) * .92;
-        ctx.fill();
-      }
-    }
-  }
-
-  // Fine tile seams are intentionally absent: adjacent copies share the same
-  // periodic samples and are drawn with overlapping sub-pixel cell edges.
   ctx.restore();
 }
