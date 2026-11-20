@@ -1102,7 +1102,7 @@ function render(){
  const terrainReady=currentPlanetMeshes.length>0||previousPlanetMeshes.length>0;
  const handoffNow=performance.now(),handoffDt=planetaryHandoffLastTime?Math.min(.05,(handoffNow-planetaryHandoffLastTime)/1000):0;
  planetaryHandoffLastTime=handoffNow;
- const handoffTarget=terrainReady&&localWorldBlend>=.34?1:0;
+ const handoffTarget=localWorldBlend>=.34?1:0;
  const handoffStep=handoffDt*2.5;
  planetaryHandoffProgress+=Math.max(-handoffStep,Math.min(handoffStep,handoffTarget-planetaryHandoffProgress));
  const handoff=planetaryHandoffForBlend(planetaryHandoffProgress);
@@ -1117,7 +1117,7 @@ function render(){
  const terrainMeshes=handoff.planetOpacity>.001?(currentPlanetMeshes.length?currentPlanetMeshes:previousPlanetMeshes):[];
  drawPlanetaryGlobe(ctx,viewWidth,viewHeight,{yaw:planetYaw,pitch:planetPitch,focusLongitude:planetaryFocus.longitude,focusLatitude:planetaryFocus.latitude,scale:planetScale*handoff.planetScaleMultiplier,opacity:handoff.planetOpacity,time:school.time,terrainMeshes,planetaryFrame});
  modelCanvas.style.opacity=String(ecologyAlpha);
- if(!handoff.localVisible){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);drawPlanetaryMapOverlay(planetaryFocus,handoff.localOpacity,ecologyAlpha);return;}
+ if(!handoff.localVisible||!terrainReady){habitatTerrainStream?.setOpacity(0);previousHabitatTerrainStream?.setOpacity(0);if(advanceMarineAnimation)for(const fish of school.fish)advanceMarineAnimation(fish,1/24);drawPlanetaryMapOverlay(planetaryFocus,handoff.localOpacity,ecologyAlpha);return;}
  ctx.save();
  drawSeabed();
  if(currentWorldScale.showLocalEcology){
