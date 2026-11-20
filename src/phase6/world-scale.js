@@ -11,8 +11,7 @@ export const WORLD_SCALE_LEVELS = Object.freeze({
 });
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 /**
- * Camera orientation is invariant across zoom tiers. The planet unfolds into
- * a flat wrapped map; zoom never rotates the observer.
+ * Camera orientation is invariant across zoom tiers; zoom never rotates the observer.
  */
 export function geographyCameraForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Geography camera blend must be finite.');
@@ -31,19 +30,20 @@ export function planetScaleForZoom(relativeZoom){
 }
 const smoothstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
 /**
- * Sequentially hands presentation from the globe to the wrapped 2D atlas and
- * then local ecology. The observer camera does not rotate during the handoff.
+ * Hands presentation directly from the globe to local ecology. No intermediate
+ * map layer is rendered and the observer camera does not rotate.
  */
 export function planetaryHandoffForBlend(blend){
  if(!Number.isFinite(blend))throw new RangeError('Planet hand-off blend must be finite.');
  const t=clamp(blend,0,1);
- const planetOpacity=1-smoothstep(.46,.52,t);
- const localOpacity=smoothstep(.52,.58,t);
+ const transition=smoothstep(.40,.60,t);
+ const planetOpacity=1-transition;
+ const localOpacity=transition;
  return Object.freeze({
   planetOpacity,
   localOpacity,
   planetScaleMultiplier:1+2.2*smoothstep(0,.52,t),
-  localVisible:t>=.52
+  localVisible:t>=.40
  });
 }
 export function normaliseWorldZoom(zoom,fitZoom){
